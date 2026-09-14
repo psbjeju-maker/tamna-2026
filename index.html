@@ -85,7 +85,7 @@ p.lead{font-size:13px;color:var(--dim);line-height:1.65;margin:0 0 14px}
 .field input:focus{border-color:var(--gold)}
 .tiny{font-size:11px;color:var(--dim);line-height:1.6}
 
-/* ---------- 수배 포스터 ---------- */
+/* ---------- 신위 패널 ---------- */
 .crewgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:6px}
 .poster{position:relative;background:linear-gradient(175deg,var(--paper),var(--paper2));border-radius:8px;
   padding:10px 9px 11px;color:var(--paperInk);box-shadow:0 8px 20px rgba(0,0,0,.45);overflow:hidden;
@@ -103,9 +103,10 @@ p.lead{font-size:13px;color:var(--dim);line-height:1.65;margin:0 0 14px}
 .poster .liveHint{margin-top:5px;font-size:9.5px;font-weight:800;text-align:center;color:#0d6f66;
   background:rgba(47,209,197,.18);border:1px solid rgba(13,111,102,.25);border-radius:99px;padding:2px 6px}
 .poster.got .face{filter:none}
-.poster.got:after{content:'親見';position:absolute;top:40%;left:50%;transform:translate(-50%,-50%) rotate(-10deg);
-  width:58px;height:58px;border-radius:50%;border:3px solid #c2352a;color:#c2352a;font-size:20px;font-weight:800;
-  letter-spacing:0;display:flex;align-items:center;justify-content:center;
+.poster.got:after{content:'탐라\A 문화제';white-space:pre-line;position:absolute;top:40%;left:50%;
+  transform:translate(-50%,-50%) rotate(-10deg);
+  width:62px;height:62px;border-radius:50%;border:3px solid #c2352a;color:#c2352a;font-size:12px;font-weight:800;
+  line-height:1.15;letter-spacing:0;display:flex;align-items:center;justify-content:center;text-align:center;
   opacity:.82;animation:stampin .4s cubic-bezier(.2,1.6,.4,1)}
 @keyframes stampin{0%{transform:translate(-50%,-50%) rotate(-14deg) scale(2.4);opacity:0}
   60%{opacity:1}100%{transform:translate(-50%,-50%) rotate(-14deg) scale(1);opacity:.85}}
@@ -170,9 +171,9 @@ p.lead{font-size:13px;color:var(--dim);line-height:1.65;margin:0 0 14px}
 .cinePortrait img.full{max-width:230px;max-height:100%;filter:drop-shadow(0 16px 22px rgba(0,0,0,.55));
   animation:cinein .25s ease}
 /* 캐릭터와의 대화 — 표정이 바뀔 때마다 동그란 창(뱃지) 안에 귀엽게 담긴다 */
-.cinePortrait img.face{width:188px;height:188px;object-fit:cover;border-radius:50%;
+.cinePortrait img.face{width:260px;height:260px;max-width:72vw;max-height:72vw;object-fit:cover;border-radius:50%;
   background:linear-gradient(160deg,var(--paper),var(--paper2));
-  border:5px solid var(--gold);box-shadow:0 12px 30px rgba(0,0,0,.5),inset 0 0 0 2px rgba(255,255,255,.18);
+  border:6px solid var(--gold);box-shadow:0 14px 34px rgba(0,0,0,.5),inset 0 0 0 2px rgba(255,255,255,.18);
   animation:cinein .22s ease}
 @keyframes cinein{from{transform:translateY(10px) scale(.9);opacity:0}to{transform:none;opacity:1}}
 .cineCard{background:linear-gradient(180deg,#0d2740,#081a29);border-top:1px solid var(--line);
@@ -248,7 +249,7 @@ p.lead{font-size:13px;color:var(--dim);line-height:1.65;margin:0 0 14px}
       <p class="lead" style="text-align:center;margin:0 auto;max-width:330px">
         탐라의 오랜 이야기 속 <b style="color:var(--gold)">여섯 신</b>이<br>
         탐라문화제에 강림하셨습니다.<br><br>
-        찾아 인사드리고 <b style="color:var(--gold)">신표</b>를 모으면,<br>
+        찾아 인사드리고 <b style="color:var(--gold)">도장</b>를 모으면,<br>
         10월 31일 <b style="color:var(--coral)">과수원피스</b>로 가는<br><b style="color:var(--coral)">승선권</b>으로 바꿀 수 있습니다.
       </p>
       <div class="card" style="margin-top:20px;text-align:left">
@@ -266,10 +267,10 @@ p.lead{font-size:13px;color:var(--dim);line-height:1.65;margin:0 0 14px}
   <!-- ========== 신당 (홈) ========== -->
   <section class="screen" id="s-wanted">
     <h2 class="sec">탐라의 여섯 신</h2>
-    <p class="lead">행사장 곳곳에 강림해 계십니다. 만나 인사드리면 <b style="color:var(--gold)">신표 QR</b>을 받을 수 있어요.</p>
+    <p class="lead">행사장 곳곳에 강림해 계십니다. 만나 인사드리면 <b style="color:var(--gold)">도장 QR</b>을 받을 수 있어요.</p>
     <div class="prog"><div class="progbar"><i id="progFill" style="width:0"></i></div><div class="progn" id="progTxt">0 / 6</div></div>
     <div class="crewgrid" id="crewGrid"></div>
-    <button class="btn" style="margin:16px 0 6px" id="btnScan">🖋 신표 스캔하기</button>
+    <button class="btn" style="margin:16px 0 6px" id="btnScan">✅ 도장 찍기</button>
 
     <h2 class="sec">오늘의 순례</h2>
     <div id="todoList"></div>
@@ -389,11 +390,11 @@ p.lead{font-size:13px;color:var(--dim);line-height:1.65;margin:0 0 14px}
 
 <!-- 탭바 -->
 <nav id="tabs"><div class="tabin">
-  <button class="tab on" data-go="wanted"><i>📜</i>수배</button>
-  <button class="tab" data-go="game"><i>🎮</i>훈련장</button>
+  <button class="tab on" data-go="wanted"><i>⛩</i>신당</button>
+  <button class="tab" data-go="game"><i>🎮</i>놀이터</button>
   <button class="tab" data-go="photo"><i>📸</i>4컷</button>
   <button class="tab" data-go="shop"><i>🎫</i>매표소</button>
-  <button class="tab" data-go="info"><i>🏴‍☠️</i>안내</button>
+  <button class="tab" data-go="info"><i>📋</i>안내</button>
 </div></nav>
 
 <!-- 모달 -->
@@ -559,7 +560,7 @@ function paintCrew(){
     el.className='poster'+(got?' got':'')+(c.id===tc?' today':'')+(!active&&!got?' resting':'');
     var face = got&&c.photo ? '<img src="'+c.photo+'" alt="'+c.name+'">'
              : '<span>'+(got?c.name.slice(0,1):'?')+'</span>';
-    var pb = got?'친견 완료':(!active?'오늘은 쉬어가심':(c.bounty||C.gold.crew)*(c.id===tc?C.gold.todayMultiplier:1)+' 복 포인트');
+    var pb = got?'인사 완료':(!active?'오늘은 쉬어가심':(c.bounty||C.gold.crew)*(c.id===tc?C.gold.todayMultiplier:1)+' 복 포인트');
     el.innerHTML=(c.id===tc?'<div class="todaybadge">오늘의 신</div>':'')+
       '<div class="pw">탐라신화</div><div class="face">'+face+'</div>'+
       '<div class="pn">'+(got?c.name:'? ? ?')+'</div>'+
@@ -580,7 +581,7 @@ function jejuCard(c){
 }
 function crewInfo(c){
   sheet('<h3>'+c.name+'</h3><p>'+c.desc+'</p>'+jejuCard(c)+
-    '<div class="card" style="text-align:center"><div class="tag">친견 완료</div>'+
+    '<div class="card" style="text-align:center"><div class="tag">인사 완료</div>'+
     '<p class="lead" style="margin:10px 0 0">이 신과 찍은 사진으로 4컷을 만들어 보세요.</p></div>'+
     '<button class="btn" onclick="document.getElementById(\'modal\').classList.remove(\'on\');">닫기</button>');
 }
@@ -640,7 +641,7 @@ $('#btnBuy').onclick=function(){
 
 /* ---------------- 코드 스캔 ---------------- */
 function openScan(kind){
-  var label = kind? '스태프 확인 코드' : '신표 QR 코드';
+  var label = kind? '스태프 확인 코드' : '도장 QR 코드';
   var demo='';
   if(C.demoMode){
     var btns = kind
@@ -650,7 +651,7 @@ function openScan(kind){
       '<div class="dbtns">'+btns+'</div></div>';
   }
   sheet('<h3>'+label+' 입력</h3>'+
-    '<p>'+(kind?'부스 스태프가 보여주는 코드를 입력하세요.':'신을 뵈면 스태프가 보여주는 신표 코드를 입력하세요.')+'</p>'+
+    '<p>'+(kind?'부스 스태프가 보여주는 코드를 입력하세요.':'신을 뵈면 스태프가 보여주는 도장 코드를 입력하세요.')+'</p>'+
     '<div class="field"><input id="codeIn" placeholder="코드 입력" autocapitalize="characters"></div>'+
     '<button class="btn" id="codeGo">확인</button>'+demo);
   $('#codeGo').onclick=function(){redeem($('#codeIn').value.trim(),kind)};
@@ -678,7 +679,7 @@ function redeem(code,kind){
   var extra='';
   if(n>=C.crew.length&&!S.flags.all){S.flags.all=1;S.gold+=C.gold.crewAll;save();paint();
     extra='<div class="card" style="text-align:center;margin-top:6px">'+
-      '<div class="tag hot">여섯 신 모두 친견</div>'+
+      '<div class="tag hot">여섯 신께 모두 인사</div>'+
       '<p class="lead" style="margin:10px 0 0">보너스 <b style="color:var(--gold)">+'+C.gold.crewAll+' 복 포인트</b></p>'+
       '<div style="margin:14px 0;padding:13px 14px;background:rgba(255,201,74,.08);border:1px dashed var(--line);border-radius:12px;text-align:left">'+
         '<div style="font-size:10.5px;color:var(--gold);font-weight:800;letter-spacing:.06em;margin-bottom:8px">지금까지 한 건, 사실 예고편입니다</div>'+
@@ -690,12 +691,12 @@ function redeem(code,kind){
       '</div>'+
       '<p class="lead" style="margin:0">"탐라의 신들이 모두 그대를 반겼구나.<br>진짜 항해는 <b style="color:var(--coral)">10월 31일</b>, 과수원피스에서 시작된다."<br>— 귤선장</p></div>';}
   function showCaptureSheet(){
-    sheet('<h3>🙏 '+hit.name+' 친견</h3><p>'+hit.desc+'</p>'+jejuCard(hit)+
+    sheet('<h3>🙏 '+hit.name+' 인사</h3><p>'+hit.desc+'</p>'+jejuCard(hit)+
       '<div class="card" style="text-align:center;padding:22px"><div style="font-size:34px;font-weight:800;color:var(--gold)">+'+g+'</div>'+
       '<div class="tiny">복 포인트 획득'+(mult>1?' · 오늘의 신 2배!':'')+'</div></div>'+extra+
       '<button class="btn" style="margin-top:8px" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">계속</button>');
   }
-  /* 도채비는 처음 친견할 때만 짧은 대화 장면(오해 풀어주기)이 먼저 나온다 */
+  /* 도채비는 처음 인사드릴 때만 짧은 대화 장면(오해 풀어주기)이 먼저 나온다 */
   if(hit.id==='GOD2'){ playCinema(hit.name,DOKEBI_LINES,showCaptureSheet); }
   else { showCaptureSheet(); }
 }
@@ -708,29 +709,31 @@ function closeModal(){$('#modal').classList.remove('on')}
 $('#modal').onclick=function(e){if(e.target===$('#modal'))closeModal()};
 
 /* ---------------- 대화(시네마) ----------------
-   신을 처음 친견할 때 짧은 대화 장면을 넣을 수 있다. 지금은 도채비 전용
+   신을 처음 만날 때 짧은 대화 장면을 넣을 수 있다. 지금은 도채비 전용
    (오해를 풀어주는 대사) — 다른 신에게도 쓰려면 아래 DOKEBI_LINES 같은
    배열을 하나 더 만들어서 playCinema() 세 번째 인자로 넘기면 된다. */
 var CINE_LINES=null, cineIdx=0, cineDone=null;
 /* 오프닝 — 등록 화면 뜨기 전, 처음 한 번만 재생. 진행자는 도채비. */
 /* 오프닝은 표정 전환 없이 전신컷 하나로만 진행(사장님 지정) */
 var OPENING_LINES=[
-  {img:'dokebi/fullbody.png', text:'어이, 거기! 반갑다. 나는 도채비야.'},
-  {img:'dokebi/fullbody.png', text:'탐라문화제에 잘 왔어. 오늘 여기, 탐라의 오래된 이야기 속 여섯 신이 전부 강림해 있거든.'},
+  {img:'dokebi/fullbody.png', text:'어이, 거기! 나는 도채비야.'},
+  {img:'dokebi/fullbody.png', text:'탐라문화제에 여섯 신이 전부 강림해 있어.'},
   {img:'dokebi/fullbody.png', text:'설문대할망, 소별왕, 영등할망, 자청비, 가문장아기… 그리고 나까지 여섯.'},
-  {img:'dokebi/fullbody.png', text:'찾아가서 인사만 드려도 신표를 주지. 다 모으면 재밌는 일이 생길 거야.'},
-  {img:'dokebi/fullbody.png', text:'그리고 그 신표, 잘 모아두라고. 10월 31일에 훨씬 더 큰 곳에서 쓸모가 있을 테니까.'},
-  {img:'dokebi/fullbody.png', text:'거기가 어디냐고? 직접 와서 확인해봐. 「과수원피스」라고, 재밌는 녀석들이 준비하고 있거든.'},
-  {img:'dokebi/fullbody.png', text:'자, 준비됐으면 이름부터 알려줘. 놀아보자고!'}
+  {img:'dokebi/fullbody.png', text:'인사만 드려도 도장을 줘. 다 모으면 좋은 일이 생겨.'},
+  {img:'dokebi/fullbody.png', text:'도장은 잘 모아둬. 10월 31일에 쓸모가 있을 거야.'},
+  {img:'dokebi/fullbody.png', text:'어디냐고? 「과수원피스」야. 직접 와서 확인해봐.'},
+  {img:'dokebi/fullbody.png', text:'이름부터 알려줘. 놀아보자!'}
 ];
+/* 표정이 대사마다 매번 바뀌면 산만하다는 피드백(2026-09-14) 반영 —
+   감정이 실제로 바뀌는 지점에서만 표정을 바꾼다(7줄에 4번만 전환). */
 var DOKEBI_LINES=[
-  {img:'dokebi/exp_smile.png', text:'오, 사람이잖아! 잘 왔다, 나는 도채비.'},
-  {img:'dokebi/exp_default.png', text:'근데 표정이 왜 그래? 뭘 상상한 거야?'},
-  {img:'dokebi/exp_surprise.png', text:'아~ 알겠다. 너 지금 "뿔 달리고 이빨 뾰족한 그거" 떠올렸지?'},
-  {img:'dokebi/exp_pout.png', text:'그건 일본 오니(鬼)잖아. 나는 도채비, 한국 도깨비라고.'},
-  {img:'dokebi/exp_wink.png', text:'우리는 원래 사람이랑 똑같이 생겼어. 뿔도 이빨도 없어. 옛날이야기에도 늘 그렇게 나온다고.'},
-  {img:'dokebi/exp_think.png', text:'대신 방망이 하나는 꼭 들고 다니지. 은혜도 원수도 화끈하게 갚는 성격이거든.'},
-  {img:'dokebi/exp_laugh.png', text:'자, 오해 풀렸으면 됐고! 탐라문화제 재밌게 즐기다 가라고!'}
+  {img:'dokebi/exp_smile.png', text:'오, 사람이잖아! 나는 도채비야.'},
+  {img:'dokebi/exp_smile.png', text:'근데 왜 그런 표정이야?'},
+  {img:'dokebi/exp_surprise.png', text:'뿔 달리고 이빨 뾰족한 거, 그거 상상했지?'},
+  {img:'dokebi/exp_pout.png', text:'그건 오니(鬼)야. 난 도깨비라고.'},
+  {img:'dokebi/exp_wink.png', text:'원래 사람이랑 똑같이 생겼어. 뿔도 이빨도 없어.'},
+  {img:'dokebi/exp_wink.png', text:'대신 방망이는 꼭 들고 다녀. 은혜도 원수도 화끈하게 갚거든.'},
+  {img:'dokebi/exp_laugh.png', text:'오해 풀렸지? 재밌게 놀다 가!'}
 ];
 var cineMode='face';
 /* mode: 'full'=전신컷만 계속 보여줌(오프닝용) · 'face'(기본)=표정컷을 동그란 창에 담아 매 대사마다 교체 */
@@ -743,7 +746,10 @@ function playCinema(name,lines,onDone,mode){
 function cineStep(){
   var l=CINE_LINES[cineIdx];
   var img=$('#cineImg');
-  img.className='';img.offsetWidth;img.className=cineMode; // 클래스 재설정으로 매번 등장 애니메이션 재생
+  /* 등장 애니메이션은 대화가 처음 열릴 때 한 번만 — 대사가 넘어갈 때마다
+     클래스를 재설정해 깜박이던 걸(2026-09-14 피드백) 없앴다. 같은 모드면
+     그냥 src만 바뀐다. */
+  if(img.className!==cineMode)img.className=cineMode;
   img.src=l.img;
   $('#cineText').textContent=l.text;
   $('#cineNext').textContent=(cineIdx===CINE_LINES.length-1)?'확인 ▶':'다음 ▶';
@@ -1143,7 +1149,7 @@ $('#btnMake').onclick=function(){
   x.fillText(C.festivalDates, W/2, H-96);
   x.fillStyle='#FF5A47';x.font='800 27px SCDream, sans-serif';
   var n=Object.keys(S.crew).length;
-  x.fillText('신 '+n+'/6 친견 · '+(S.name||'순례자'), W/2, H-52);
+  x.fillText('신 '+n+'/6 인사 · '+(S.name||'순례자'), W/2, H-52);
   var url=c.toDataURL('image/jpeg',.92);
   var out=$('#photoOut');out.src=url;out.style.display='block';
   $('#btnSave').style.display='block';
@@ -1155,7 +1161,7 @@ $('#btnMake').onclick=function(){
 
 /* ---------------- 초기화 ---------------- */
 $('#btnReset').onclick=function(){
-  sheet('<h3>기록을 지울까요?</h3><p>복 포인트·승선권·친견 기록이 전부 사라집니다. 테스트용 기능입니다.</p>'+
+  sheet('<h3>기록을 지울까요?</h3><p>복 포인트·승선권·인사 기록이 전부 사라집니다. 테스트용 기능입니다.</p>'+
     '<button class="btn" id="okReset">지우기</button>'+
     '<button class="btn ghost" style="margin-top:8px" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">취소</button>');
   $('#okReset').onclick=function(){localStorage.removeItem(KEY);location.reload()};
