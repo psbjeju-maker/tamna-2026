@@ -163,6 +163,17 @@ p.lead{font-size:13px;color:var(--dim);line-height:1.65;margin:0 0 14px}
 #stage{position:fixed;inset:0;z-index:95;display:none;background:#04111c;flex-direction:column}
 #stage.on{display:flex}
 
+/* ---------- 큰 추적 화면 ---------- */
+#tracker{position:fixed;inset:0;z-index:96;display:none;flex-direction:column;
+  background:radial-gradient(120% 90% at 50% 20%,#123047,#04111c 65%);
+  padding:18px 20px calc(20px + var(--safe))}
+#tracker.on{display:flex}
+.trackTop{display:flex;align-items:center;font-size:15px;font-weight:800}
+.trackTop .x{margin-left:auto;font-size:24px;color:var(--dim);padding:4px}
+.trackBody{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#trackCompassWrap{filter:drop-shadow(0 10px 24px rgba(47,209,197,.25))}
+#trackDist{font-size:26px;font-weight:800;color:var(--gold);text-align:center}
+
 /* ---------- 대화(시네마) ---------- */
 #cinema{position:fixed;inset:0;z-index:97;display:none;flex-direction:column;justify-content:flex-end;
   background:radial-gradient(120% 90% at 50% 15%,#1b3f5e,#04111c 62%);cursor:pointer}
@@ -408,6 +419,17 @@ p.lead{font-size:13px;color:var(--dim);line-height:1.65;margin:0 0 14px}
   <div id="memo" style="display:none"></div>
 </div>
 
+<!-- 큰 추적 화면 — 카드 탭하면 뜬다 -->
+<div id="tracker">
+  <div class="trackTop"><span id="trackName">추적 중</span><button class="x" id="trackClose">✕</button></div>
+  <div class="trackBody">
+    <div id="trackCompassWrap"></div>
+    <div id="trackDist">-</div>
+    <p class="tiny" id="trackNote" style="text-align:center;max-width:280px"></p>
+  </div>
+  <button class="btn" id="trackScanBtn">✅ 찾았다! 도장 찍기</button>
+</div>
+
 <!-- 대화(시네마) — 화면 아무 곳이나 탭하면 다음 대사로 -->
 <div id="cinema">
   <div class="cinePortrait"><img id="cineImg" src="" alt=""></div>
@@ -451,15 +473,57 @@ function refreshPlayerPos(){
 }
 /* 나침반 SVG — 방위각(bearing)만큼 바늘을 돌린다. 폰 자체의 방향(기기 컴퍼스)은
    안 쓴다 — 기기마다 지원이 들쭉날쭉해서, 항상 "북쪽이 위"인 지도용 나침반으로
-   단순화했다. 정확한 좌표·지도 핀은 여전히 어디에도 노출하지 않는다. */
-function compassSvg(bearingDeg,known){
+   단순화했다. 정확한 좌표·지도 핀은 여전히 어디에도 노출하지 않는다.
+   size를 키우면 카드의 작은 배지 대신 추적 화면의 큰 나침반으로도 쓴다. */
+function compassSvg(bearingDeg,known,size){
+  size=size||26;
   var needle = known
     ? '<g transform="rotate('+bearingDeg+' 17 17)"><polygon points="17,4 21.5,19 17,15.5 12.5,19" fill="#0d6f66"/></g>'
     : '<text x="17" y="21" text-anchor="middle" font-size="13" font-weight="800" fill="#0d6f66">?</text>';
-  return '<svg width="26" height="26" viewBox="0 0 34 34" style="flex:none">'+
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 34 34" style="flex:none">'+
     '<circle cx="17" cy="17" r="15" fill="rgba(47,209,197,.14)" stroke="#0d6f66" stroke-width="1.5"/>'+
     (known?'<circle cx="17" cy="17" r="1.6" fill="#0d6f66"/>':'')+
     needle+'</svg>';
+}
+/* ---------------- 큰 추적 화면 ----------------
+   카드를 탭하면 이 화면이 뜬다 — 작은 배지 대신 진짜 "추적하는 느낌"을 주기 위해
+   나침반을 크게 띄우고, 걸으면서 몇 초마다 갱신되게 한다. */
+var trackGod=null, trackTimer=null;
+function openTracker(c){
+  trackGod=c;
+  $('#trackName').textContent=c.name+' 추적 중';
+  $('#tracker').classList.add('on');
+  refreshPlayerPos();refreshLive();
+  trackTick();
+  if(trackTimer)clearInterval(trackTimer);
+  trackTimer=setInterval(trackTick,6000);
+}
+function closeTracker(){
+  $('#tracker').classList.remove('on');
+  if(trackTimer){clearInterval(trackTimer);trackTimer=null}
+  trackGod=null;
+}
+function trackTick(){
+  if(!trackGod)return;
+  var h=liveHints[trackGod.id];
+  var stale=h&&h.updatedAt&&h.updatedAt.toMillis&&(Date.now()-h.updatedAt.toMillis()>(C.liveLocation.staleMs||90000));
+  if(!h||!h.active||h.lat==null||stale){
+    $('#trackCompassWrap').innerHTML=compassSvg(0,false,220);
+    $('#trackDist').textContent='신호 없음';
+    $('#trackNote').textContent='지금은 위치를 안 알려주고 계세요. 잠시 후 다시 열어보세요.';
+    return;
+  }
+  if(!playerPos){
+    $('#trackCompassWrap').innerHTML=compassSvg(0,false,220);
+    $('#trackDist').textContent='내 위치 확인 중…';
+    $('#trackNote').textContent='위치 권한을 허용하면 방향까지 보여드려요.';
+    return;
+  }
+  var d=TamnaLive.distanceM(playerPos.lat,playerPos.lng,h.lat,h.lng);
+  var b=TamnaLive.bearingDeg(playerPos.lat,playerPos.lng,h.lat,h.lng);
+  $('#trackCompassWrap').innerHTML=compassSvg(b,true,220);
+  $('#trackDist').textContent=TamnaLive.dirLabel(b)+'쪽 · 약 '+TamnaLive.fmtDist(d);
+  $('#trackNote').textContent='조금씩 움직이면서 다시 확인해보세요. 가까워질수록 거리가 줄어들어요.';
 }
 function liveHintHtml(c){
   var h=liveHints[c.id];
@@ -578,7 +642,13 @@ function paintCrew(){
       '<div class="pw">탐라신화</div><div class="face">'+face+'</div>'+
       '<div class="pn">'+(got?c.name:'? ? ?')+'</div>'+
       '<div class="pb">'+pb+'</div>'+(got?'':liveHintHtml(c));
-    el.onclick=function(){ got?crewInfo(c):openScan(); };
+    el.onclick=function(){
+      if(got){crewInfo(c);return}
+      var h=liveHints[c.id];
+      var stale=h&&h.updatedAt&&h.updatedAt.toMillis&&(Date.now()-h.updatedAt.toMillis()>(C.liveLocation.staleMs||90000));
+      var isLive=h&&h.active&&h.lat!=null&&!stale;
+      isLive?openTracker(c):openScan();
+    };
     g.appendChild(el);
   });
   var n=Object.keys(S.crew).length;
@@ -714,6 +784,8 @@ function redeem(code,kind){
   else { showCaptureSheet(); }
 }
 $('#btnScan').onclick=function(){openScan()};
+$('#trackClose').onclick=closeTracker;
+$('#trackScanBtn').onclick=function(){closeTracker();openScan()};
 $('#btnSns').onclick=function(){openScan('sns')};
 
 /* ---------------- 모달 ---------------- */
