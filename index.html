@@ -100,8 +100,9 @@ p.lead{font-size:13px;color:var(--dim);line-height:1.65;margin:0 0 14px}
 .poster .face span{font-size:40px;font-weight:800;color:#9c8149}
 .poster .pn{font-size:13px;font-weight:800;text-align:center;line-height:1.25;letter-spacing:-.3px}
 .poster .pb{font-size:10.5px;text-align:center;color:#7a5c22;font-weight:600;margin-top:3px}
-.poster .liveHint{margin-top:5px;font-size:9.5px;font-weight:800;text-align:center;color:#0d6f66;
-  background:rgba(47,209,197,.18);border:1px solid rgba(13,111,102,.25);border-radius:99px;padding:2px 6px}
+.poster .liveHint{margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px;
+  font-size:9.5px;font-weight:800;color:#0d6f66;
+  background:rgba(47,209,197,.18);border:1px solid rgba(13,111,102,.25);border-radius:99px;padding:3px 8px 3px 4px}
 .poster.got .face{filter:none}
 .poster.got:after{content:'탐라\A 문화제';white-space:pre-line;position:absolute;top:40%;left:50%;
   transform:translate(-50%,-50%) rotate(-10deg);
@@ -448,6 +449,18 @@ function refreshPlayerPos(){
   }, function(){ /* 권한 거부·실패 — 조용히 무시, 힌트는 방향 없이만 표시 */ },
   {enableHighAccuracy:false, maximumAge:20000, timeout:8000});
 }
+/* 나침반 SVG — 방위각(bearing)만큼 바늘을 돌린다. 폰 자체의 방향(기기 컴퍼스)은
+   안 쓴다 — 기기마다 지원이 들쭉날쭉해서, 항상 "북쪽이 위"인 지도용 나침반으로
+   단순화했다. 정확한 좌표·지도 핀은 여전히 어디에도 노출하지 않는다. */
+function compassSvg(bearingDeg,known){
+  var needle = known
+    ? '<g transform="rotate('+bearingDeg+' 17 17)"><polygon points="17,4 21.5,19 17,15.5 12.5,19" fill="#0d6f66"/></g>'
+    : '<text x="17" y="21" text-anchor="middle" font-size="13" font-weight="800" fill="#0d6f66">?</text>';
+  return '<svg width="26" height="26" viewBox="0 0 34 34" style="flex:none">'+
+    '<circle cx="17" cy="17" r="15" fill="rgba(47,209,197,.14)" stroke="#0d6f66" stroke-width="1.5"/>'+
+    (known?'<circle cx="17" cy="17" r="1.6" fill="#0d6f66"/>':'')+
+    needle+'</svg>';
+}
 function liveHintHtml(c){
   var h=liveHints[c.id];
   if(!h||!h.active||h.lat==null)return '';
@@ -457,9 +470,9 @@ function liveHintHtml(c){
   if(playerPos){
     var d=TamnaLive.distanceM(playerPos.lat,playerPos.lng,h.lat,h.lng);
     var b=TamnaLive.bearingDeg(playerPos.lat,playerPos.lng,h.lat,h.lng);
-    return '<div class="liveHint">🧭 '+TamnaLive.dirLabel(b)+'쪽 · 약 '+TamnaLive.fmtDist(d)+'</div>';
+    return '<div class="liveHint">'+compassSvg(b,true)+'<span>'+TamnaLive.dirLabel(b)+'쪽 · 약 '+TamnaLive.fmtDist(d)+'</span></div>';
   }
-  return '<div class="liveHint">🧭 근처 어딘가에 계세요</div>';
+  return '<div class="liveHint">'+compassSvg(0,false)+'<span>근처 어딘가에 계세요</span></div>';
 }
 
 /* ---------------- 상태 ---------------- */
