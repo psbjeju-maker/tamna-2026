@@ -628,6 +628,11 @@ function isActiveToday(c){
   if(!c.activeDays)return true;
   return c.activeDays.indexOf(today())>=0;
 }
+/* 카드 클릭은 위임(delegation) 방식으로 처리한다 — #crewGrid 자체에 리스너를
+   한 번만 걸어두고, 클릭 시점에 data-god으로 대상을 찾는다. 예전엔 각 카드에
+   직접 onclick을 걸었는데, 25초마다 자동으로 카드를 통째로 다시 그리는 도중
+   탭이 겹치면 이벤트가 씹히는 문제가 있었다(2026-09-14 발견) — 위임 방식이면
+   #crewGrid 자체는 다시 안 그려지니 이 문제가 없다. */
 function paintCrew(){
   var tc=todayCrew(), g=$('#crewGrid');g.innerHTML='';
   C.crew.forEach(function(c){
@@ -635,6 +640,7 @@ function paintCrew(){
     var active=isActiveToday(c);
     var el=document.createElement('div');
     el.className='poster'+(got?' got':'')+(c.id===tc?' today':'')+(!active&&!got?' resting':'');
+    el.dataset.god=c.id;
     var face = got&&c.photo ? '<img src="'+c.photo+'" alt="'+c.name+'">'
              : '<span>'+(got?c.name.slice(0,1):'?')+'</span>';
     var pb = got?'인사 완료':(!active?'오늘은 쉬어가심':(c.bounty||C.gold.crew)*(c.id===tc?C.gold.todayMultiplier:1)+' 복 포인트');
@@ -642,19 +648,23 @@ function paintCrew(){
       '<div class="pw">탐라신화</div><div class="face">'+face+'</div>'+
       '<div class="pn">'+(got?c.name:'? ? ?')+'</div>'+
       '<div class="pb">'+pb+'</div>'+(got?'':liveHintHtml(c));
-    el.onclick=function(){
-      if(got){crewInfo(c);return}
-      var h=liveHints[c.id];
-      var stale=h&&h.updatedAt&&h.updatedAt.toMillis&&(Date.now()-h.updatedAt.toMillis()>(C.liveLocation.staleMs||90000));
-      var isLive=h&&h.active&&h.lat!=null&&!stale;
-      isLive?openTracker(c):openScan();
-    };
     g.appendChild(el);
   });
   var n=Object.keys(S.crew).length;
   $('#progFill').style.width=(n/C.crew.length*100)+'%';
   $('#progTxt').textContent=n+' / '+C.crew.length;
 }
+$('#crewGrid').addEventListener('click',function(e){
+  var card=e.target.closest('.poster');
+  if(!card)return;
+  var c=C.crew.filter(function(x){return x.id===card.dataset.god})[0];
+  if(!c)return;
+  if(S.crew[c.id]){crewInfo(c);return}
+  var h=liveHints[c.id];
+  var stale=h&&h.updatedAt&&h.updatedAt.toMillis&&(Date.now()-h.updatedAt.toMillis()>(C.liveLocation.staleMs||90000));
+  var isLive=h&&h.active&&h.lat!=null&&!stale;
+  isLive?openTracker(c):openScan();
+});
 function jejuCard(c){
   if(!c.jeju)return '';
   return '<div style="margin:12px 0;padding:13px 14px;background:rgba(255,201,74,.08);border:1px dashed var(--line);border-radius:12px;text-align:center">'+
