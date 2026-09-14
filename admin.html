@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#04111c">
+<title>관리자 — 탐라, 여섯 신을 만나다</title>
+<style>
+@font-face{font-family:SCDream;src:url(fonts/SCDream4.woff)format('woff');font-weight:400;font-display:swap}
+@font-face{font-family:SCDream;src:url(fonts/SCDream5.woff)format('woff');font-weight:600;font-display:swap}
+@font-face{font-family:SCDream;src:url(fonts/SCDream7.woff)format('woff');font-weight:800;font-display:swap}
+:root{
+  --ink:#04111c; --gold:#FFC94A; --coral:#FF5A47; --teal:#2FD1C5;
+  --txt:#e9f1f7; --dim:#8aa3b6; --line:rgba(255,201,74,.22);
+  --safe: env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:SCDream,-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;
+  background:radial-gradient(1200px 700px at 50% -10%,#1b4463 0%,transparent 60%),
+    linear-gradient(180deg,#04111c 0%,#071a29 45%,#04111c 100%);
+  background-attachment:fixed;color:var(--txt);min-height:100dvh}
+button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+.wrap{max-width:480px;margin:0 auto;padding:20px 18px calc(30px + var(--safe))}
+.eyebrow{font-size:11px;letter-spacing:.08em;color:var(--gold);font-weight:800}
+h1{font-size:19px;font-weight:800;margin:6px 0 16px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:16px;margin-bottom:14px}
+.field input{width:100%;padding:14px;border-radius:12px;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.14);color:var(--txt);font-size:20px;outline:none;
+  text-align:center;letter-spacing:.4em}
+.btn{display:block;width:100%;padding:14px;border-radius:12px;font-weight:800;font-size:14px;text-align:center;
+  background:linear-gradient(180deg,#ffd76b,#e0a52c);color:#2a1a02;margin-top:10px}
+.btn.danger{background:rgba(255,90,71,.15);border:1px solid rgba(255,90,71,.35);color:#ff8b7c}
+#gate{}
+#panel{display:none}
+#panel.on{display:block}
+.godrow{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);margin-bottom:8px}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;background:#3a4a5a}
+.dot.live{background:var(--teal);box-shadow:0 0 8px var(--teal)}
+.godrow .nm{flex:1;font-weight:700;font-size:14px}
+.godrow .st{font-size:11.5px;color:var(--dim);text-align:right}
+.godrow .st.live{color:var(--teal)}
+.tiny{font-size:11.5px;color:var(--dim);line-height:1.7}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);z-index:99;
+  background:rgba(10,31,49,.97);border:1px solid var(--line);color:var(--txt);padding:12px 20px;border-radius:99px;
+  font-size:13px;font-weight:600;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;text-align:center;
+  max-width:88vw}
+#toast.on{opacity:1;transform:translateX(-50%)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">탐라문화제 · ADMIN</div>
+  <h1>관리자 화면</h1>
+
+  <div id="gate" class="card">
+    <div class="field"><input id="pinIn" type="password" inputmode="numeric" placeholder="••••" maxlength="6"></div>
+    <button class="btn" id="btnGo">들어가기</button>
+  </div>
+
+  <div id="panel">
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px">여섯 신 근무 현황</div>
+      <div id="godList"></div>
+      <p class="tiny" style="margin-top:8px">정확한 좌표는 이 화면에도 표시하지 않습니다 — "근무 중"인지, 얼마 전에
+        마지막으로 신호가 왔는지만 보여줍니다. 새로고침하면 최신 상태로 갱신됩니다.</p>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px">전체 위치 초기화</div>
+      <p class="tiny" style="margin:0 0 10px">여섯 신의 위치 기록을 즉시 비활성화하고 좌표를 지웁니다.
+        행사가 끝났을 때, 또는 문제가 생겼을 때 누르세요.</p>
+      <button class="btn danger" id="btnClear">여섯 신 위치 전부 지우기</button>
+    </div>
+    <a href="staff/" style="display:block;text-align:center;margin-top:16px;font-size:11.5px;color:var(--dim)">스태프 화면 →</a>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="config.js"></script>
+<script src="live.js"></script>
+<script>
+(function(){
+'use strict';
+var C=window.TAMNA, L=window.TamnaLive;
+var $=function(s){return document.querySelector(s)};
+
+function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');
+  clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('on')},2400)}
+
+$('#btnGo').onclick=function(){
+  if($('#pinIn').value.trim()!==String(C.liveLocation.adminPin)){toast('PIN이 맞지 않습니다');return}
+  $('#gate').style.display='none';
+  $('#panel').classList.add('on');
+  loadStatus();
+};
+
+function fmtAgo(ms){
+  var s=Math.floor(ms/1000);
+  if(s<60)return s+'초 전';
+  if(s<3600)return Math.floor(s/60)+'분 전';
+  return Math.floor(s/3600)+'시간 전';
+}
+
+function loadStatus(){
+  $('#godList').innerHTML='<p class="tiny">불러오는 중…</p>';
+  if(!L.hasDb()){$('#godList').innerHTML='<p class="tiny">서버 연결 실패 — 오프라인이거나 설정 오류입니다.</p>';return}
+  L.getAll().then(function(data){
+    var stale=(C.liveLocation&&C.liveLocation.staleMs)||90000;
+    $('#godList').innerHTML=C.crew.map(function(c){
+      var d=data[c.id];
+      var live=false, statusTxt='근무 중 아님';
+      if(d&&d.active&&d.updatedAt&&d.updatedAt.toMillis){
+        var age=Date.now()-d.updatedAt.toMillis();
+        live=age<stale;
+        statusTxt=live?('근무 중 · '+fmtAgo(age)+' 갱신'):('신호 끊김 · '+fmtAgo(age)+' 전');
+      }
+      return '<div class="godrow"><span class="dot'+(live?' live':'')+'"></span>'+
+        '<span class="nm">'+c.name+'</span><span class="st'+(live?' live':'')+'">'+statusTxt+'</span></div>';
+    }).join('');
+  });
+}
+
+$('#btnClear').onclick=function(){
+  if(!confirm('여섯 신의 위치를 전부 지울까요?'))return;
+  L.clearAll().then(function(ok){
+    toast(ok?'전부 지웠습니다':'실패 — 네트워크를 확인하세요');
+    loadStatus();
+  });
+};
+})();
+</script>
+</body>
+</html>
