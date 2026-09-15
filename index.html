@@ -214,6 +214,10 @@ p.lead{font-size:13px;color:var(--dim);line-height:1.65;margin:0 0 14px}
   background:rgba(255,255,255,.04);overflow:hidden;position:relative;font-size:12px;color:var(--dim)}
 .slot img{width:100%;height:100%;object-fit:cover}
 #photoOut{width:100%;border-radius:12px;display:none;margin-top:12px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.fmtToggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.fmtBtn{padding:11px;border-radius:12px;font-weight:700;font-size:13px;text-align:center;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:var(--dim)}
+.fmtBtn.on{background:rgba(0,229,255,.14);border-color:rgba(0,229,255,.5);color:#EAF4FF}
 
 /* ---------- 상점 ---------- */
 .ticket{position:relative;background:linear-gradient(115deg,#201c2e,#14121f);border:1px solid var(--line);
@@ -323,6 +327,10 @@ p.lead{font-size:13px;color:var(--dim);line-height:1.65;margin:0 0 14px}
     <p class="lead">신들과 찍은 사진 4장을 넣으면 탐라문화제 × 과수원피스 프레임으로 만들어 드립니다. 저장해서 SNS에 올리고
       부스 스태프에게 보여주면 <b style="color:var(--gold)">300 복 포인트</b>.</p>
     <div class="slot4" id="slots"></div>
+    <div class="fmtToggle" id="fmtToggle">
+      <button class="fmtBtn on" type="button" data-fmt="tall">세로형 (4:5)</button>
+      <button class="fmtBtn" type="button" data-fmt="square">정방형 (1:1)</button>
+    </div>
     <button class="btn" id="btnMake">4컷 만들기</button>
     <img id="photoOut" alt="완성된 4컷 사진">
     <button class="btn ghost" id="btnSave" style="display:none;margin-top:10px">사진 저장하기</button>
@@ -895,11 +903,46 @@ function stopGame(){
   stage.classList.remove('on');
   window.removeEventListener('deviceorientation',tiltH);
   cv.onpointerdown=null;cv.onpointermove=null;cv.onpointerup=null;
+  sfxStopAmbient();
 }
 function startGame(k){
   if(k==='catch')gCatch();
   if(k==='sail')gSail();
   if(k==='memo')gMemo();
+}
+
+/* ---------------- 사운드 ---------------- */
+/* 짧은 효과음은 sfx/*.mp3 파일로, 미사일 발사음 같은 반복되는 단순음은
+   파일 없이 오실레이터로 합성한다(beep) — 파일 왕복 없이 즉시 나고 용량도 안 든다. */
+var sfxPool={}, ambientEl=null, _actx=null;
+function sfx(name,vol){
+  try{
+    var a=new Audio('sfx/'+name+'.mp3');
+    a.volume=vol==null?0.75:vol;
+    a.play()['catch'](function(){});
+  }catch(e){}
+}
+function sfxAmbient(name,vol){
+  try{
+    sfxStopAmbient();
+    ambientEl=new Audio('sfx/'+name+'.mp3');
+    ambientEl.loop=true;ambientEl.volume=vol==null?0.35:vol;
+    ambientEl.play()['catch'](function(){});
+  }catch(e){}
+}
+function sfxStopAmbient(){ if(ambientEl){try{ambientEl.pause()}catch(e){} ambientEl=null} }
+function beep(freq,dur,type,vol){
+  try{
+    _actx=_actx||new (window.AudioContext||window.webkitAudioContext)();
+    var t0=_actx.currentTime, osc=_actx.createOscillator(), g=_actx.createGain();
+    osc.type=type||'square';
+    osc.frequency.setValueAtTime(freq,t0);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(60,freq*0.35),t0+dur);
+    g.gain.setValueAtTime(vol==null?0.16:vol,t0);
+    g.gain.exponentialRampToValueAtTime(0.001,t0+dur);
+    osc.connect(g);g.connect(_actx.destination);
+    osc.start(t0);osc.stop(t0+dur);
+  }catch(e){}
 }
 
 /* --- ① 황금귤 캐치 --- */
@@ -928,6 +971,8 @@ function gCatch(){
   var W=cv.width,H=cv.height,items=[],score=0,t0=performance.now(),dur=30000,spawn=0;
   var lastPt=null, hitSet=null;
   var fx=[], pieces=[], flashes=[], shakeT=0, shakeMag=0;
+  var trail=[], lastSliceSnd=0;
+  var combo=0, comboUntil=0, popups=[];
   function pt(e){var r=cv.getBoundingClientRect();return {x:(e.clientX-r.left)*2,y:(e.clientY-r.top)*2}}
   /* 과즙 스프레이 — 자른 방향과 수직으로 즙이 튄다 */
   function juice(x,y,swipeAngle,c,n){
@@ -957,22 +1002,32 @@ function gCatch(){
         sz:role===0?4:6,grav:true});
     }
   }
+  function popText(x,y,txt,c){popups.push({x:x,y:y,txt:txt,c:c,life:1})}
   function slice(p0,p1){
     var swipeAngle=Math.atan2(p1.y-p0.y,p1.x-p0.x);
+    var now=performance.now();
+    if(now-lastSliceSnd>110){lastSliceSnd=now;sfx('slice',0.35)}
     for(var i=items.length-1;i>=0;i--){var it=items[i];
       if(hitSet.indexOf(it)>=0)continue;
       if(segPointDist(p0,p1,it.x,it.y)<it.r+22){
         hitSet.push(it);
-        if(it.bomb){score=Math.max(0,score-30);explode(it.x,it.y,it.r);items.splice(i,1);continue}
+        if(it.bomb){score=Math.max(0,score-30);explode(it.x,it.y,it.r);sfx('boom',0.8);combo=0;items.splice(i,1);continue}
         it.hits++;
         it.marks.push(swipeAngle-it.rot);
-        if(it.hits>=it.need){score+=it.val;splitFruit(it,swipeAngle);juice(it.x,it.y,swipeAngle,it.glow?'#FFC93C':'#FFDA80',10);items.splice(i,1)}
+        if(it.hits>=it.need){
+          score+=it.val;splitFruit(it,swipeAngle);juice(it.x,it.y,swipeAngle,it.glow?'#FFC93C':'#FFDA80',10);
+          sfx('pop',0.55);
+          if(now<comboUntil)combo++;else combo=1;
+          comboUntil=now+900;
+          if(combo>=2){var bonus=(combo-1)*3;score+=bonus;popText(it.x,it.y-it.r-14,'COMBO ×'+combo+'  +'+bonus,combo>=5?'#FF2E9E':'#FFC93C');beep(520+combo*40,0.09,'square',0.1)}
+          items.splice(i,1);
+        }
         else{juice(it.x,it.y,swipeAngle,'#FFF3D0',6)}
       }
     }
   }
-  cv.onpointerdown=function(e){hitSet=[];lastPt=pt(e);slice(lastPt,lastPt)};
-  cv.onpointermove=function(e){if(!lastPt)return;var p=pt(e);slice(lastPt,p);lastPt=p};
+  cv.onpointerdown=function(e){hitSet=[];lastPt=pt(e);trail=[{x:lastPt.x,y:lastPt.y,t:performance.now()}];slice(lastPt,lastPt)};
+  cv.onpointermove=function(e){if(!lastPt)return;var p=pt(e);slice(lastPt,p);lastPt=p;trail.push({x:p.x,y:p.y,t:performance.now()});if(trail.length>16)trail.shift()};
   cv.onpointerup=function(){lastPt=null;hitSet=null};
   cv.onpointercancel=cv.onpointerup;
   function loop(now){
@@ -1041,29 +1096,118 @@ function gCatch(){
     fx.forEach(function(p){p.x+=p.vx*2;p.y+=p.vy*2;if(p.grav)p.vy+=.16;p.l-=.045;
       ctx.globalAlpha=Math.max(0,p.l);ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,p.sz||7,0,7);ctx.fill();ctx.globalAlpha=1});
     fx=fx.filter(function(p){return p.l>0});
+    /* 칼날 궤적 — 최근 포인트를 밝은 헤드에서 꼬리로 갈수록 얇고 투명하게 잇는다 */
+    var tnow=performance.now();
+    trail=trail.filter(function(p){return tnow-p.t<140});
+    if(trail.length>1){
+      for(var ti=1;ti<trail.length;ti++){
+        var a0=trail[ti-1],a1=trail[ti],age=(tnow-a1.t)/140,al=Math.max(0,1-age);
+        ctx.strokeStyle='rgba(230,250,255,'+(al*0.95).toFixed(2)+')';
+        ctx.lineWidth=Math.max(1.5,10*al);ctx.lineCap='round';
+        ctx.beginPath();ctx.moveTo(a0.x,a0.y);ctx.lineTo(a1.x,a1.y);ctx.stroke();
+        ctx.strokeStyle='rgba(0,229,255,'+(al*0.35).toFixed(2)+')';
+        ctx.lineWidth=Math.max(3,20*al);
+        ctx.beginPath();ctx.moveTo(a0.x,a0.y);ctx.lineTo(a1.x,a1.y);ctx.stroke();
+      }
+    }
+    popups.forEach(function(p){
+      p.y-=0.6;p.life-=0.018;
+      ctx.globalAlpha=Math.max(0,Math.min(1,p.life*1.4));
+      ctx.textAlign='center';ctx.font='800 22px SCDream, sans-serif';
+      ctx.fillStyle=p.c;ctx.fillText(p.txt,p.x,p.y);ctx.globalAlpha=1;
+    });
+    popups=popups.filter(function(p){return p.life>0});
     ctx.restore();
-    $('#stScore').textContent=score+'점 · '+(left/1000).toFixed(1)+'초';
+    /* ---- HUD: 점수 · 콤보 · 시간바 (흔들림 영향 안 받게 restore 이후에 그림) ---- */
+    var timePct=Math.max(0,left/dur);
+    ctx.save();
+    ctx.fillStyle='rgba(255,255,255,.12)';ctx.fillRect(0,0,W,7);
+    var tbar=ctx.createLinearGradient(0,0,W,0);
+    tbar.addColorStop(0,'#00E5FF');tbar.addColorStop(1,timePct<0.25?'#FF2E9E':'#FFC93C');
+    ctx.fillStyle=tbar;ctx.fillRect(0,0,W*timePct,7);
+    ctx.textAlign='left';ctx.font='800 15px SCDream, sans-serif';ctx.fillStyle='rgba(234,244,255,.7)';
+    ctx.fillText('TIME',22,36);
+    ctx.font='800 30px SCDream, sans-serif';ctx.fillStyle='#EAF4FF';
+    ctx.fillText(Math.ceil(left/1000)+'s',22,66);
+    ctx.textAlign='right';ctx.font='800 15px SCDream, sans-serif';ctx.fillStyle='rgba(255,201,60,.75)';
+    ctx.fillText('SCORE',W-22,36);
+    ctx.font='800 34px SCDream, sans-serif';ctx.fillStyle='#FFC93C';
+    ctx.shadowColor='rgba(255,201,60,.55)';ctx.shadowBlur=14;
+    ctx.fillText(String(score),W-22,70);
+    ctx.shadowBlur=0;
+    if(combo>=2&&tnow<comboUntil+250){
+      ctx.textAlign='center';ctx.font='800 17px SCDream, sans-serif';ctx.fillStyle='#FF2E9E';
+      ctx.fillText('🔥 '+combo+' 콤보',W/2,40);
+    }
+    ctx.restore();
     raf=requestAnimationFrame(loop);
   }
   raf=requestAnimationFrame(loop);
 }
 function finishCatch(score){
   stopGame();
-  if(score>(S.best.catch||0))S.best.catch=score;
-  reward(score/4,'🍊 '+score+'점');
+  var isBest=score>(S.best.catch||0);
+  if(isBest)S.best.catch=score;
+  sfx(isBest?'fanfare':'bonus',0.7);
+  reward(score/4,'🍊 '+score+'점'+(isBest?' · 신기록!':''));
 }
 
 /* --- ③ 영등할망의 바람 (조타) --- */
 var tiltX=0;
 function tiltH(e){ if(e.gamma!=null) tiltX=Math.max(-1,Math.min(1,e.gamma/25)); }
+/* 배 진화 4단계 — 먹거리를 먹을수록 evoProgress가 쌓여 다음 단계로 진화한다.
+   2단계부터 자동으로 미사일을 쏴서 앞을 가로막는 바위를 직접 파괴할 수 있다. */
+var SHIP_TIERS=[
+  {name:'조각배',   need:0, fireEvery:0,    missiles:0, spread:0,    aura:false},
+  {name:'풍선(風船)',need:2, fireEvery:1.35, missiles:1, spread:0,    aura:false},
+  {name:'범선',     need:3, fireEvery:1.05, missiles:2, spread:10,   aura:true },
+  {name:'용선(龍船)',need:4, fireEvery:0.8,  missiles:3, spread:16,   aura:true }
+];
+function drawShip(ctx,lvl,glowPulse){
+  var T=SHIP_TIERS[lvl];
+  var hullW=40+lvl*10, hullH=14+lvl*2, mastH=54+lvl*14;
+  if(T.aura){
+    var ag=ctx.createRadialGradient(0,-mastH*0.3,4,0,-mastH*0.3,hullW*1.6);
+    ag.addColorStop(0,'rgba(0,229,255,'+(0.28+glowPulse*0.14)+')');ag.addColorStop(1,'rgba(0,229,255,0)');
+    ctx.fillStyle=ag;ctx.beginPath();ctx.arc(0,-mastH*0.25,hullW*1.6,0,7);ctx.fill();
+  }
+  /* 선체 */
+  ctx.fillStyle=lvl>=3?'#3a2440':'#2a2440';
+  ctx.beginPath();ctx.moveTo(-hullW,hullH);ctx.lineTo(hullW,hullH);ctx.lineTo(hullW*.68,hullH+30);ctx.lineTo(-hullW*.68,hullH+30);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='rgba(0,229,255,.5)';ctx.lineWidth=2;ctx.stroke();
+  /* 돛대 + 돛(단계마다 늘어난다) */
+  var masts=[0].concat(lvl>=2?[-hullW*0.55]:[]).concat(lvl>=3?[hullW*0.55]:[]);
+  masts.forEach(function(mx,mi){
+    var mh=mastH*(mi===0?1:0.72);
+    ctx.fillStyle='#FFC93C';ctx.fillRect(mx-2.5,-mh,5,mh+hullH+6);
+    ctx.fillStyle=lvl>=3?'#EAF4FF':'#D6FBFF';
+    ctx.beginPath();ctx.moveTo(mx,-mh);ctx.lineTo(mx+28,-mh*0.42+10);ctx.lineTo(mx,-mh*0.28+10);ctx.closePath();ctx.fill();
+  });
+  /* 선명(船名) 깃발 — 최종 단계에서만 */
+  if(lvl>=3){
+    ctx.fillStyle='#FF2E9E';ctx.beginPath();
+    ctx.moveTo(0,-mastH-2);ctx.lineTo(22,-mastH+7);ctx.lineTo(0,-mastH+16);ctx.closePath();ctx.fill();
+  }
+  /* 포문(砲門) — 미사일을 쏘는 단계부터 옆구리에 작은 발광 포인트 */
+  if(T.missiles>0){
+    for(var pi=0;pi<T.missiles;pi++){
+      var pxo=(pi-(T.missiles-1)/2)*16;
+      ctx.fillStyle='rgba(0,229,255,'+(0.7+glowPulse*0.3)+')';
+      ctx.beginPath();ctx.arc(pxo,hullH-2,3.2,0,7);ctx.fill();
+    }
+  }
+}
 function gSail(){
   openStage('🌬 영등할망의 바람');
+  sfxAmbient('ocean',0.22);
   if(window.DeviceOrientationEvent&&DeviceOrientationEvent.requestPermission){
     DeviceOrientationEvent.requestPermission().then(function(r){
       if(r==='granted')window.addEventListener('deviceorientation',tiltH)}).catch(function(){});
   } else window.addEventListener('deviceorientation',tiltH);
-  var W=cv.width,H=cv.height,px=W/2,rocks=[],foods=[],t0=performance.now();
+  var W=cv.width,H=cv.height,px=W/2,rocks=[],foods=[],missiles=[],t0=performance.now();
   var spawn=0,foodSpawn=2600,touch=0,alive=true;
+  var lvl=0,evoProgress=0,evoFlashUntil=0,fireTimer=0,kills=0;
+  var flashes=[],fx=[];
   /* 룰렛 버프: 먹거리를 먹으면 잠깐 스핀하다 "질풍(빠르게)" 또는 "훈풍(느리게)" 중 하나로 확정된다.
      질풍=장애물이 더 빠르고 촘촘해짐(고위험) · 훈풍=장애물이 느려짐(잠깐 숨 돌리기) */
   var buff=null;          // {type:'fast'|'slow', until:<el 초>}
@@ -1071,6 +1215,11 @@ function gSail(){
   cv.onpointerdown=function(e){var r=cv.getBoundingClientRect();touch=((e.clientX-r.left)*2<W/2)?-1:1};
   cv.onpointerup=function(){touch=0};
   cv.onpointercancel=function(){touch=0};
+  function explodeRock(x,y,r){
+    flashes.push({x:x,y:y,t:0,r0:r*0.3,r1:r*1.8});
+    for(var i=0;i<14;i++){var a=Math.random()*Math.PI*2,sp=2+Math.random()*5;
+      fx.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,l:1,c:i%2?'#00E5FF':'#EAF4FF',sz:3+Math.random()*3});}
+  }
   var wave=0;
   function loop(now){
     if(!alive)return;
@@ -1085,6 +1234,7 @@ function gSail(){
     var mul = (buff&&buff.until>el) ? (buff.type==='fast'?1.55:0.62) : 1;
     px+=(tiltX*9+touch*9);
     px=Math.max(50,Math.min(W-50,px));
+    var T=SHIP_TIERS[lvl];
     if(!spinning){
       /* 기존보다 스폰 간격을 좁히고 낙하 가속도를 올려 전체 난이도를 높였다 */
       spawn-=16;
@@ -1093,6 +1243,18 @@ function gSail(){
       foodSpawn-=16;
       if(foodSpawn<=0){foodSpawn=4600+Math.random()*2600;
         foods.push({x:60+Math.random()*(W-120),y:-40,r:26,v:2.5+el*0.05})}
+      /* 자동 사격 — 2단계 이상부터, 단계가 오를수록 발사 간격이 짧고 탄이 늘어난다 */
+      if(T.missiles>0){
+        fireTimer-=16;
+        if(fireTimer<=0){
+          fireTimer=T.fireEvery*1000;
+          beep(880,0.06,'sawtooth',0.09);
+          for(var mi=0;mi<T.missiles;mi++){
+            var ang=(mi-(T.missiles-1)/2)*(T.spread*Math.PI/180);
+            missiles.push({x:px,y:H-190,vx:Math.sin(ang)*3,vy:-9-lvl});
+          }
+        }
+      }
     }
     ctx.clearRect(0,0,W,H);
     var g=ctx.createLinearGradient(0,0,0,H);
@@ -1106,41 +1268,80 @@ function gSail(){
       for(var x=0;x<=W;x+=24)ctx.lineTo(x,i*H/7+Math.sin(x/90+wave+i)*9);ctx.stroke();}
     var hit=false;
     if(!spinning){
+      /* 미사일 이동 + 바위 명중 판정 (먼저 처리해서 이번 프레임에 파괴된 바위는 안 그림) */
+      missiles.forEach(function(m){m.x+=m.vx;m.y+=m.vy*2.6});
+      missiles=missiles.filter(function(m){return m.y>-40});
       rocks.forEach(function(r){
         r.y+=r.v*2.6;
+        for(var mi2=missiles.length-1;mi2>=0;mi2--){
+          var m=missiles[mi2];
+          if(!r.dead&&Math.hypot(m.x-r.x,m.y-r.y)<r.r+10){
+            r.dead=true;missiles.splice(mi2,1);explodeRock(r.x,r.y,r.r);sfx('pop',0.5);kills++;
+          }
+        }
+      });
+      rocks=rocks.filter(function(r){
+        if(r.dead)return false;
         ctx.fillStyle='#2e2a45';ctx.beginPath();
         ctx.moveTo(r.x-r.r,r.y+r.r);ctx.lineTo(r.x,r.y-r.r);ctx.lineTo(r.x+r.r,r.y+r.r);ctx.closePath();ctx.fill();
         ctx.fillStyle='rgba(255,255,255,.14)';ctx.beginPath();
         ctx.moveTo(r.x,r.y-r.r);ctx.lineTo(r.x+r.r*.5,r.y+r.r*.2);ctx.lineTo(r.x,r.y+r.r*.4);ctx.closePath();ctx.fill();
         if(Math.abs(r.x-px)<r.r+30&&Math.abs(r.y-(H-160))<r.r+34)hit=true;
+        return r.y<H+90;
       });
-      rocks=rocks.filter(function(r){return r.y<H+90});
+      /* 미사일 그리기 */
+      missiles.forEach(function(m){
+        ctx.save();ctx.translate(m.x,m.y);
+        var mg=ctx.createLinearGradient(0,-14,0,10);
+        mg.addColorStop(0,'#EAF4FF');mg.addColorStop(1,'#00E5FF');
+        ctx.fillStyle=mg;ctx.beginPath();ctx.moveTo(0,-14);ctx.lineTo(4,6);ctx.lineTo(-4,6);ctx.closePath();ctx.fill();
+        ctx.fillStyle='rgba(0,229,255,.5)';ctx.beginPath();ctx.arc(0,9,3.4,0,7);ctx.fill();
+        ctx.restore();
+      });
     } else {
       rocks.forEach(function(r){
         ctx.fillStyle='#2e2a45';ctx.beginPath();
         ctx.moveTo(r.x-r.r,r.y+r.r);ctx.lineTo(r.x,r.y-r.r);ctx.lineTo(r.x+r.r,r.y+r.r);ctx.closePath();ctx.fill();
       });
     }
-    /* 먹거리(복떡) — 먹으면 룰렛이 돌아간다 */
+    /* 파괴 이펙트 */
+    flashes.forEach(function(fl){fl.t++;var p=Math.min(1,fl.t/14);var rad=fl.r0+(fl.r1-fl.r0)*p;
+      ctx.globalAlpha=1-p;var fg=ctx.createRadialGradient(fl.x,fl.y,0,fl.x,fl.y,rad);
+      fg.addColorStop(0,'rgba(220,250,255,.9)');fg.addColorStop(.5,'rgba(0,229,255,.5)');fg.addColorStop(1,'rgba(0,229,255,0)');
+      ctx.fillStyle=fg;ctx.beginPath();ctx.arc(fl.x,fl.y,rad,0,7);ctx.fill();ctx.globalAlpha=1});
+    flashes=flashes.filter(function(fl){return fl.t/14<1});
+    fx.forEach(function(p){p.x+=p.vx*2;p.y+=p.vy*2;p.vy+=.1;p.l-=.05;
+      ctx.globalAlpha=Math.max(0,p.l);ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,p.sz||5,0,7);ctx.fill();ctx.globalAlpha=1});
+    fx=fx.filter(function(p){return p.l>0});
+    /* 먹거리(복떡) — 먹으면 룰렛이 돌고, 진화 게이지도 함께 찬다 */
     foods.forEach(function(f){
       if(!spinning)f.y+=f.v*2.4;
       ctx.save();ctx.translate(f.x,f.y);
-      var fg=ctx.createRadialGradient(-f.r*.3,-f.r*.3,2,0,0,f.r);
-      fg.addColorStop(0,'#D6FBFF');fg.addColorStop(1,'#00C2D6');
-      ctx.fillStyle=fg;ctx.beginPath();ctx.arc(0,0,f.r,0,7);ctx.fill();
+      var fg2=ctx.createRadialGradient(-f.r*.3,-f.r*.3,2,0,0,f.r);
+      fg2.addColorStop(0,'#D6FBFF');fg2.addColorStop(1,'#00C2D6');
+      ctx.fillStyle=fg2;ctx.beginPath();ctx.arc(0,0,f.r,0,7);ctx.fill();
       ctx.fillStyle='rgba(80,55,15,.35)';
       [[-6,-4],[6,-3],[-3,6],[5,7]].forEach(function(p){ctx.beginPath();ctx.arc(p[0],p[1],2.6,0,7);ctx.fill();});
       ctx.restore();
       if(!spinning&&spinResolved&&Math.abs(f.x-px)<f.r+30&&Math.abs(f.y-(H-160))<f.r+34){
         f.eaten=true; spinResolved=false; spinUntil=el+0.9;
+        sfx('bonus',0.5);
+        if(lvl<SHIP_TIERS.length-1){
+          evoProgress++;
+          if(evoProgress>=SHIP_TIERS[lvl+1].need){
+            lvl++;evoProgress=0;evoFlashUntil=el+1.4;
+            sfx('evolve',0.8);
+            toast('⚓ '+SHIP_TIERS[lvl].name+'(으)로 진화! '+(SHIP_TIERS[lvl].missiles>0?'자동 포격 시작':''));
+          }
+        }
       }
     });
     foods=foods.filter(function(f){return f.y<H+80&&!f.eaten});
     // ship
+    var pulse=(Math.sin(el*4)+1)/2;
     ctx.save();ctx.translate(px,H-160);ctx.rotate(tiltX*.18+touch*.18);
-    ctx.fillStyle='#6b4527';ctx.beginPath();ctx.moveTo(-42,14);ctx.lineTo(42,14);ctx.lineTo(28,44);ctx.lineTo(-28,44);ctx.closePath();ctx.fill();
-    ctx.fillStyle='#EAF4FF';ctx.beginPath();ctx.moveTo(0,-54);ctx.lineTo(34,10);ctx.lineTo(0,10);ctx.closePath();ctx.fill();
-    ctx.fillStyle='#FFC93C';ctx.fillRect(-3,-60,5,72);
+    if(el<evoFlashUntil){ctx.scale(1+Math.sin((evoFlashUntil-el)*30)*0.06,1+Math.sin((evoFlashUntil-el)*30)*0.06)}
+    drawShip(ctx,lvl,pulse);
     ctx.restore();
     if(spinning){
       var flick=Math.floor(el*9)%2===0;
@@ -1152,16 +1353,33 @@ function gSail(){
       ctx.fillStyle=buff.type==='fast'?'#FF6EC7':'#A6F5FF';
       ctx.fillText((buff.type==='fast'?'🌀 질풍 · ':'🌀 훈풍 · ')+Math.max(0,buff.until-el).toFixed(1)+'초', W/2, 50);
     }
-    $('#stScore').textContent=el.toFixed(1)+'초';
-    if(hit){alive=false;finishSail(el);return}
+    /* ---- HUD ---- */
+    ctx.textAlign='left';ctx.font='800 15px SCDream, sans-serif';ctx.fillStyle='rgba(234,244,255,.7)';
+    ctx.fillText('생존',22,36);
+    ctx.font='800 30px SCDream, sans-serif';ctx.fillStyle='#EAF4FF';
+    ctx.fillText(el.toFixed(1)+'s',22,66);
+    ctx.textAlign='right';ctx.font='800 14px SCDream, sans-serif';ctx.fillStyle='rgba(0,229,255,.85)';
+    ctx.fillText('⚓ '+T.name,W-22,36);
+    if(lvl<SHIP_TIERS.length-1){
+      var need=SHIP_TIERS[lvl+1].need, pct=Math.min(1,evoProgress/need);
+      ctx.fillStyle='rgba(255,255,255,.15)';ctx.fillRect(W-122,44,100,6);
+      ctx.fillStyle='#00E5FF';ctx.fillRect(W-122,44,100*pct,6);
+    } else {
+      ctx.font='700 12px SCDream, sans-serif';ctx.fillStyle='rgba(255,201,60,.85)';ctx.fillText('MAX',W-22,54);
+    }
+    $('#stScore').textContent='';
+    if(hit){alive=false;finishSail(el,kills);return}
     raf=requestAnimationFrame(loop);
   }
   raf=requestAnimationFrame(loop);
 }
-function finishSail(sec){
+function finishSail(sec,kills){
   var s=Math.floor(sec);stopGame();
-  if(s>(S.best.sail||0))S.best.sail=s;
-  reward(s*2,'🚢 '+s+'초 생존');
+  var isBest=s>(S.best.sail||0);
+  if(isBest)S.best.sail=s;
+  sfx(isBest?'fanfare':'bonus',0.7);
+  var bonus=(kills||0)*3;
+  reward(s*2+bonus,'🚢 '+s+'초 생존'+(bonus?' · 파괴 보너스 +'+bonus:''));
 }
 
 /* --- ⑤ 기억력 카드 --- */
@@ -1225,37 +1443,75 @@ var slots=[null,null,null,null];
     })(i);
   }
 })();
-$('#btnMake').onclick=function(){
-  var have=slots.filter(Boolean).length;
-  if(have<4){toast('사진 4장을 모두 넣어 주세요 ('+have+'/4)');return}
-  var W=900,H=1500,c=document.createElement('canvas');c.width=W;c.height=H;
+/* 공식 탐라문화제 포스터(하단 후원사 로고 밴드만 잘라낸 버전, 1080x1350)를
+   4컷 액자 배경으로 쓴다. 세로형은 전체를, 정방형은 위쪽(제목이 있는 쪽)만
+   써서 "탐라문화제" 캘리그라피가 항상 잘리지 않게 한다. */
+var posterImg=null, photoFmt='tall';
+function loadPoster(cb){
+  if(posterImg){cb();return}
+  var im=new Image();im.onload=function(){posterImg=im;cb()};im.src='frame/tamna_poster_crop.jpg';
+}
+$$('.fmtBtn').forEach(function(b){
+  b.onclick=function(){
+    $$('.fmtBtn').forEach(function(o){o.classList.remove('on')});
+    b.classList.add('on');photoFmt=b.dataset.fmt;
+  };
+});
+function roundRectPath(ctx2,px,py,pw,ph,r){
+  ctx2.beginPath();ctx2.moveTo(px+r,py);ctx2.arcTo(px+pw,py,px+pw,py+ph,r);
+  ctx2.arcTo(px+pw,py+ph,px,py+ph,r);ctx2.arcTo(px,py+ph,px,py,r);ctx2.arcTo(px,py,px+pw,py,r);ctx2.closePath();
+}
+function buildFrame(){
+  var square=photoFmt==='square';
+  var W=1080,H=square?1080:1350;
+  var c=document.createElement('canvas');c.width=W;c.height=H;
   var x=c.getContext('2d');
   x.fillStyle='#0a0a14';x.fillRect(0,0,W,H);
-  var g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#201c2e');g.addColorStop(1,'#0a0a14');
-  x.fillStyle=g;x.fillRect(0,0,W,H);
-  var pad=42,gap=18,cw=(W-pad*2-gap)/2,ch=520;
+  /* 포스터를 위쪽 기준으로 그린다 — 정방형이면 아래쪽(일러스트 하단)만 잘려나가고 캘리그라피는 항상 보인다 */
+  x.drawImage(posterImg,0,0,1080,H, 0,0,1080,H);
+  /* "탐라문화제" 캘리그라피 뒤에 네온 글로우를 깔아 제목이 액자의 주인공으로 확실히 도드라지게 한다 */
+  var titleGlow=x.createRadialGradient(W/2,260,20,W/2,260,560);
+  titleGlow.addColorStop(0,'rgba(0,229,255,.35)');titleGlow.addColorStop(.6,'rgba(0,229,255,.12)');titleGlow.addColorStop(1,'rgba(0,229,255,0)');
+  x.fillStyle=titleGlow;x.fillRect(0,0,W,620);
+  /* 사진 그리드 뒤에 어두운 스크림을 깔아 밑에 깔린 일러스트와 상관없이 사진이 또렷하게 도드라지게 한다 */
+  var gridTop=square?610:650, footerH=square?70:100, pad=40,gap=14;
+  var gridBottom=H-footerH, gridH=gridBottom-gridTop;
+  var scrimPad=18;
+  x.fillStyle='rgba(4,4,10,.42)';
+  roundRectPath(x,pad-scrimPad,gridTop-scrimPad,W-(pad-scrimPad)*2,gridH+footerH+scrimPad*1.6,22);x.fill();
+  var cw=(W-pad*2-gap)/2, ch=(gridH-gap)/2;
   slots.forEach(function(img,i){
-    var px=pad+(i%2)*(cw+gap), py=110+Math.floor(i/2)*(ch+gap);
-    x.save();x.beginPath();x.rect(px,py,cw,ch);x.clip();
+    var px=pad+(i%2)*(cw+gap), py=gridTop+Math.floor(i/2)*(ch+gap);
+    x.save();
+    x.shadowColor='rgba(0,0,0,.55)';x.shadowBlur=16;x.shadowOffsetY=6;
+    x.fillStyle='#0a0a14';roundRectPath(x,px-3,py-3,cw+6,ch+6,12);x.fill();
+    x.restore();
+    x.save();roundRectPath(x,px,py,cw,ch,10);x.clip();
     var s=Math.max(cw/img.width,ch/img.height);
     x.drawImage(img,px+(cw-img.width*s)/2,py+(ch-img.height*s)/2,img.width*s,img.height*s);
     x.restore();
-    x.strokeStyle='rgba(255,201,60,.35)';x.lineWidth=3;x.strokeRect(px,py,cw,ch);
+    x.strokeStyle='rgba(0,229,255,.55)';x.lineWidth=2.5;roundRectPath(x,px,py,cw,ch,10);x.stroke();
   });
-  x.fillStyle='#FFC93C';x.font='800 34px SCDream, sans-serif';x.textAlign='center';
-  x.fillText('탐라문화제 × 과수원피스', W/2, 66);
-  x.fillStyle='rgba(233,241,247,.7)';x.font='600 21px SCDream, sans-serif';
-  x.fillText(C.festivalDates, W/2, H-96);
-  x.fillStyle='#FF2E9E';x.font='800 27px SCDream, sans-serif';
+  x.textAlign='center';
+  x.fillStyle='rgba(234,244,255,.8)';x.font='600 '+(square?15:18)+'px SCDream, sans-serif';
+  x.fillText(C.festivalDates, W/2, H-(square?38:56));
+  x.fillStyle='#FF2E9E';x.font='800 '+(square?18:23)+'px SCDream, sans-serif';
   var n=Object.keys(S.crew).length;
-  x.fillText('신 '+n+'/6 인사 · '+(S.name||'순례자'), W/2, H-52);
-  var url=c.toDataURL('image/jpeg',.92);
-  var out=$('#photoOut');out.src=url;out.style.display='block';
-  $('#btnSave').style.display='block';
-  $('#btnSave').onclick=function(){var a=document.createElement('a');a.href=url;
-    a.download='과수원피스_4컷_'+Date.now()+'.jpg';a.click()};
-  if(!d().photo){d().photo=1;addGold(C.gold.photo,'4컷 완성')}
-  out.scrollIntoView({behavior:'smooth',block:'center'});
+  x.fillText('신 '+n+'/6 인사 · '+(S.name||'순례자'), W/2, H-(square?16:22));
+  return c.toDataURL('image/jpeg',.92);
+}
+$('#btnMake').onclick=function(){
+  var have=slots.filter(Boolean).length;
+  if(have<4){toast('사진 4장을 모두 넣어 주세요 ('+have+'/4)');return}
+  loadPoster(function(){
+    var url=buildFrame();
+    var out=$('#photoOut');out.src=url;out.style.display='block';
+    $('#btnSave').style.display='block';
+    $('#btnSave').onclick=function(){var a=document.createElement('a');a.href=url;
+      a.download='탐라문화제_4컷_'+(photoFmt==='square'?'정방형_':'')+Date.now()+'.jpg';a.click()};
+    if(!d().photo){d().photo=1;addGold(C.gold.photo,'4컷 완성')}
+    out.scrollIntoView({behavior:'smooth',block:'center'});
+  });
 };
 
 /* ---------------- 초기화 ---------------- */
