@@ -3,22 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-<meta name="theme-color" content="#04111c">
+<meta name="theme-color" content="#170f0a">
 <title>관리자 — 탐라, 여섯 신을 만나다</title>
 <style>
 @font-face{font-family:SCDream;src:url(fonts/SCDream4.woff)format('woff');font-weight:400;font-display:swap}
 @font-face{font-family:SCDream;src:url(fonts/SCDream5.woff)format('woff');font-weight:600;font-display:swap}
 @font-face{font-family:SCDream;src:url(fonts/SCDream7.woff)format('woff');font-weight:800;font-display:swap}
 :root{
-  --ink:#04111c; --gold:#FFC94A; --coral:#FF5A47; --teal:#2FD1C5;
-  --txt:#e9f1f7; --dim:#8aa3b6; --line:rgba(255,201,74,.22);
+  --ink:#170f0a; --gold:#E3AE52; --coral:#C1573A; --teal:#6E9463;
+  --txt:#F0E6D2; --dim:#A89A80; --line:rgba(227,174,82,.22);
   --safe: env(safe-area-inset-bottom, 0px);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 body{font-family:SCDream,-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;
-  background:radial-gradient(1200px 700px at 50% -10%,#1b4463 0%,transparent 60%),
-    linear-gradient(180deg,#04111c 0%,#071a29 45%,#04111c 100%);
+  background:radial-gradient(1200px 700px at 50% -10%,#4a3620 0%,transparent 60%),
+    linear-gradient(180deg,#170f0a 0%,#1f160e 45%,#170f0a 100%);
   background-attachment:fixed;color:var(--txt);min-height:100dvh}
 button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
 .wrap{max-width:480px;margin:0 auto;padding:20px 18px calc(30px + var(--safe))}
@@ -30,14 +30,14 @@ h1{font-size:19px;font-weight:800;margin:6px 0 16px}
   border:1px solid rgba(255,255,255,.14);color:var(--txt);font-size:20px;outline:none;
   text-align:center;letter-spacing:.4em}
 .btn{display:block;width:100%;padding:14px;border-radius:12px;font-weight:800;font-size:14px;text-align:center;
-  background:linear-gradient(180deg,#ffd76b,#e0a52c);color:#2a1a02;margin-top:10px}
-.btn.danger{background:rgba(255,90,71,.15);border:1px solid rgba(255,90,71,.35);color:#ff8b7c}
+  background:linear-gradient(180deg,#E9C56E,#B8842E);color:#241505;margin-top:10px}
+.btn.danger{background:rgba(193,87,58,.15);border:1px solid rgba(193,87,58,.35);color:#D68A6E}
 #gate{}
 #panel{display:none}
 #panel.on{display:block}
 .godrow{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);margin-bottom:8px}
-.dot{width:10px;height:10px;border-radius:50%;flex:none;background:#3a4a5a}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;background:#4a3f34}
 .dot.live{background:var(--teal);box-shadow:0 0 8px var(--teal)}
 .godrow .nm{flex:1;font-weight:700;font-size:14px}
 .godrow .st{font-size:11.5px;color:var(--dim);text-align:right}
