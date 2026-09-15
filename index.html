@@ -72,8 +72,7 @@ p.lead{font-size:13px;color:var(--dim);line-height:1.65;margin:0 0 14px}
 .introwrap{min-height:100dvh;display:flex;flex-direction:column;justify-content:center;gap:14px;padding:40px 0}
 .stamp{font-size:11px;letter-spacing:5px;color:var(--gold);font-weight:800}
 .bigtitle{font-size:clamp(38px,13vw,58px);font-weight:800;line-height:.98;letter-spacing:-2px;margin:2px 0 0;
-  background:linear-gradient(180deg,#F3E8C8,#E3AE52 55%,#96691E);-webkit-background-clip:text;background-clip:text;color:transparent;
-  text-shadow:0 6px 30px rgba(227,174,82,.18)}
+  color:#E9C56E;text-shadow:0 3px 0 #6b4a1a,0 10px 18px rgba(0,0,0,.4)}
 .wantedmini{display:flex;gap:6px;justify-content:center;margin:18px 0 6px}
 .wantedmini i{width:36px;height:48px;border-radius:3px;background:linear-gradient(180deg,var(--paper),var(--paper2));
   opacity:.85;display:block;position:relative;transform:rotate(var(--r,0deg));box-shadow:0 4px 12px rgba(0,0,0,.4)}
@@ -94,9 +93,12 @@ p.lead{font-size:13px;color:var(--dim);line-height:1.65;margin:0 0 14px}
 .poster:before{content:'';position:absolute;inset:0;pointer-events:none;
   background:repeating-linear-gradient(115deg,rgba(120,90,40,.05) 0 2px,transparent 2px 5px)}
 .poster .pw{font-size:9.5px;letter-spacing:3px;font-weight:800;text-align:center;color:#7a5c22}
-.poster .face{margin:6px 0;aspect-ratio:1/1;border-radius:4px;background:#c9b184;display:grid;place-items:center;
+.poster .face{position:relative;margin:6px 0;aspect-ratio:3/4;border-radius:4px;background:#c9b184;display:block;
   overflow:hidden;border:1px solid #a8905f}
-.poster .face img{width:100%;height:100%;object-fit:cover;display:block}
+.poster .face img{width:100%;height:100%;object-fit:cover;object-position:50% 15%;display:block}
+.poster .face img.teaser{filter:saturate(1.15)}
+.poster .face .qmark{position:absolute;inset:0;display:grid;place-items:center;font-size:30px;font-weight:800;
+  color:rgba(240,230,210,.85);text-shadow:0 2px 6px rgba(0,0,0,.5)}
 .poster .face span{font-size:40px;font-weight:800;color:#9c8149}
 .poster .pn{font-size:13px;font-weight:800;text-align:center;line-height:1.25;letter-spacing:-.3px}
 .poster .pb{font-size:10.5px;text-align:center;color:#7a5c22;font-weight:600;margin-top:3px}
@@ -444,7 +446,7 @@ p.lead{font-size:13px;color:var(--dim);line-height:1.65;margin:0 0 14px}
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="config.js"></script>
+<script src="config.js?v=gods1"></script>
 <script src="live.js"></script>
 <script>
 (function(){
@@ -641,8 +643,10 @@ function paintCrew(){
     var el=document.createElement('div');
     el.className='poster'+(got?' got':'')+(c.id===tc?' today':'')+(!active&&!got?' resting':'');
     el.dataset.god=c.id;
+    var teaserSrc = c.photo ? c.photo.replace('/final/','/teaser/') : '';
     var face = got&&c.photo ? '<img src="'+c.photo+'" alt="'+c.name+'">'
-             : '<span>'+(got?c.name.slice(0,1):'?')+'</span>';
+             : (teaserSrc ? '<img class="teaser" src="'+teaserSrc+'" alt=""><span class="qmark">?</span>'
+                          : '<span>?</span>');
     var pb = got?'인사 완료':(!active?'오늘은 쉬어가심':(c.bounty||C.gold.crew)*(c.id===tc?C.gold.todayMultiplier:1)+' 복 포인트');
     el.innerHTML=(c.id===tc?'<div class="todaybadge">오늘의 신</div>':'')+
       '<div class="pw">탐라신화</div><div class="face">'+face+'</div>'+
