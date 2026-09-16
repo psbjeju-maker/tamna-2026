@@ -3,441 +3,257 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-<meta name="theme-color" content="#0a0a14">
-<title>탐라, 여섯 신을 만나다 — 탐라문화제 × 과수원피스</title>
-<style>
-@font-face{font-family:SCDream;src:url(fonts/SCDream4.woff)format('woff');font-weight:400;font-display:swap}
-@font-face{font-family:SCDream;src:url(fonts/SCDream5.woff)format('woff');font-weight:600;font-display:swap}
-@font-face{font-family:SCDream;src:url(fonts/SCDream7.woff)format('woff');font-weight:800;font-display:swap}
-
-:root{
-  --ink:#0a0a14; --ink2:#14121f; --ink3:#201c2e;
-  --gold:#FFC93C; --gold2:#D4A030; --coral:#FF2E9E; --teal:#00E5FF;
-  --paper:#EBD9AE; --paper2:#d8c091; --paperInk:#3a2a15;
-  --txt:#EAF4FF; --dim:#8FA8C2; --line:rgba(255,201,60,.22);
-  --safe: env(safe-area-inset-bottom, 0px);
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;padding:0}
-body{
-  font-family:SCDream,-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;
-  background:
-    radial-gradient(1200px 700px at 50% -10%, #3a1a3a 0%, transparent 60%),
-    linear-gradient(180deg,#0a0a14 0%,#120f1c 45%,#0a0a14 100%);
-  background-attachment:fixed;
-  color:var(--txt);min-height:100dvh;overflow-x:hidden;
-}
-button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
-input{font-family:inherit}
-
-/* ---------- 레이아웃 ---------- */
-#app{max-width:520px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
-.screen{display:none;flex:1;padding:0 16px 130px}
-.screen.on{display:block;animation:fade .28s ease}
-@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-
-/* ---------- 상단 HUD ---------- */
-#hud{position:sticky;top:0;z-index:40;background:linear-gradient(180deg,rgba(4,17,28,.97),rgba(4,17,28,.82) 70%,transparent);
-  padding:12px 16px 14px;backdrop-filter:blur(8px);display:none}
-#hud.on{display:block}
-.hudrow{display:flex;align-items:center;gap:10px}
-.purse{display:flex;align-items:center;gap:7px;background:rgba(255,201,60,.1);border:1px solid var(--line);
-  border-radius:999px;padding:7px 14px 7px 10px;font-weight:800;font-size:15px;color:var(--gold)}
-.coin{width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#FFE6A0,#FFC93C 45%,#A66E18);
-  box-shadow:0 0 10px rgba(255,201,60,.45);flex:none}
-.hudname{font-size:12px;color:var(--dim);margin-left:auto;text-align:right;line-height:1.4}
-.hudname b{display:block;color:var(--txt);font-size:13px;font-weight:600}
-.dday{margin-top:9px;display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--dim);
-  border-top:1px dashed rgba(255,255,255,.09);padding-top:8px}
-.dday b{color:var(--coral);font-weight:800;font-size:13px}
-
-/* ---------- 공통 파츠 ---------- */
-h2.sec{font-size:19px;font-weight:800;margin:22px 0 4px;letter-spacing:-.4px}
-p.lead{font-size:13px;color:var(--dim);line-height:1.65;margin:0 0 14px}
-.card{background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.02));
-  border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:16px;margin-bottom:12px}
-.btn{display:block;width:100%;padding:15px;border-radius:14px;font-weight:800;font-size:15px;text-align:center;
-  background:linear-gradient(180deg,#FFD23F,#E0A020);color:#2a1505;box-shadow:0 6px 18px rgba(255,201,60,.22);
-  transition:transform .12s}
-.btn:active{transform:scale(.975)}
-.btn.ghost{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:var(--txt);box-shadow:none}
-.btn.teal{background:linear-gradient(180deg,#7BF3FF,#00B8D4);color:#0A2226}
-.btn:disabled{opacity:.4;pointer-events:none}
-.tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.6px;padding:4px 9px;border-radius:999px;
-  background:rgba(0,229,255,.16);color:var(--teal);border:1px solid rgba(0,229,255,.3)}
-.tag.hot{background:rgba(255,46,158,.16);color:#FF6EC7;border-color:rgba(255,46,158,.32)}
-
-/* ---------- 인트로 ---------- */
-#intro{padding:0 20px 40px;text-align:center}
-.introwrap{min-height:100dvh;display:flex;flex-direction:column;justify-content:center;gap:14px;padding:40px 0}
-.stamp{font-size:11px;letter-spacing:5px;color:var(--gold);font-weight:800}
-.bigtitle{font-size:clamp(38px,13vw,58px);font-weight:800;line-height:.98;letter-spacing:-2px;margin:2px 0 0;
-  color:#FFD23F;text-shadow:0 3px 0 #7a1560,0 10px 24px rgba(255,46,158,.35)}
-.wantedmini{display:flex;gap:6px;justify-content:center;margin:18px 0 6px}
-.wantedmini i{width:36px;height:48px;border-radius:3px;background:linear-gradient(180deg,var(--paper),var(--paper2));
-  opacity:.85;display:block;position:relative;transform:rotate(var(--r,0deg));box-shadow:0 4px 12px rgba(0,0,0,.4)}
-.wantedmini i:after{content:'?';position:absolute;inset:0;display:grid;place-items:center;color:#8d7a55;font-weight:800;font-size:20px}
-.field{text-align:left;margin-bottom:12px}
-.field label{display:block;font-size:12px;color:var(--dim);margin-bottom:6px;font-weight:600}
-.field input{width:100%;padding:14px;border-radius:12px;background:rgba(255,255,255,.07);
-  border:1px solid rgba(255,255,255,.14);color:var(--txt);font-size:16px;outline:none}
-.field input:focus{border-color:var(--gold)}
-.tiny{font-size:11px;color:var(--dim);line-height:1.6}
-
-/* ---------- 신위 패널 ---------- */
-.crewgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:6px}
-.poster{position:relative;background:linear-gradient(175deg,var(--paper),var(--paper2));border-radius:8px;
-  padding:10px 9px 11px;color:var(--paperInk);box-shadow:0 8px 20px rgba(0,0,0,.45);overflow:hidden;
-  border:1px solid #b9a173;transition:transform .15s}
-.poster:active{transform:scale(.97)}
-.poster:before{content:'';position:absolute;inset:0;pointer-events:none;
-  background:repeating-linear-gradient(115deg,rgba(120,90,40,.05) 0 2px,transparent 2px 5px)}
-.poster .pw{font-size:9.5px;letter-spacing:3px;font-weight:800;text-align:center;color:#7a5c22}
-.poster .face{position:relative;margin:6px 0;aspect-ratio:3/4;border-radius:4px;background:#c9b184;display:block;
-  overflow:hidden;border:1px solid #a8905f}
-.poster .face img{width:100%;height:100%;object-fit:cover;object-position:50% 15%;display:block}
-.poster .face img.teaser{filter:saturate(1.15)}
-.poster .face .qmark{position:absolute;inset:0;display:grid;place-items:center;font-size:64px;font-weight:800;
-  color:rgba(255,250,240,.92);text-shadow:0 3px 10px rgba(0,0,0,.75),0 0 26px rgba(0,0,0,.6)}
-.poster .face span{font-size:40px;font-weight:800;color:#9c8149}
-.poster .pn{font-size:13px;font-weight:800;text-align:center;line-height:1.25;letter-spacing:-.3px}
-.poster .pb{font-size:10.5px;text-align:center;color:#7a5c22;font-weight:600;margin-top:3px}
-.poster .liveHint{margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px;
-  font-size:9.5px;font-weight:800;color:#00A8C2;
-  background:rgba(0,229,255,.18);border:1px solid rgba(13,111,102,.25);border-radius:99px;padding:3px 8px 3px 4px}
-.poster.got .face{filter:none}
-.poster.got:after{content:'탐라\A 문화제';white-space:pre-line;position:absolute;top:40%;left:50%;
-  transform:translate(-50%,-50%) rotate(-10deg);
-  width:62px;height:62px;border-radius:50%;border:3px solid #C2187A;color:#C2187A;font-size:12px;font-weight:800;
-  line-height:1.15;letter-spacing:0;display:flex;align-items:center;justify-content:center;text-align:center;
-  opacity:.82;animation:stampin .4s cubic-bezier(.2,1.6,.4,1)}
-@keyframes stampin{0%{transform:translate(-50%,-50%) rotate(-14deg) scale(2.4);opacity:0}
-  60%{opacity:1}100%{transform:translate(-50%,-50%) rotate(-14deg) scale(1);opacity:.85}}
-.poster.today{outline:2px solid var(--coral);outline-offset:2px}
-.poster.resting{opacity:.55}
-.poster .todaybadge{position:absolute;top:6px;right:6px;background:var(--coral);color:#fff;font-size:9px;font-weight:800;
-  padding:3px 6px;border-radius:4px;letter-spacing:.4px;z-index:2}
-.prog{display:flex;align-items:center;gap:10px;margin:14px 0 2px}
-.progbar{flex:1;height:8px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden}
-.progbar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold2),var(--gold));border-radius:99px;transition:width .5s}
-.progn{font-size:12px;font-weight:800;color:var(--gold)}
-
-/* ---------- 할일 리스트 ---------- */
-.todo{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:13px;
-  background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);margin-bottom:8px}
-.todo.done{opacity:.45}
-.todo .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:17px;flex:none;
-  background:rgba(255,201,60,.13)}
-.todo .tt{flex:1;min-width:0}
-.todo .tt b{display:block;font-size:13.5px;font-weight:600}
-.todo .tt span{font-size:11px;color:var(--dim)}
-.todo .gv{font-size:12px;font-weight:800;color:var(--gold);white-space:nowrap}
-.todo.done .gv{color:var(--teal)}
-
-/* ---------- 탭바 ---------- */
-#tabs{position:fixed;left:0;right:0;bottom:0;z-index:50;display:none;
-  background:linear-gradient(180deg,rgba(4,17,28,.6),rgba(4,17,28,.98) 45%);backdrop-filter:blur(14px);
-  border-top:1px solid rgba(255,255,255,.08);padding:8px 6px calc(8px + var(--safe))}
-#tabs.on{display:block}
-.tabin{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
-.tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;font-size:10.5px;color:var(--dim);font-weight:600}
-.tab i{font-size:19px;font-style:normal;line-height:1;filter:grayscale(1) opacity(.55)}
-.tab.on{color:var(--gold)}
-.tab.on i{filter:none}
-
-/* ---------- 모달 ---------- */
-#modal{position:fixed;inset:0;z-index:90;display:none;align-items:flex-end;justify-content:center;
-  background:rgba(2,9,15,.8);backdrop-filter:blur(4px)}
-#modal.on{display:flex}
-.sheet{width:100%;max-width:520px;background:linear-gradient(180deg,#1a1626,#120f1c);
-  border-radius:22px 22px 0 0;border-top:1px solid var(--line);padding:22px 18px calc(24px + var(--safe));
-  animation:up .3s cubic-bezier(.2,.9,.3,1);max-height:90dvh;overflow-y:auto}
-@keyframes up{from{transform:translateY(100%)}to{transform:none}}
-.sheet h3{margin:0 0 6px;font-size:19px;font-weight:800;letter-spacing:-.4px}
-.sheet p{margin:0 0 16px;font-size:13px;color:var(--dim);line-height:1.65}
-
-/* ---------- 게임 ---------- */
-.gamecard{position:relative;border-radius:16px;overflow:hidden;margin-bottom:12px;
-  background:linear-gradient(135deg,rgba(0,229,255,.1),rgba(255,201,60,.07));border:1px solid rgba(255,255,255,.1);padding:16px}
-.gamecard h4{margin:0 0 4px;font-size:16px;font-weight:800}
-.gamecard p{margin:0 0 12px;font-size:12px;color:var(--dim);line-height:1.6}
-.gamecard .best{font-size:11px;color:var(--gold);font-weight:700}
-#stage{position:fixed;inset:0;z-index:95;display:none;background:#0a0a14;flex-direction:column}
-#stage.on{display:flex}
-
-/* ---------- 큰 추적 화면 ---------- */
-#tracker{position:fixed;inset:0;z-index:96;display:none;flex-direction:column;
-  background:radial-gradient(120% 90% at 50% 20%,#201c2e,#0a0a14 65%);
-  padding:18px 20px calc(20px + var(--safe))}
-#tracker.on{display:flex}
-.trackTop{display:flex;align-items:center;font-size:15px;font-weight:800}
-.trackTop .x{margin-left:auto;font-size:24px;color:var(--dim);padding:4px}
-.trackBody{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
-#trackCompassWrap{filter:drop-shadow(0 10px 24px rgba(0,229,255,.25))}
-#trackDist{font-size:26px;font-weight:800;color:var(--gold);text-align:center}
-
-/* ---------- 대화(시네마) ---------- */
-#cinema{position:fixed;inset:0;z-index:97;display:none;flex-direction:column;justify-content:flex-end;
-  background:radial-gradient(120% 90% at 50% 15%,#2a2440,#0a0a14 62%);cursor:pointer}
-#cinema.on{display:flex}
-.cinePortrait{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;padding:26px 26px 6px}
-/* 오프닝 등 "전신" 모드 — 배경 없이 누끼 딴 캐릭터가 그대로 떠 있는 형태 */
-.cinePortrait img.full{max-width:230px;max-height:100%;filter:drop-shadow(0 16px 22px rgba(0,0,0,.55));
-  animation:cinein .25s ease}
-/* 캐릭터와의 대화 — 표정이 바뀔 때마다 동그란 창(뱃지) 안에 귀엽게 담긴다 */
-.cinePortrait img.face{width:260px;height:260px;max-width:72vw;max-height:72vw;object-fit:cover;border-radius:50%;
-  background:linear-gradient(160deg,var(--paper),var(--paper2));
-  border:6px solid var(--gold);box-shadow:0 14px 34px rgba(0,0,0,.5),inset 0 0 0 2px rgba(255,255,255,.18);
-  animation:cinein .22s ease}
-@keyframes cinein{from{transform:translateY(10px) scale(.9);opacity:0}to{transform:none;opacity:1}}
-.cineCard{background:linear-gradient(180deg,#1a1626,#120f1c);border-top:1px solid var(--line);
-  border-radius:20px 20px 0 0;padding:20px 20px calc(22px + var(--safe));box-shadow:0 -10px 30px rgba(0,0,0,.4)}
-.cineName{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.05em;color:var(--gold);
-  background:rgba(255,201,60,.12);border:1px solid rgba(255,201,60,.3);padding:4px 12px;border-radius:999px;margin-bottom:10px}
-.cineText{font-size:15px;line-height:1.7;min-height:52px}
-.cineNext{margin-top:14px;text-align:right;font-size:12.5px;font-weight:700;color:var(--dim)}
-.stagebar{display:flex;align-items:center;gap:12px;padding:14px 16px;font-size:13px;font-weight:800}
-.stagebar .x{margin-left:auto;font-size:22px;color:var(--dim);padding:0 4px}
-#canvasWrap{flex:1;position:relative;overflow:hidden}
-#gcv{width:100%;height:100%;display:block;touch-action:none}
-#memo{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:9px;padding:16px;align-content:center}
-.mcard{aspect-ratio:3/4;border-radius:10px;background:linear-gradient(160deg,#2a2440,#1a1626);border:1px solid rgba(255,201,60,.2);
-  display:grid;place-items:center;font-size:26px;transition:transform .25s;transform-style:preserve-3d}
-.mcard.flip{background:linear-gradient(160deg,var(--paper),var(--paper2))}
-.mcard.hide{opacity:0;pointer-events:none}
-.mcard span{opacity:0}
-.mcard.flip span{opacity:1}
-
-/* ---------- 포토 ---------- */
-.slot4{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
-.slot{aspect-ratio:4/5;border-radius:10px;border:1.5px dashed rgba(255,255,255,.2);display:grid;place-items:center;
-  background:rgba(255,255,255,.04);overflow:hidden;position:relative;font-size:12px;color:var(--dim)}
-.slot img{width:100%;height:100%;object-fit:cover}
-#photoOut{width:100%;border-radius:12px;display:none;margin-top:12px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
-.fmtToggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-.fmtBtn{padding:11px;border-radius:12px;font-weight:700;font-size:13px;text-align:center;
-  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:var(--dim)}
-.fmtBtn.on{background:rgba(0,229,255,.14);border-color:rgba(0,229,255,.5);color:#EAF4FF}
-
-/* ---------- 상점 ---------- */
-.ticket{position:relative;background:linear-gradient(115deg,#201c2e,#14121f);border:1px solid var(--line);
-  border-radius:14px;padding:15px 16px;margin-bottom:10px;overflow:hidden}
-.ticket:before,.ticket:after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#0a0a14;left:-9px}
-.ticket:before{top:calc(50% - 9px)}
-.ticket:after{left:auto;right:-9px;top:calc(50% - 9px)}
-.ticket b{display:block;font-size:15px;font-weight:800;color:var(--gold)}
-.ticket span{font-size:11px;color:var(--dim);font-family:ui-monospace,monospace;letter-spacing:.5px}
-.warn{border:1px solid rgba(255,46,158,.35);background:rgba(255,46,158,.08);border-radius:13px;padding:13px 15px;
-  font-size:12.5px;line-height:1.7;color:#FFCCEB}
-.warn b{color:#FF6EC7}
-
-/* ---------- 토스트 ---------- */
-#toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%) translateY(20px);z-index:99;
-  background:rgba(10,31,49,.97);border:1px solid var(--line);color:var(--txt);padding:12px 20px;border-radius:99px;
-  font-size:13.5px;font-weight:600;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;
-  box-shadow:0 10px 30px rgba(0,0,0,.5)}
-#toast.on{opacity:1;transform:translateX(-50%)}
-.demo{margin-top:14px;padding-top:12px;border-top:1px dashed rgba(255,255,255,.12)}
-.demo .tiny{color:#FFA8DE}
-.dbtns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.dbtns button{font-size:11px;padding:7px 11px;border-radius:8px;background:rgba(255,46,158,.14);
-  border:1px solid rgba(255,46,158,.3);color:#FFA8DE;font-weight:700}
-</style>
+<meta name="theme-color" content="#0F1120">
+<title>TAMNA QUEST — 탐라, 여섯 신을 만나다</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Song+Myung&display=swap">
+<link rel="stylesheet" href="app.css?v=3">
 </head>
 <body>
 
+<!-- 아이콘 심볼 시트 (Lucide 기반, stroke 1.75) -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></symbol>
+  <symbol id="i-game" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h4M8 9v4M15 12h.01M18 10h.01"/><path d="M17.3 5H6.7a4 4 0 0 0-3.9 3.2L2 15a3 3 0 0 0 5.5 1.7L9 15h6l1.5 1.7A3 3 0 0 0 22 15l-.8-6.8A4 4 0 0 0 17.3 5z"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></symbol>
+  <symbol id="i-qr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v7h-7M17 21h.01"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-ticket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 0 0 4v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1a2 2 0 0 0 0-4V9z"/><path d="M13 7v10"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-message" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H8l-4 4V4z"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m16 8-2.5 5.5L8 16l2.5-5.5z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M9 12h6"/></symbol>
+  <symbol id="i-bag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l1 14H5L6 7z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+  <symbol id="i-store" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0V9zM5 13v8h14v-8"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20c0-9 6-15 16-16-1 10-7 16-16 16z"/><path d="M4 20c4-5 8-8 12-10"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M19 14v6H4V5h6"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"/></symbol>
+</svg>
+
 <div id="app">
-  <div id="hud">
-    <div class="hudrow">
-      <div class="purse"><i class="coin"></i><span id="goldN">0</span></div>
-      <div class="hudname">순례자<b id="meName">-</b></div>
+
+  <!-- 헤더 (sticky 아님 — 콘텐츠와 함께 스크롤) -->
+  <header class="app-header" id="hud">
+    <div class="app-header__row">
+      <a class="app-header__brand" href="#" id="brandHome">TAMNA QUEST</a>
+      <button class="balance" id="balBtn" aria-label="복 포인트 잔액, 승선권 매표소로 이동">
+        <svg class="icon"><use href="#i-coin"/></svg><span id="goldN">0</span>
+      </button>
     </div>
-    <div class="dday">과수원피스까지 <b id="ddayN">D-00</b> · 승선권 <b id="tkN">0</b>장 보유</div>
-  </div>
+    <div class="app-header__sub">
+      <span>순례자 <b id="meName">-</b></span>
+      <span>과수원피스 <b id="ddayN">D-00</b></span>
+      <span>승선권 <b id="tkN">0</b>장</span>
+    </div>
+  </header>
 
   <!-- ========== 인트로 / 등록 ========== -->
   <section class="screen on" id="s-intro">
-    <div class="introwrap" id="intro">
-      <div class="stamp">TAMNA MYTH</div>
-      <h1 class="bigtitle">여섯 신을<br>만나다</h1>
-      <div class="wantedmini">
-        <i style="--r:-6deg"></i><i style="--r:3deg"></i><i style="--r:-2deg"></i>
-        <i style="--r:5deg"></i><i style="--r:-4deg"></i><i style="--r:2deg"></i>
-      </div>
-      <p class="lead" style="text-align:center;margin:0 auto;max-width:330px">
-        탐라의 오랜 이야기 속 <b style="color:var(--gold)">여섯 신</b>이<br>
-        탐라문화제에 강림하셨습니다.<br><br>
-        찾아 인사드리고 <b style="color:var(--gold)">도장</b>를 모으면,<br>
-        10월 31일 <b style="color:var(--coral)">과수원피스</b>로 가는<br><b style="color:var(--coral)">승선권</b>으로 바꿀 수 있습니다.
+    <div class="intro">
+      <div class="intro__brand">TAMNA QUEST</div>
+      <h1 class="intro__title">여섯 신을<br>만나다</h1>
+      <p class="intro__lead">
+        탐라의 오랜 이야기 속 <b>여섯 신</b>이 탐라문화제에 강림하셨습니다.
+        찾아 인사드리고 <b>도장</b>을 모으면, 10월 31일 <b>과수원피스</b>로 가는 <b>승선권</b>으로 바꿀 수 있습니다.
       </p>
-      <div class="card" style="margin-top:20px;text-align:left">
-        <div class="field"><label>내 이름 (닉네임)</label>
-          <input id="inName" placeholder="예) 감귤" maxlength="12"></div>
-        <div class="field" style="margin-bottom:8px"><label>전화번호</label>
-          <input id="inPhone" type="tel" inputmode="numeric" placeholder="010-0000-0000" maxlength="13"></div>
-        <p class="tiny">10월 31일 과수원피스 현장에서 <b style="color:var(--gold)">같은 번호</b>를 입력하면
-          여기서 모은 승선권이 그대로 이어집니다. 추첨 확인 외 다른 용도로 쓰지 않으며 행사 종료 후 삭제합니다.</p>
+      <div class="intro__form">
+        <div class="field"><label for="inName">내 이름 (닉네임)</label>
+          <input id="inName" placeholder="예) 감귤" maxlength="12" autocomplete="nickname"></div>
+        <div class="field"><label for="inPhone">전화번호</label>
+          <input id="inPhone" type="tel" inputmode="numeric" placeholder="010-0000-0000" maxlength="13" autocomplete="tel"></div>
+        <p class="caption">10월 31일 과수원피스 현장에서 같은 번호를 입력하면 여기서 모은 승선권이 그대로 이어집니다. 추첨 확인 외 다른 용도로 쓰지 않으며 행사 종료 후 삭제합니다.</p>
       </div>
-      <button class="btn" id="btnStart">순례 시작하기</button>
+      <button class="btn btn--primary btn--block" id="btnStart">순례 시작하기</button>
     </div>
   </section>
 
-  <!-- ========== 신당 (홈) ========== -->
+  <!-- ========== 신의 기록 (홈) ========== -->
   <section class="screen" id="s-wanted">
-    <h2 class="sec">탐라의 여섯 신</h2>
-    <p class="lead">행사장 곳곳에 강림해 계십니다. 만나 인사드리면 <b style="color:var(--gold)">도장 QR</b>을 받을 수 있어요.</p>
-    <div class="prog"><div class="progbar"><i id="progFill" style="width:0"></i></div><div class="progn" id="progTxt">0 / 6</div></div>
-    <div class="crewgrid" id="crewGrid"></div>
-    <button class="btn" style="margin:16px 0 6px" id="btnScan">✅ 도장 찍기</button>
+    <div class="hero">
+      <h1 class="hero__title">탐라의 여섯 신</h1>
+      <p class="hero__sub" id="heroSub">행사장 곳곳에 강림해 계십니다</p>
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" id="progWrap">
+        <div class="progress__bar"><i class="progress__fill" id="progFill"></i></div>
+        <div class="progress__count"><span id="progN">0</span><small>/ 6 발견</small></div>
+      </div>
+    </div>
+    <button class="btn btn--primary btn--block" id="btnScan" style="margin-top:20px">
+      <svg class="icon"><use href="#i-qr"/></svg>도장 QR 찍기
+    </button>
+    <div class="gods" id="crewGrid"></div>
 
-    <h2 class="sec">오늘의 순례</h2>
-    <div id="todoList"></div>
+    <div class="section">
+      <div class="section__head">
+        <h2 class="section__title">오늘의 순례</h2>
+        <span class="section__meta" id="todoMeta"></span>
+      </div>
+      <div class="quests" id="todoList"></div>
+    </div>
   </section>
 
-  <!-- ========== 게임 ========== -->
+  <!-- ========== 놀이터 ========== -->
   <section class="screen" id="s-game">
-    <h2 class="sec">탐라 놀이터</h2>
-    <p class="lead">몇 번이든 도전할 수 있습니다. 다만 하루에 많이 할수록 복 포인트는 조금씩 줄어듭니다.<br>
-      <span class="tag" id="decayTag">오늘 0회 · 지급률 100%</span></p>
-    <div class="gamecard">
-      <h4>🍊 황금귤 캐치</h4><p>30초. 떨어지는 귤을 손가락으로 잘라 터뜨리세요. 큰 귤일수록 천천히 떨어지지만 여러 번 잘라야 부서집니다. 폭탄은 피할 것.</p>
-      <div class="best" id="best-catch">최고 0점</div>
-      <button class="btn" style="margin-top:10px" data-game="catch">도전</button>
+    <div class="hero">
+      <h1 class="hero__title">탐라 놀이터</h1>
+      <p class="hero__sub">몇 번이든 도전할 수 있어요. 하루에 많이 할수록 복 포인트는 조금씩 줄어듭니다.</p>
+      <div style="margin-top:12px"><span class="chip" id="decayTag">오늘 0회 · 지급률 100%</span></div>
     </div>
-    <div class="gamecard">
-      <h4>🌬 영등할망의 바람</h4><p>바람을 타고(폰을 기울이거나 화면 좌우를 눌러) 먹구름을 피하세요. 초록 복떡을 먹으면 룰렛이 돌아가 질풍(빠르게)·훈풍(느리게) 중 하나가 걸립니다. 오래 버틸수록 복 포인트.</p>
-      <div class="best" id="best-sail">최고 0초</div>
-      <button class="btn" style="margin-top:10px" data-game="sail">도전</button>
+    <div class="section" style="margin-top:20px">
+      <div class="game">
+        <div>
+          <div class="game__title">황금귤 캐치</div>
+          <div class="game__desc">30초 동안 떨어지는 귤을 손가락으로 잘라 터뜨리세요. 큰 귤은 여러 번, 폭탄은 피할 것.</div>
+          <div class="game__best" id="best-catch">최고 0점</div>
+        </div>
+        <button class="btn btn--secondary btn--sm" data-game="catch">도전</button>
+      </div>
+      <div class="game">
+        <div>
+          <div class="game__title">영등할망의 바람</div>
+          <div class="game__desc">폰을 기울이거나 화면 좌우를 눌러 바위를 피하세요. 복떡을 먹으면 배가 진화하고 포격이 시작됩니다.</div>
+          <div class="game__best" id="best-sail">최고 0초</div>
+        </div>
+        <button class="btn btn--secondary btn--sm" data-game="sail">도전</button>
+      </div>
+      <div class="game">
+        <div>
+          <div class="game__title">기억력 카드</div>
+          <div class="game__desc">12장 중 같은 그림 6쌍. 빠를수록 복 포인트가 큽니다.</div>
+          <div class="game__best" id="best-memo">최고 기록 없음</div>
+        </div>
+        <button class="btn btn--secondary btn--sm" data-game="memo">도전</button>
+      </div>
     </div>
-    <div class="gamecard">
-      <h4>🃏 기억력 카드</h4><p>12장 중 같은 그림 6쌍. 빠를수록 복 포인트가 큽니다.</p>
-      <div class="best" id="best-memo">최고 기록 없음</div>
-      <button class="btn" style="margin-top:10px" data-game="memo">도전</button>
-    </div>
-    <div class="card" style="margin-top:18px">
-      <div class="tag hot">체험판</div>
-      <p class="lead" style="margin:10px 0 0">여기 있는 건 맛보기입니다. <b style="color:var(--gold)">10월 31일 과수원피스</b>에서는
-        미션 11종과 과수원 전체를 돌아다니는 GPS 보물찾기 「황금 귤을 찾아라」가 열립니다.</p>
-    </div>
+    <p class="caption" style="margin-top:24px">여기 있는 건 맛보기입니다. 10월 31일 과수원피스에서는 미션 11종과 과수원 전체를 도는 GPS 보물찾기가 열립니다.</p>
   </section>
 
-  <!-- ========== 포토 ========== -->
+  <!-- ========== 4컷 ========== -->
   <section class="screen" id="s-photo">
-    <h2 class="sec">4컷 포토</h2>
-    <p class="lead">신들과 찍은 사진 4장을 넣으면 탐라문화제 × 과수원피스 프레임으로 만들어 드립니다. 저장해서 SNS에 올리고
-      부스 스태프에게 보여주면 <b style="color:var(--gold)">300 복 포인트</b>.</p>
-    <div class="slot4" id="slots"></div>
-    <div class="fmtToggle" id="fmtToggle">
-      <button class="fmtBtn on" type="button" data-fmt="tall">세로형 (4:5)</button>
-      <button class="fmtBtn" type="button" data-fmt="square">정방형 (1:1)</button>
+    <div class="hero">
+      <h1 class="hero__title">4컷 포토</h1>
+      <p class="hero__sub">신들과 찍은 사진 4장을 넣으면 탐라문화제 공식 프레임으로 만들어 드립니다. 저장해서 SNS에 올리고 부스 스태프에게 보여주면 <b style="color:var(--color-accent-strong);font-weight:800">+300</b>.</p>
     </div>
-    <button class="btn" id="btnMake">4컷 만들기</button>
-    <img id="photoOut" alt="완성된 4컷 사진">
-    <button class="btn ghost" id="btnSave" style="display:none;margin-top:10px">사진 저장하기</button>
-    <div class="card" style="margin-top:16px">
-      <div class="todo" style="margin:0;background:none;border:0;padding:0">
-        <div class="ic">📣</div>
-        <div class="tt"><b>SNS 인증</b><span>올린 화면을 부스 스태프에게 보여주세요</span></div>
-        <button class="btn" style="width:auto;padding:9px 14px;font-size:12px" id="btnSns">인증</button>
+    <div class="slots" id="slots"></div>
+    <div class="seg" id="fmtToggle" role="tablist">
+      <button class="seg__btn fmtBtn on" type="button" data-fmt="tall" role="tab">세로형 4:5</button>
+      <button class="seg__btn fmtBtn" type="button" data-fmt="square" role="tab">정방형 1:1</button>
+    </div>
+    <button class="btn btn--primary btn--block" id="btnMake" style="margin-top:16px">4컷 만들기</button>
+    <div class="result" id="result">
+      <img id="photoOut" alt="완성된 4컷 사진">
+      <button class="btn btn--secondary btn--block" id="btnSave" style="margin-top:12px">사진 저장하기</button>
+    </div>
+    <div class="section">
+      <h2 class="section__title">SNS 인증</h2>
+      <div class="quests">
+        <div class="quest">
+          <svg class="icon"><use href="#i-message"/></svg>
+          <div><div class="quest__title">올린 화면을 부스 스태프에게 보여주세요</div><div class="quest__desc">하루 1회</div></div>
+          <button class="btn btn--secondary btn--sm quest__action" id="btnSns">인증</button>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ========== 상점 ========== -->
-  <section class="screen" id="s-shop">
-    <h2 class="sec">선착장 매표소</h2>
-    <p class="lead">모은 복 포인트로 <b style="color:var(--gold)">승선권</b>을 삽니다. 승선권은 10월 31일
-      과수원피스 경품 추첨에 쓰입니다.</p>
-    <div class="card" style="text-align:center;padding:22px 16px">
-      <div style="font-size:12px;color:var(--dim);font-weight:600">보유 복 포인트</div>
-      <div style="font-size:40px;font-weight:800;color:var(--gold);line-height:1.15;letter-spacing:-1px" id="shopGold">0</div>
-      <div style="font-size:12px;color:var(--dim)" id="shopNeed">승선권 1장까지 500 복 포인트</div>
-      <button class="btn" style="margin-top:16px" id="btnBuy">승선권 1장 구매 (500 복 포인트)</button>
-      <div class="tiny" style="margin-top:8px" id="buyLimit">1인 최대 5장</div>
-    </div>
-    <h2 class="sec">보유 승선권</h2>
-    <div id="tkList"></div>
-    <div class="warn" style="margin-top:14px">
-      <b>⚠ 추첨은 과수원피스 현장에서만 합니다.</b><br>
-      <span id="drawWhen"></span>에 번호를 부릅니다. 그 자리에 없으면 <b>바로 다시 뽑습니다.</b>
-      승선권은 꼭 현장에서 쓰세요.
-    </div>
-  </section>
-
-  <!-- ========== 안내 ========== -->
-  <section class="screen" id="s-info">
-    <h2 class="sec">과수원피스 STAMPEDE</h2>
-    <div class="card" style="text-align:center;padding:24px 16px">
-      <div class="stamp" style="font-size:10px">2026.10.31 SAT</div>
-      <div style="font-size:44px;font-weight:800;color:var(--coral);line-height:1;margin:8px 0" id="ddayBig">D-00</div>
-      <p class="lead" style="margin:0">금능석물원 · 10:00~16:00<br>입장 무료 · 항해 패스 6,000원</p>
-      <a class="btn" style="margin-top:16px;text-decoration:none" id="lnkPre" target="_blank" rel="noopener">사전예매 하러 가기</a>
-      <a class="btn ghost" style="margin-top:8px;text-decoration:none" id="lnkGuide" target="_blank" rel="noopener">행사 안내 보기</a>
-    </div>
-
-    <h2 class="sec">🔒 아직 못 보여드리는 것</h2>
-    <div class="card" style="position:relative;overflow:hidden;padding:0">
-      <div style="height:140px;background:
-          radial-gradient(circle at 22% 28%,rgba(255,201,60,.28),transparent 42%),
-          radial-gradient(circle at 72% 62%,rgba(0,229,255,.24),transparent 46%),
-          radial-gradient(circle at 45% 85%,rgba(255,46,158,.2),transparent 42%),
-          repeating-linear-gradient(45deg,rgba(255,255,255,.05) 0 10px,transparent 10px 20px),
-          linear-gradient(160deg,#201c2e,#0a0a14);
-          filter:blur(3px) saturate(1.15)"></div>
-      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:rgba(4,17,28,.42)">
-        <div style="font-size:24px">🗺️🔒</div>
-        <div style="font-weight:800;font-size:13.5px">GPS 보물지도 — 전 지역 13개 지점</div>
-        <div style="font-size:11px;color:var(--dim)">탐라에서 만난 여섯 신은 맛보기였습니다</div>
+  <!-- ========== 더보기 (승선권 · 부스 인증 · 안내 · 설정) ========== -->
+  <section class="screen" id="s-more">
+    <div class="section" id="sec-shop" style="margin-top:12px">
+      <h2 class="section__title">선착장 매표소</h2>
+      <p class="section__lead">모은 복 포인트로 승선권을 삽니다. 승선권은 10월 31일 과수원피스 경품 추첨에 쓰입니다.</p>
+      <div class="shop">
+        <div class="shop__label">보유 복 포인트</div>
+        <div class="shop__num" id="shopGold">0</div>
+        <div class="shop__need" id="shopNeed">승선권 1장까지 500 복 포인트</div>
+      </div>
+      <button class="btn btn--primary btn--block" id="btnBuy">승선권 1장 구매 (500 복 포인트)</button>
+      <p class="caption caption--center" id="buyLimit" style="margin-top:10px">1인 최대 5장</p>
+      <div class="section" style="margin-top:28px">
+        <div class="section__head"><h3 class="section__title" style="font-size:17px">보유 승선권</h3></div>
+        <div id="tkList"></div>
+      </div>
+      <div class="note note--danger" style="margin-top:20px">
+        <b>추첨은 과수원피스 현장에서만 합니다.</b><br>
+        <span id="drawWhen"></span>에 번호를 부릅니다. 그 자리에 없으면 바로 다시 뽑습니다. 승선권은 꼭 현장에서 쓰세요.
       </div>
     </div>
-    <p class="tiny" style="text-align:center;margin:8px 0 4px">여기서 신 6명·미니게임 3종을 즐기셨다면,<br>과수원피스에선 <b style="color:var(--gold)">과수원 전체가 게임판</b>이 됩니다.</p>
 
-    <h2 class="sec">본편에서 할 수 있는 것</h2>
-    <div class="todo"><div class="ic">🧭</div><div class="tt"><b>GPS 보물찾기</b><span>과수원 전체를 도는 「황금 귤을 찾아라」</span></div></div>
-    <div class="todo"><div class="ic">🎯</div><div class="tt"><b>미션 11종</b><span>양궁·사격·고리던지기·피규어 컬링…</span></div></div>
-    <div class="todo"><div class="ic">🛍️</div><div class="tt"><b>서브컬처 마켓</b><span>피규어·2차창작·푸드 25팀</span></div></div>
-    <div class="todo"><div class="ic">🎤</div><div class="tt"><b>무대</b><span>노래·댄스·퀴즈 대회, 실시간 투표</span></div></div>
-    <div class="todo"><div class="ic">🍊</div><div class="tt"><b>감귤 체험</b><span>패스+감귤체험 콤보 10,000원</span></div></div>
-
-    <h2 class="sec">지금 여기</h2>
-    <div class="card">
-      <p class="lead" style="margin:0" id="boothInfo"></p>
+    <div class="section" id="sec-staff">
+      <h2 class="section__title">부스 인증</h2>
+      <p class="section__lead">부스 스태프가 보여주는 코드로 인증하면 복 포인트를 드립니다.</p>
+      <div class="quests" id="staffTodo"></div>
     </div>
-    <h2 class="sec">부스 인증</h2>
-    <div id="staffTodo"></div>
-    <button class="btn ghost" style="margin-top:20px" id="btnReset">기록 초기화 (테스트용)</button>
-    <p class="tiny" style="text-align:center;margin-top:14px;opacity:.5">프로토타입 v0.1 · 박서방 제주점</p>
+
+    <div class="section" id="sec-info">
+      <h2 class="section__title">과수원피스 STAMPEDE</h2>
+      <div class="dday">
+        <div class="dday__label">2026.10.31 SAT</div>
+        <div class="dday__num" id="ddayBig">D-00</div>
+        <p class="dday__meta">금능석물원 · 10:00~16:00<br>입장 무료 · 항해 패스 6,000원</p>
+      </div>
+      <a class="btn btn--secondary btn--block" id="lnkPre" target="_blank" rel="noopener">사전예매 하러 가기 <svg class="icon"><use href="#i-external"/></svg></a>
+      <a class="btn btn--tertiary btn--block" id="lnkGuide" target="_blank" rel="noopener" style="margin-top:6px">행사 안내 보기</a>
+
+      <div class="rows" style="margin-top:20px">
+        <div class="row"><svg class="icon"><use href="#i-map"/></svg><div><div class="row__title">GPS 보물찾기</div><div class="row__desc">과수원 전체를 도는 「황금 귤을 찾아라」 · 13개 지점</div></div></div>
+        <div class="row"><svg class="icon"><use href="#i-target"/></svg><div><div class="row__title">미션 11종</div><div class="row__desc">양궁 · 사격 · 고리던지기 · 피규어 컬링…</div></div></div>
+        <div class="row"><svg class="icon"><use href="#i-store"/></svg><div><div class="row__title">서브컬처 마켓</div><div class="row__desc">피규어 · 2차창작 · 푸드 25팀</div></div></div>
+        <div class="row"><svg class="icon"><use href="#i-mic"/></svg><div><div class="row__title">무대</div><div class="row__desc">노래 · 댄스 · 퀴즈 대회, 실시간 투표</div></div></div>
+        <div class="row"><svg class="icon"><use href="#i-leaf"/></svg><div><div class="row__title">감귤 체험</div><div class="row__desc">패스 + 감귤체험 콤보 10,000원</div></div></div>
+      </div>
+      <p class="caption" style="margin-top:16px">여기서 신 6명과 미니게임 3종을 즐기셨다면, 과수원피스에선 과수원 전체가 게임판이 됩니다.</p>
+    </div>
+
+    <div class="section" id="sec-here">
+      <h2 class="section__title">지금 여기</h2>
+      <p class="section__lead" id="boothInfo"></p>
+    </div>
+
+    <div class="section" id="sec-settings">
+      <div class="divider"></div>
+      <button class="btn btn--tertiary btn--block" id="btnReset"><svg class="icon"><use href="#i-trash"/></svg>기록 초기화 (테스트용)</button>
+      <p class="caption caption--center" style="margin-top:8px;opacity:.6">프로토타입 v0.2 · 박서방 제주점</p>
+    </div>
   </section>
 </div>
 
-<!-- 탭바 -->
-<nav id="tabs"><div class="tabin">
-  <button class="tab on" data-go="wanted"><i>⛩</i>신당</button>
-  <button class="tab" data-go="game"><i>🎮</i>놀이터</button>
-  <button class="tab" data-go="photo"><i>📸</i>4컷</button>
-  <button class="tab" data-go="shop"><i>🎫</i>매표소</button>
-  <button class="tab" data-go="info"><i>📋</i>안내</button>
+<!-- 하단 내비게이션 (4탭) -->
+<nav id="tabs" class="nav" aria-label="주 메뉴"><div class="nav__in">
+  <button class="tab on" data-go="wanted"><svg class="icon"><use href="#i-home"/></svg>신의 기록</button>
+  <button class="tab" data-go="game"><svg class="icon"><use href="#i-game"/></svg>놀이터</button>
+  <button class="tab" data-go="photo"><svg class="icon"><use href="#i-camera"/></svg>4컷</button>
+  <button class="tab" data-go="more"><svg class="icon"><use href="#i-more"/></svg>더보기</button>
 </div></nav>
 
-<!-- 모달 -->
-<div id="modal"><div class="sheet" id="sheet"></div></div>
+<!-- 바텀시트 -->
+<div id="modal" role="dialog" aria-modal="true"><div class="sheet" id="sheet"></div></div>
 
 <!-- 게임 스테이지 -->
 <div id="stage">
-  <div class="stagebar"><span id="stTitle">게임</span><span id="stScore"></span><button class="x" id="stClose">✕</button></div>
+  <div class="stagebar"><span id="stTitle">게임</span><span id="stScore"></span>
+    <button class="stagebar__x" id="stClose" aria-label="닫기"><svg class="icon"><use href="#i-close"/></svg></button></div>
   <div id="canvasWrap"><canvas id="gcv"></canvas></div>
   <div id="memo" style="display:none"></div>
 </div>
 
-<!-- 큰 추적 화면 — 카드 탭하면 뜬다 -->
+<!-- 나침반 추적 -->
 <div id="tracker">
-  <div class="trackTop"><span id="trackName">추적 중</span><button class="x" id="trackClose">✕</button></div>
+  <div class="trackTop"><span id="trackName">추적 중</span>
+    <button class="stagebar__x" id="trackClose" aria-label="닫기"><svg class="icon"><use href="#i-close"/></svg></button></div>
   <div class="trackBody">
     <div id="trackCompassWrap"></div>
     <div id="trackDist">-</div>
-    <p class="tiny" id="trackNote" style="text-align:center;max-width:280px"></p>
+    <p class="caption" id="trackNote"></p>
   </div>
-  <button class="btn" id="trackScanBtn">✅ 찾았다! 도장 찍기</button>
+  <button class="btn btn--primary btn--block" id="trackScanBtn"><svg class="icon"><use href="#i-qr"/></svg>찾았다! 도장 찍기</button>
 </div>
 
 <!-- 대화(시네마) — 화면 아무 곳이나 탭하면 다음 대사로 -->
@@ -450,7 +266,7 @@ p.lead{font-size:13px;color:var(--dim);line-height:1.65;margin:0 0 14px}
   </div>
 </div>
 
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -488,11 +304,11 @@ function refreshPlayerPos(){
 function compassSvg(bearingDeg,known,size){
   size=size||26;
   var needle = known
-    ? '<g transform="rotate('+bearingDeg+' 17 17)"><polygon points="17,4 21.5,19 17,15.5 12.5,19" fill="#00A8C2"/></g>'
-    : '<text x="17" y="21" text-anchor="middle" font-size="13" font-weight="800" fill="#00A8C2">?</text>';
-  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 34 34" style="flex:none">'+
-    '<circle cx="17" cy="17" r="15" fill="rgba(0,229,255,.14)" stroke="#00A8C2" stroke-width="1.5"/>'+
-    (known?'<circle cx="17" cy="17" r="1.6" fill="#00A8C2"/>':'')+
+    ? '<g transform="rotate('+bearingDeg+' 17 17)"><polygon points="17,4 21.5,19 17,15.5 12.5,19" fill="#F5B331"/></g>'
+    : '<text x="17" y="21" text-anchor="middle" font-size="13" font-weight="800" fill="#F5B331">?</text>';
+  return '<svg class="compass" width="'+size+'" height="'+size+'" viewBox="0 0 34 34" style="flex:none">'+
+    '<circle cx="17" cy="17" r="15" fill="rgba(245,179,49,.14)" stroke="#F5B331" stroke-width="1.5"/>'+
+    (known?'<circle cx="17" cy="17" r="1.6" fill="#F5B331"/>':'')+
     needle+'</svg>';
 }
 /* ---------------- 큰 추적 화면 ----------------
@@ -544,9 +360,9 @@ function liveHintHtml(c){
   if(playerPos){
     var d=TamnaLive.distanceM(playerPos.lat,playerPos.lng,h.lat,h.lng);
     var b=TamnaLive.bearingDeg(playerPos.lat,playerPos.lng,h.lat,h.lng);
-    return '<div class="liveHint">'+compassSvg(b,true)+'<span>'+TamnaLive.dirLabel(b)+'쪽 · 약 '+TamnaLive.fmtDist(d)+'</span></div>';
+    return compassSvg(b,true)+'<span>'+TamnaLive.dirLabel(b)+'쪽 · 약 '+TamnaLive.fmtDist(d)+'</span>';
   }
-  return '<div class="liveHint">'+compassSvg(0,false)+'<span>근처 어딘가에 계세요</span></div>';
+  return compassSvg(0,false)+'<span>근처 어딘가에 계세요</span>';
 }
 
 /* ---------------- 상태 ---------------- */
@@ -568,15 +384,20 @@ function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');
   clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('on')},2100)}
 
 /* ---------------- 화면 전환 ---------------- */
-function go(id){
+function go(id,anchor){
+  if(id==='shop'){anchor=anchor||'sec-shop';id='more'}
+  if(id==='info'){anchor=anchor||'sec-info';id='more'}
   $$('.screen').forEach(function(s){s.classList.remove('on')});
   $('#s-'+id).classList.add('on');
   $$('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.go===id)});
-  window.scrollTo(0,0);
   if(id==='game')paintGame();
-  if(id==='shop')paintShop();
+  if(id==='more')paintShop();
+  if(anchor&&$('#'+anchor)){$('#'+anchor).scrollIntoView({block:'start'});}
+  else window.scrollTo(0,0);
 }
 $$('.tab').forEach(function(t){t.onclick=function(){go(t.dataset.go)}});
+$('#balBtn').onclick=function(){go('shop')};
+$('#brandHome').onclick=function(e){e.preventDefault();go('wanted')};
 
 /* ---------------- 등록 ---------------- */
 $('#inPhone').addEventListener('input',function(e){
@@ -613,8 +434,20 @@ function checkAttend(){
 }
 
 /* ---------------- 렌더 ---------------- */
+var _goldShown=null;
+function setNum(el,target){
+  var from=parseInt(String(el.textContent).replace(/\D/g,''),10);
+  if(isNaN(from)||from===target||Math.abs(target-from)>5000){el.textContent=target.toLocaleString();return}
+  var t0=performance.now(),dur=280;
+  el.classList.remove('num-bump');void el.offsetWidth;el.classList.add('num-bump');
+  (function step(now){
+    var p=Math.min(1,(now-t0)/dur);p=1-Math.pow(1-p,3);
+    el.textContent=Math.round(from+(target-from)*p).toLocaleString();
+    if(p<1)requestAnimationFrame(step);
+  })(t0);
+}
 function paint(){
-  $('#goldN').textContent=S.gold.toLocaleString();
+  setNum($('#goldN'),S.gold);
   $('#meName').textContent=S.name;
   $('#tkN').textContent=S.tickets.length;
   var days=dday();
@@ -648,26 +481,35 @@ function paintCrew(){
   C.crew.forEach(function(c){
     var got=!!S.crew[c.id];
     var active=isActiveToday(c);
-    var el=document.createElement('div');
-    el.className='poster'+(got?' got':'')+(c.id===tc?' today':'')+(!active&&!got?' resting':'');
+    var el=document.createElement('button');
+    el.type='button';
+    var live=liveHintHtml(c);
+    el.className='god'+(got?' god--found':' god--locked')+(c.id===tc&&!got?' god--today':'')+(!active&&!got?' god--resting':'')+(live&&!got?' god--live':'')+(c.id===revealId?' god--reveal':'');
     el.dataset.god=c.id;
-    var teaserSrc = c.photo ? c.photo.replace('/final/','/teaser/') : '';
-    var face = got&&c.photo ? '<img src="'+c.photo+'" alt="'+c.name+'">'
-             : (teaserSrc ? '<img class="teaser" src="'+teaserSrc+'" alt=""><span class="qmark">?</span>'
-                          : '<span>?</span>');
-    var pb = got?'인사 완료':(!active?'오늘은 쉬어가심':(c.bounty||C.gold.crew)*(c.id===tc?C.gold.todayMultiplier:1)+' 복 포인트');
-    el.innerHTML=(c.id===tc?'<div class="todaybadge">오늘의 신</div>':'')+
-      '<div class="pw">탐라신화</div><div class="face">'+face+'</div>'+
-      '<div class="pn">'+(got?c.name:'? ? ?')+'</div>'+
-      '<div class="pb">'+pb+'</div>'+(got?'':liveHintHtml(c));
+    el.setAttribute('aria-label',got?c.name+' · 발견':'미발견 신');
+    var reward=(c.bounty||C.gold.crew)*(c.id===tc?C.gold.todayMultiplier:1);
+    var status;
+    if(got) status='<svg class="icon"><use href="#i-check"/></svg>발견'+(c.jeju?' · '+c.jeju.word:'');
+    else if(live) status=live;
+    else if(!active) status='오늘은 쉬어가심';
+    else status='미발견 · +'+reward;
+    el.innerHTML=(c.id===tc&&!got?'<span class="god__badge">오늘의 신 ×'+C.gold.todayMultiplier+'</span>':'')+
+      (c.photo?'<img class="god__img" src="'+c.photo+'" alt="" loading="lazy">':'')+
+      (got?'':'<span class="god__seal"><svg class="icon"><use href="#i-lock"/></svg></span>')+
+      '<div class="god__body"><div class="god__name">'+(got?c.name:'???')+'</div>'+
+      '<div class="god__status">'+status+'</div></div>';
     g.appendChild(el);
   });
-  var n=Object.keys(S.crew).length;
-  $('#progFill').style.width=(n/C.crew.length*100)+'%';
-  $('#progTxt').textContent=n+' / '+C.crew.length;
+  revealId=null;
+  var n=Object.keys(S.crew).length, total=C.crew.length;
+  $('#progFill').style.width=(n/total*100)+'%';
+  $('#progN').textContent=n;
+  $('#progWrap').setAttribute('aria-valuenow',n);
+  $('#heroSub').textContent = n===0?'행사장 곳곳에 강림해 계십니다':(n>=total?'여섯 신을 모두 만났습니다':n+'분을 만났습니다. '+(total-n)+'분 남았어요');
 }
+var revealId=null;
 $('#crewGrid').addEventListener('click',function(e){
-  var card=e.target.closest('.poster');
+  var card=e.target.closest('.god');
   if(!card)return;
   var c=C.crew.filter(function(x){return x.id===card.dataset.god})[0];
   if(!c)return;
@@ -679,43 +521,46 @@ $('#crewGrid').addEventListener('click',function(e){
 });
 function jejuCard(c){
   if(!c.jeju)return '';
-  return '<div style="margin:12px 0;padding:13px 14px;background:rgba(255,201,60,.08);border:1px dashed var(--line);border-radius:12px;text-align:center">'+
-    '<div style="font-size:10px;color:var(--gold);font-weight:800;letter-spacing:.08em;margin-bottom:6px">제주어 한마디</div>'+
-    '<div style="font-size:19px;font-weight:800">"'+c.jeju.word+'"</div>'+
-    '<div style="font-size:12px;color:var(--dim);margin-top:3px">'+c.jeju.mean+'</div></div>';
+  return '<div class="jeju"><div class="jeju__label">제주어 한마디</div>'+
+    '<div class="jeju__word">"'+c.jeju.word+'"</div>'+
+    '<div class="jeju__mean">'+c.jeju.mean+'</div></div>';
 }
 function crewInfo(c){
   sheet('<h3>'+c.name+'</h3><p>'+c.desc+'</p>'+jejuCard(c)+
-    '<div class="card" style="text-align:center"><div class="tag">인사 완료</div>'+
-    '<p class="lead" style="margin:10px 0 0">이 신과 찍은 사진으로 4컷을 만들어 보세요.</p></div>'+
-    '<button class="btn" onclick="document.getElementById(\'modal\').classList.remove(\'on\');">닫기</button>');
+    '<p><span class="chip chip--success"><svg class="icon icon--sm"><use href="#i-check"/></svg>인사 완료</span></p>'+
+    '<p>이 신과 찍은 사진으로 4컷을 만들어 보세요.</p>'+
+    '<button class="btn btn--secondary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\');">닫기</button>');
 }
 function paintTodo(){
   var t=d(), tc=todayCrew(), n=Object.keys(S.crew).length;
   var items=[
-    {ic:'🙏',t:'여섯 신께 인사드리기',s:n+'/6 완료'+(tc?' · 오늘의 신이 계십니다':''),g:C.gold.crew+'×6',done:n>=6},
-    {ic:'📸',t:'4컷 포토 만들기',s:'하루 1회',g:'+'+C.gold.photo,done:!!t.photo},
-    {ic:'📣',t:'SNS 올리고 인증',s:'부스 스태프 확인',g:'+'+C.gold.sns,done:!!t.sns},
-    {ic:'🎮',t:'탐라 놀이터 미니게임',s:'오늘 '+(t.games||0)+'회 플레이',g:'최대 '+C.gameMax,done:false},
-    {ic:'🛍️',t:'부스 물품 구매',s:'스태프 확인',g:'+'+C.gold.purchase,done:!!t.buy},
-    {ic:'🎟️',t:'사전예매 인증',s:'한 번만 · 승선권 1장 값',g:'+'+C.gold.preorder,done:!!S.flags.pre}
+    {ic:'home',t:'여섯 신께 인사드리기',s:n+' / 6'+(tc?' · 오늘의 신은 '+C.gold.todayMultiplier+'배':''),g:'+'+C.gold.crew,done:n>=6},
+    {ic:'camera',t:'4컷 포토 만들기',s:'하루 1회',g:'+'+C.gold.photo,done:!!t.photo},
+    {ic:'message',t:'SNS 올리고 인증',s:'부스 스태프 확인',g:'+'+C.gold.sns,done:!!t.sns},
+    {ic:'game',t:'탐라 놀이터',s:'오늘 '+(t.games||0)+'회 플레이',g:'최대 '+C.gameMax,done:false},
+    {ic:'bag',t:'부스 물품 구매',s:'스태프 확인',g:'+'+C.gold.purchase,done:!!t.buy},
+    {ic:'ticket',t:'사전예매 인증',s:'한 번만 · 승선권 1장 값',g:'+'+C.gold.preorder,done:!!S.flags.pre}
   ];
+  var doneN=items.filter(function(i){return i.done}).length;
+  $('#todoMeta').textContent=doneN+' / '+items.length+' 완료';
   $('#todoList').innerHTML=items.map(function(i){
-    return '<div class="todo'+(i.done?' done':'')+'"><div class="ic">'+i.ic+'</div><div class="tt"><b>'+i.t+
-      '</b><span>'+i.s+'</span></div><div class="gv">'+(i.done?'완료':i.g)+'</div></div>';
+    return '<div class="quest'+(i.done?' quest--done':'')+'"><svg class="icon"><use href="#i-'+(i.done?'check':i.ic)+'"/></svg>'+
+      '<div><div class="quest__title">'+i.t+'</div><div class="quest__desc">'+(i.done?'완료':i.s)+'</div></div>'+
+      '<div class="quest__reward">'+i.g+'</div></div>';
   }).join('');
 }
 function paintStaff(){
   var t=d();
   var rows=[
-    {k:'sns',ic:'📣',t:'SNS 인증',g:C.gold.sns,done:!!t.sns},
-    {k:'purchase',ic:'🛍️',t:'물품 구매 인증',g:C.gold.purchase,done:!!t.buy},
-    {k:'preorder',ic:'🎟️',t:'사전예매 인증',g:C.gold.preorder,done:!!S.flags.pre}
+    {k:'sns',ic:'message',t:'SNS 인증',g:C.gold.sns,done:!!t.sns},
+    {k:'purchase',ic:'bag',t:'물품 구매 인증',g:C.gold.purchase,done:!!t.buy},
+    {k:'preorder',ic:'ticket',t:'사전예매 인증',g:C.gold.preorder,done:!!S.flags.pre}
   ];
   $('#staffTodo').innerHTML=rows.map(function(r){
-    return '<div class="todo'+(r.done?' done':'')+'"><div class="ic">'+r.ic+'</div><div class="tt"><b>'+r.t+
-      '</b><span>부스 스태프 QR</span></div>'+(r.done?'<div class="gv">완료</div>':
-      '<button class="btn" style="width:auto;padding:9px 14px;font-size:12px" data-staff="'+r.k+'">인증</button>')+'</div>';
+    return '<div class="quest'+(r.done?' quest--done':'')+'"><svg class="icon"><use href="#i-'+(r.done?'check':r.ic)+'"/></svg>'+
+      '<div><div class="quest__title">'+r.t+'</div><div class="quest__desc">'+(r.done?'완료':'+'+r.g+' · 스태프 코드')+'</div></div>'+
+      (r.done?'<div class="quest__reward">+'+r.g+'</div>':
+      '<button class="btn btn--secondary btn--sm quest__action" data-staff="'+r.k+'">인증</button>')+'</div>';
   }).join('');
   $$('[data-staff]').forEach(function(b){b.onclick=function(){openScan(b.dataset.staff)}});
 }
@@ -729,19 +574,19 @@ function paintShop(){
   $('#buyLimit').textContent='1인 최대 '+C.ticket.max+'장 · 현재 '+S.tickets.length+'장';
   $('#tkList').innerHTML=S.tickets.length?S.tickets.map(function(t,i){
     return '<div class="ticket"><b>승선권 #'+String(i+1).padStart(2,'0')+'</b><span>'+t+'</span></div>';
-  }).join(''):'<p class="lead">아직 승선권이 없습니다. 복 포인트를 모아 보세요.</p>';
+  }).join(''):'<p class="caption">아직 승선권이 없습니다. 복 포인트를 모아 보세요.</p>';
 }
 $('#btnBuy').onclick=function(){
   if(S.gold<C.ticket.cost||S.tickets.length>=C.ticket.max)return;
   S.gold-=C.ticket.cost;
   var code=(S.phone.replace(/\D/g,'').slice(-4))+'-'+Date.now().toString(36).toUpperCase().slice(-5);
   S.tickets.push(code);save();paint();
-  sheet('<h3>🎫 승선권 획득</h3><p>과수원피스로 가는 배에 자리를 잡았습니다.</p>'+
-    '<div class="ticket" style="margin-bottom:16px"><b>승선권 #'+String(S.tickets.length).padStart(2,'0')+
+  sheet('<h3>승선권 획득</h3><p>과수원피스로 가는 배에 자리를 잡았습니다.</p>'+
+    '<div class="ticket" style="margin-top:16px"><b>승선권 #'+String(S.tickets.length).padStart(2,'0')+
     '</b><span>'+code+'</span></div>'+
-    '<div class="warn" style="margin-bottom:16px"><b>⚠ 추첨은 '+C.drawTime+' 과수원피스 현장에서</b><br>'+
+    '<div class="note note--danger" style="margin-top:12px"><b>추첨은 '+C.drawTime+' 과수원피스 현장에서</b><br>'+
     '그 자리에 없으면 바로 다시 뽑습니다. 꼭 오세요.</div>'+
-    '<button class="btn" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">알겠습니다</button>');
+    '<button class="btn btn--primary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">알겠습니다</button>');
 };
 
 /* ---------------- 코드 스캔 ---------------- */
@@ -752,15 +597,15 @@ function openScan(kind){
     var btns = kind
       ? '<button data-code="'+C.staffCodes[kind]+'">'+C.staffCodes[kind]+'</button>'
       : C.crew.map(function(c){return '<button data-code="'+c.code+'">'+c.code+'</button>'}).join('');
-    demo='<div class="demo"><p class="tiny">프로토타입 모드 — 실제 행사에서는 QR 카메라가 열립니다. 아래는 테스트용 버튼.</p>'+
-      '<div class="dbtns">'+btns+'</div></div>';
+    demo='<div class="demo"><p class="caption">프로토타입 모드 — 실제 행사에서는 QR 카메라가 열립니다. 아래는 테스트용 버튼.</p>'+
+      '<div class="demo__btns">'+btns+'</div></div>';
   }
   sheet('<h3>'+label+' 입력</h3>'+
     '<p>'+(kind?'부스 스태프가 보여주는 코드를 입력하세요.':'신을 뵈면 스태프가 보여주는 도장 코드를 입력하세요.')+'</p>'+
-    '<div class="field"><input id="codeIn" placeholder="코드 입력" autocapitalize="characters"></div>'+
-    '<button class="btn" id="codeGo">확인</button>'+demo);
+    '<div class="field" style="margin-top:16px"><input id="codeIn" placeholder="코드 입력" autocapitalize="characters" aria-label="코드"></div>'+
+    '<button class="btn btn--primary btn--block" id="codeGo" style="margin-top:8px">확인</button>'+demo);
   $('#codeGo').onclick=function(){redeem($('#codeIn').value.trim(),kind)};
-  $$('#sheet .dbtns button').forEach(function(b){b.onclick=function(){redeem(b.dataset.code,kind)}});
+  $$('#sheet .demo__btns button').forEach(function(b){b.onclick=function(){redeem(b.dataset.code,kind)}});
 }
 function redeem(code,kind){
   code=(code||'').toUpperCase().replace(/\s/g,'');
@@ -778,28 +623,19 @@ function redeem(code,kind){
   if(S.crew[hit.id]){toast('이미 인사드린 신입니다');return}
   var mult = (todayCrew()===hit.id)?C.gold.todayMultiplier:1;
   var g=(hit.bounty||C.gold.crew)*mult;
-  S.crew[hit.id]=today();S.gold+=g;save();paint();
+  S.crew[hit.id]=today();S.gold+=g;save();revealId=hit.id;paint();
   closeModal();
   var n=Object.keys(S.crew).length;
   var extra='';
   if(n>=C.crew.length&&!S.flags.all){S.flags.all=1;S.gold+=C.gold.crewAll;save();paint();
-    extra='<div class="card" style="text-align:center;margin-top:6px">'+
-      '<div class="tag hot">여섯 신께 모두 인사</div>'+
-      '<p class="lead" style="margin:10px 0 0">보너스 <b style="color:var(--gold)">+'+C.gold.crewAll+' 복 포인트</b></p>'+
-      '<div style="margin:14px 0;padding:13px 14px;background:rgba(255,201,60,.08);border:1px dashed var(--line);border-radius:12px;text-align:left">'+
-        '<div style="font-size:10.5px;color:var(--gold);font-weight:800;letter-spacing:.06em;margin-bottom:8px">지금까지 한 건, 사실 예고편입니다</div>'+
-        '<div style="font-size:12.5px;line-height:1.85">'+
-          '신 6명 → 과수원피스는 <b style="color:var(--coral)">미션 11종 + 과수원 전체 GPS 보물찾기</b><br>'+
-          '몇 분짜리 미니게임 → <b style="color:var(--coral)">감귤밭·산책로까지 이어지는 진짜 게임판</b><br>'+
-          '부스 하나 → <b style="color:var(--coral)">마켓 25팀 + 무대 + 코스프레</b>'+
-        '</div>'+
-      '</div>'+
-      '<p class="lead" style="margin:0">"탐라의 신들이 모두 그대를 반겼구나.<br>진짜 항해는 <b style="color:var(--coral)">10월 31일</b>, 과수원피스에서 시작된다."<br>— 귤선장</p></div>';}
+    extra='<div class="note" style="margin-top:16px"><b>여섯 신께 모두 인사 — 보너스 +'+C.gold.crewAll+'</b><br>'+
+        '지금까지 한 건 사실 예고편입니다. 과수원피스는 미션 11종 + 과수원 전체 GPS 보물찾기, 마켓 25팀 + 무대 + 코스프레.</div>'+
+      '<p>"탐라의 신들이 모두 그대를 반겼구나. 진짜 항해는 10월 31일, 과수원피스에서 시작된다." — 귤선장</p>';}
   function showCaptureSheet(){
-    sheet('<h3>🙏 '+hit.name+' 인사</h3><p>'+hit.desc+'</p>'+jejuCard(hit)+
-      '<div class="card" style="text-align:center;padding:22px"><div style="font-size:34px;font-weight:800;color:var(--gold)">+'+g+'</div>'+
-      '<div class="tiny">복 포인트 획득'+(mult>1?' · 오늘의 신 2배!':'')+'</div></div>'+extra+
-      '<button class="btn" style="margin-top:8px" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">계속</button>');
+    sheet('<h3>'+hit.name+'</h3><p>'+hit.desc+'</p>'+
+      '<div class="reward"><div class="reward__num">+'+g+'</div><div class="reward__label">복 포인트 획득'+(mult>1?' · 오늘의 신 '+mult+'배':'')+'</div></div>'+
+      jejuCard(hit)+extra+
+      '<button class="btn btn--primary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">계속</button>');
   }
   /* 도채비는 처음 인사드릴 때만 짧은 대화 장면(오해 풀어주기)이 먼저 나온다 */
   if(hit.id==='GOD2'){ playCinema(hit.name,DOKEBI_LINES,showCaptureSheet); }
@@ -883,10 +719,10 @@ function reward(raw,label){
   d().games=(d().games||0)+1;
   var g=Math.max(1,Math.min(C.gameMax,Math.round(raw*decayRate())));
   S.gold+=g;save();paint();paintGame();
-  sheet('<h3>'+label+'</h3><div class="card" style="text-align:center;padding:24px">'+
-    '<div style="font-size:38px;font-weight:800;color:var(--gold)">+'+g+'</div><div class="tiny">복 포인트 획득 · 지급률 '+
+  sheet('<h3>'+label+'</h3>'+
+    '<div class="reward"><div class="reward__num">+'+g+'</div><div class="reward__label">복 포인트 획득 · 지급률 '+
     Math.round(decayRate()*100)+'%</div></div>'+
-    '<button class="btn" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">확인</button>');
+    '<button class="btn btn--primary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">확인</button>');
 }
 $$('[data-game]').forEach(function(b){b.onclick=function(){startGame(b.dataset.game)}});
 $('#stClose').onclick=function(){stopGame()};
@@ -967,7 +803,7 @@ function segPointDist(p0,p1,cx,cy){
   return Math.hypot(cx-(p0.x+t*dx), cy-(p0.y+t*dy));
 }
 function gCatch(){
-  openStage('🍊 황금귤 캐치');
+  openStage('황금귤 캐치');
   var W=cv.width,H=cv.height,items=[],score=0,t0=performance.now(),dur=30000,spawn=0;
   var lastPt=null, hitSet=null;
   var fx=[], pieces=[], flashes=[], shakeT=0, shakeMag=0;
@@ -1149,7 +985,7 @@ function finishCatch(score){
   var isBest=score>(S.best.catch||0);
   if(isBest)S.best.catch=score;
   sfx(isBest?'fanfare':'bonus',0.7);
-  reward(score/4,'🍊 '+score+'점'+(isBest?' · 신기록!':''));
+  reward(score/4,'황금귤 캐치 · '+score+'점'+(isBest?' · 신기록!':''));
 }
 
 /* --- ③ 영등할망의 바람 (조타) --- */
@@ -1198,7 +1034,7 @@ function drawShip(ctx,lvl,glowPulse){
   }
 }
 function gSail(){
-  openStage('🌬 영등할망의 바람');
+  openStage('영등할망의 바람');
   sfxAmbient('ocean',0.22);
   if(window.DeviceOrientationEvent&&DeviceOrientationEvent.requestPermission){
     DeviceOrientationEvent.requestPermission().then(function(r){
@@ -1379,12 +1215,12 @@ function finishSail(sec,kills){
   if(isBest)S.best.sail=s;
   sfx(isBest?'fanfare':'bonus',0.7);
   var bonus=(kills||0)*3;
-  reward(s*2+bonus,'🚢 '+s+'초 생존'+(bonus?' · 파괴 보너스 +'+bonus:''));
+  reward(s*2+bonus,'영등할망의 바람 · '+s+'초 생존'+(bonus?' · 파괴 보너스 +'+bonus:''));
 }
 
 /* --- ⑤ 기억력 카드 --- */
 function gMemo(){
-  openStage('🃏 기억력 카드');
+  openStage('기억력 카드');
   cv.style.display='none';
   var wrap=$('#memo');wrap.style.display='grid';
   var faces=['🍊','🗿','🌊','🌾','🔥','⭐'];
@@ -1418,7 +1254,7 @@ function finishMemo(sec){
   $('#memo').style.display='none';
   if(!S.best.memo||s<S.best.memo)S.best.memo=s;
   var raw=Math.max(8,60-Math.max(0,s-15)*1.6);
-  reward(raw,'🃏 '+s+'초 클리어');
+  reward(raw,'기억력 카드 · '+s+'초 클리어');
 }
 
 /* ---------------- 4컷 포토 ---------------- */
@@ -1505,20 +1341,19 @@ $('#btnMake').onclick=function(){
   if(have<4){toast('사진 4장을 모두 넣어 주세요 ('+have+'/4)');return}
   loadPoster(function(){
     var url=buildFrame();
-    var out=$('#photoOut');out.src=url;out.style.display='block';
-    $('#btnSave').style.display='block';
+    var out=$('#photoOut');out.src=url;$('#result').classList.add('on');
     $('#btnSave').onclick=function(){var a=document.createElement('a');a.href=url;
       a.download='탐라문화제_4컷_'+(photoFmt==='square'?'정방형_':'')+Date.now()+'.jpg';a.click()};
     if(!d().photo){d().photo=1;addGold(C.gold.photo,'4컷 완성')}
-    out.scrollIntoView({behavior:'smooth',block:'center'});
+    $('#result').scrollIntoView({behavior:'smooth',block:'start'});
   });
 };
 
 /* ---------------- 초기화 ---------------- */
 $('#btnReset').onclick=function(){
   sheet('<h3>기록을 지울까요?</h3><p>복 포인트·승선권·인사 기록이 전부 사라집니다. 테스트용 기능입니다.</p>'+
-    '<button class="btn" id="okReset">지우기</button>'+
-    '<button class="btn ghost" style="margin-top:8px" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">취소</button>');
+    '<button class="btn btn--danger btn--block" id="okReset">지우기</button>'+
+    '<button class="btn btn--tertiary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">취소</button>');
   $('#okReset').onclick=function(){localStorage.removeItem(KEY);location.reload()};
 };
 
