@@ -144,7 +144,7 @@
     </div>
     <div class="slots" id="slots"></div>
     <div class="seg" id="fmtToggle" role="tablist">
-      <button class="seg__btn fmtBtn on" type="button" data-fmt="tall" role="tab">세로형 2:3</button>
+      <button class="seg__btn fmtBtn on" type="button" data-fmt="tall" role="tab">세로형 4:5</button>
       <button class="seg__btn fmtBtn" type="button" data-fmt="square" role="tab">정방형 1:1</button>
     </div>
     <button class="btn btn--primary btn--block" id="btnMake" style="margin-top:16px">4컷 만들기</button>
@@ -1298,47 +1298,28 @@ function roundRectPath(ctx2,px,py,pw,ph,r){
   ctx2.arcTo(px+pw,py+ph,px,py+ph,r);ctx2.arcTo(px,py+ph,px,py,r);ctx2.arcTo(px,py,px+pw,py,r);ctx2.closePath();
 }
 function buildFrame(){
-  /* 사진이 주인공, 포스터는 헤더 밴드. 세로형은 2:3(1080x1620)으로 키워 사진 4장이 세로 비율로 크게 들어간다. */
+  /* 사장님 시안 기준: 공식 포스터를 선명하게 그대로 깔고, 그 위(일러스트 영역)에 흰 테두리 인화지 4장을 2x2로 얹는다. */
   var square=photoFmt==='square';
-  var W=1080,H=square?1080:1620;
+  var W=1080,H=square?1080:1350;
   var c=document.createElement('canvas');c.width=W;c.height=H;
   var x=c.getContext('2d');
-  /* 배경: 포스터 전체를 깔고 헤더 아래는 어둡게 눌러서 브랜드 분위기만 남긴다 */
   x.fillStyle='#17307A';x.fillRect(0,0,W,H);
-  var bgScale=Math.max(W/1080,H/1350);
-  x.drawImage(posterImg,0,0,1080,1350,(W-1080*bgScale)/2,(H-1350*bgScale)/2,1080*bgScale,1350*bgScale);
-  /* 헤더: 포스터의 제목·날짜 블록(y 30~600)만 축소해서 중앙에 */
-  var hs=square?0.62:0.82, srcY=30, srcH=540, hh=Math.round(srcH*hs), hw=Math.round(1080*hs);
-  var headH=hh+28;
-  x.fillStyle='#17307A';x.fillRect(0,0,W,headH);
-  x.drawImage(posterImg,0,srcY,1080,srcH,(W-hw)/2,14,hw,hh);
-  /* 헤더 아래 어두운 오버레이 */
-  x.fillStyle='rgba(15,17,32,.74)';x.fillRect(0,headH,W,H-headH);
-  var line=x.createLinearGradient(0,headH,0,headH+40);line.addColorStop(0,'rgba(15,17,32,.9)');line.addColorStop(1,'rgba(15,17,32,0)');
-  x.fillStyle=line;x.fillRect(0,headH,W,40);
-  /* 그리드 */
-  var pad=36,gap=14,footerH=square?64:84;
-  var gridTop=headH+22, gridBottom=H-footerH, gridH=gridBottom-gridTop;
-  var cw=(W-pad*2-gap)/2, ch=(gridH-gap)/2;
+  x.drawImage(posterImg,0,0,1080,Math.min(1350,H),0,0,1080,Math.min(1350,H));
+  /* 제목·날짜·장소 텍스트 블록(포스터 y≈600까지)은 절대 가리지 않는다 */
+  var gridTop=square?600:610, bottomPad=square?24:40, gap=square?16:20, border=square?9:11;
+  var avail=H-gridTop-bottomPad;
+  var ch=Math.floor((avail-gap)/2), cw=Math.round(ch*1.25);
+  var maxW=W-2*40; if(cw*2+gap>maxW){cw=Math.floor((maxW-gap)/2);}
+  var gw=cw*2+gap, gx=(W-gw)/2;
   slots.forEach(function(img,i){
-    var px=pad+(i%2)*(cw+gap), py=gridTop+Math.floor(i/2)*(ch+gap);
-    x.save();x.shadowColor='rgba(0,0,0,.5)';x.shadowBlur=18;x.shadowOffsetY=8;
-    x.fillStyle='#0F1120';roundRectPath(x,px,py,cw,ch,14);x.fill();x.restore();
-    x.save();roundRectPath(x,px,py,cw,ch,14);x.clip();
+    var px=gx+(i%2)*(cw+gap), py=gridTop+Math.floor(i/2)*(ch+gap);
+    x.save();x.shadowColor='rgba(0,0,0,.4)';x.shadowBlur=18;x.shadowOffsetY=8;
+    x.fillStyle='#FFFFFF';roundRectPath(x,px-border,py-border,cw+border*2,ch+border*2,10);x.fill();x.restore();
+    x.save();roundRectPath(x,px,py,cw,ch,5);x.clip();
     var sc=Math.max(cw/img.width,ch/img.height), dw=img.width*sc, dh=img.height*sc;
-    /* 셀이 사진보다 가로로 넓으면 얼굴이 있는 위쪽(약 18%)을 기준으로 잘라낸다 */
-    var dx=px+(cw-dw)/2, dy=py-(dh-ch)*0.18;
-    x.drawImage(img,dx,dy,dw,dh);
+    x.drawImage(img,px+(cw-dw)/2,py-(dh-ch)*0.18,dw,dh);
     x.restore();
-    x.strokeStyle='rgba(245,179,49,.7)';x.lineWidth=3;roundRectPath(x,px,py,cw,ch,14);x.stroke();
   });
-  /* 푸터 */
-  x.textAlign='center';
-  x.fillStyle='rgba(242,240,234,.75)';x.font='600 '+(square?17:20)+'px SCDream, sans-serif';
-  x.fillText(C.festivalDates, W/2, H-(square?34:44));
-  x.fillStyle='#F5B331';x.font='800 '+(square?18:22)+'px SCDream, sans-serif';
-  var n=Object.keys(S.crew).length;
-  x.fillText('신 '+n+'/6 인사 · '+(S.name||'순례자'), W/2, H-(square?12:16));
   return c.toDataURL('image/jpeg',.92);
 }
 $('#btnMake').onclick=function(){
