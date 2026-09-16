@@ -1298,23 +1298,27 @@ function roundRectPath(ctx2,px,py,pw,ph,r){
   ctx2.arcTo(px+pw,py+ph,px,py+ph,r);ctx2.arcTo(px,py+ph,px,py,r);ctx2.arcTo(px,py,px+pw,py,r);ctx2.closePath();
 }
 function buildFrame(){
-  /* 사장님 시안 기준: 공식 포스터를 선명하게 그대로 깔고, 그 위(일러스트 영역)에 흰 테두리 인화지 4장을 2x2로 얹는다. */
+  /* 사장님 시안(2차): 포스터 원본 위에 정방형 인화지 4장을 흩뿌린 배치.
+     위 두 장은 날짜·장소 글씨 양옆 모서리에, 아래 두 장은 가운데 나란히 — 텍스트는 절대 가리지 않는다. */
   var square=photoFmt==='square';
   var W=1080,H=square?1080:1350;
   var c=document.createElement('canvas');c.width=W;c.height=H;
   var x=c.getContext('2d');
   x.fillStyle='#17307A';x.fillRect(0,0,W,H);
   x.drawImage(posterImg,0,0,1080,Math.min(1350,H),0,0,1080,Math.min(1350,H));
-  /* 제목·날짜·장소 텍스트 블록(포스터 y≈600까지)은 절대 가리지 않는다 */
-  /* gap은 사진 안쪽 기준이라 흰 테두리 두께를 더해야 카드 사이가 실제로 떨어져 보인다 */
-  var border=square?9:11, gridTop=square?600:610, bottomPad=square?26:40, gap=border*2+(square?26:30);
-  var avail=H-gridTop-bottomPad;
-  var ch=Math.floor((avail-gap)/2), cw=Math.round(ch*1.25);
-  var maxW=W-2*40; if(cw*2+gap>maxW){cw=Math.floor((maxW-gap)/2);}
-  var gw=cw*2+gap, gx=(W-gw)/2;
+  /* 위 두 장: 날짜·장소 텍스트(x 320~800) 바깥 양옆, 캘리그라피 아래(y 470~). 아래 두 장: 가운데 나란히, 더 크게 */
+  var border=square?9:11;
+  var topSize=square?224:250, topY=square?468:470, edge=square?40:44;
+  var botSize=square?276:330, botY=square?722:770, botGap=square?40:48;
+  var spots=[
+    {x:edge,                 y:topY, s:topSize},
+    {x:W-edge-topSize,       y:topY, s:topSize},
+    {x:(W-botSize*2-botGap)/2,             y:botY, s:botSize},
+    {x:(W-botSize*2-botGap)/2+botSize+botGap, y:botY, s:botSize}
+  ];
   slots.forEach(function(img,i){
-    var px=gx+(i%2)*(cw+gap), py=gridTop+Math.floor(i/2)*(ch+gap);
-    x.save();x.shadowColor='rgba(0,0,0,.4)';x.shadowBlur=18;x.shadowOffsetY=8;
+    var px=spots[i].x, py=spots[i].y, cw=spots[i].s, ch=spots[i].s;
+    x.save();x.shadowColor='rgba(0,0,0,.42)';x.shadowBlur=20;x.shadowOffsetY=9;
     x.fillStyle='#FFFFFF';roundRectPath(x,px-border,py-border,cw+border*2,ch+border*2,10);x.fill();x.restore();
     x.save();roundRectPath(x,px,py,cw,ch,5);x.clip();
     var sc=Math.max(cw/img.width,ch/img.height), dw=img.width*sc, dh=img.height*sc;
