@@ -1336,9 +1336,12 @@ function buildFrame(){
   x.fillText('탐라, 여섯 신을 만나다', cx, 196);
   /* 포스터 미니어처 — 패널 정중앙 */
   var pw=Math.min(panelW-80,420), ph=Math.round(pw*1350/1080), pxp=cx-pw/2, pyp=H/2-ph/2+20;
-  x.save();x.shadowColor='rgba(0,0,0,.5)';x.shadowBlur=30;x.shadowOffsetY=14;
-  x.fillStyle='#FFFFFF';x.fillRect(pxp-8,pyp-8,pw+16,ph+16);x.restore();
-  x.drawImage(posterImg,0,0,1080,1350,pxp,pyp,pw,ph);
+  /* 포스터는 -6도 살짝 기울여 벽에 붙인 느낌으로 */
+  x.save();x.translate(pxp+pw/2,pyp+ph/2);x.rotate(-6*Math.PI/180);
+  x.shadowColor='rgba(0,0,0,.5)';x.shadowBlur=30;x.shadowOffsetY=14;
+  x.fillStyle='#FFFFFF';x.fillRect(-pw/2-8,-ph/2-8,pw+16,ph+16);
+  x.shadowColor='transparent';
+  x.drawImage(posterImg,0,0,1080,1350,-pw/2,-ph/2,pw,ph);x.restore();
   /* 하단 캡션 */
   var n=Object.keys(S.crew).length;
   x.fillStyle='rgba(242,240,234,.8)';x.font='600 22px SCDream, sans-serif';
