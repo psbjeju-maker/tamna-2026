@@ -143,10 +143,6 @@
       <p class="hero__sub">신들과 찍은 사진 4장을 넣으면 탐라문화제 공식 프레임으로 만들어 드립니다. 저장해서 SNS에 올리고 부스 스태프에게 보여주면 <b style="color:var(--color-accent-strong);font-weight:800">+300</b>.</p>
     </div>
     <div class="slots" id="slots"></div>
-    <div class="seg" id="fmtToggle" role="tablist">
-      <button class="seg__btn fmtBtn on" type="button" data-fmt="tall" role="tab">세로형 4:5</button>
-      <button class="seg__btn fmtBtn" type="button" data-fmt="square" role="tab">정방형 1:1</button>
-    </div>
     <button class="btn btn--primary btn--block" id="btnMake" style="margin-top:16px">4컷 만들기</button>
     <div class="result" id="result">
       <img id="photoOut" alt="완성된 4컷 사진">
@@ -1297,34 +1293,58 @@ function roundRectPath(ctx2,px,py,pw,ph,r){
   ctx2.beginPath();ctx2.moveTo(px+r,py);ctx2.arcTo(px+pw,py,px+pw,py+ph,r);
   ctx2.arcTo(px+pw,py+ph,px,py+ph,r);ctx2.arcTo(px,py+ph,px,py,r);ctx2.arcTo(px,py,px+pw,py,r);ctx2.closePath();
 }
+function star(x,cx,cy,r){
+  x.beginPath();
+  for(var i=0;i<10;i++){var a=-Math.PI/2+i*Math.PI/5, rr=i%2?r*0.45:r;
+    x[i?'lineTo':'moveTo'](cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);}
+  x.closePath();x.fill();
+}
 function buildFrame(){
-  /* 사장님 시안(2차): 포스터 원본 위에 정방형 인화지 4장을 흩뿌린 배치.
-     위 두 장은 날짜·장소 글씨 양옆 모서리에, 아래 두 장은 가운데 나란히 — 텍스트는 절대 가리지 않는다. */
-  var square=photoFmt==='square';
-  var W=1080,H=square?1080:1350;
+  /* 인생네컷 가로 액자(3:2). 왼쪽 2x2 정방형 사진, 오른쪽 패널 가운데에 탐라문화제 포스터 미니어처. */
+  var W=1800,H=1200;
   var c=document.createElement('canvas');c.width=W;c.height=H;
   var x=c.getContext('2d');
-  x.fillStyle='#17307A';x.fillRect(0,0,W,H);
-  x.drawImage(posterImg,0,0,1080,Math.min(1350,H),0,0,1080,Math.min(1350,H));
-  /* 위 두 장: 날짜·장소 텍스트(x 320~800) 바깥 양옆, 캘리그라피 아래(y 470~). 아래 두 장: 가운데 나란히, 더 크게 */
-  var border=square?9:11;
-  var topSize=square?224:250, topY=square?468:470, edge=square?40:44;
-  var botSize=square?276:330, botY=square?722:770, botGap=square?40:48;
-  var spots=[
-    {x:edge,                 y:topY, s:topSize},
-    {x:W-edge-topSize,       y:topY, s:topSize},
-    {x:(W-botSize*2-botGap)/2,             y:botY, s:botSize},
-    {x:(W-botSize*2-botGap)/2+botSize+botGap, y:botY, s:botSize}
-  ];
+  /* 배경: 포스터 남색 → 앱 배경색 그라데이션 + 은은한 별가루 */
+  var bg=x.createLinearGradient(0,0,W*0.3,H);
+  bg.addColorStop(0,'#1B3A8C');bg.addColorStop(.55,'#17307A');bg.addColorStop(1,'#0F1120');
+  x.fillStyle=bg;x.fillRect(0,0,W,H);
+  var seed=7;function rnd(){seed=(seed*9301+49297)%233280;return seed/233280}
+  for(var i=0;i<26;i++){
+    var sx=rnd()*W, sy=rnd()*H, sr=6+rnd()*20;
+    var inGrid = sx>40&&sx<1160&&sy>40&&sy<1160;
+    if(inGrid&&rnd()<0.75)continue;
+    x.fillStyle=rnd()<0.6?'rgba(245,179,49,'+(0.35+rnd()*0.5).toFixed(2)+')':'rgba(242,240,234,'+(0.25+rnd()*0.4).toFixed(2)+')';
+    star(x,sx,sy,sr);
+  }
+  /* 사진 2x2 (1:1) */
+  var m=60,gap=24,cell=Math.floor((H-m*2-gap)/2), gx=m, gy=m;
   slots.forEach(function(img,i){
-    var px=spots[i].x, py=spots[i].y, cw=spots[i].s, ch=spots[i].s;
-    x.save();x.shadowColor='rgba(0,0,0,.42)';x.shadowBlur=20;x.shadowOffsetY=9;
-    x.fillStyle='#FFFFFF';roundRectPath(x,px-border,py-border,cw+border*2,ch+border*2,10);x.fill();x.restore();
-    x.save();roundRectPath(x,px,py,cw,ch,5);x.clip();
-    var sc=Math.max(cw/img.width,ch/img.height), dw=img.width*sc, dh=img.height*sc;
-    x.drawImage(img,px+(cw-dw)/2,py-(dh-ch)*0.18,dw,dh);
+    var px=gx+(i%2)*(cell+gap), py=gy+Math.floor(i/2)*(cell+gap);
+    x.save();x.shadowColor='rgba(0,0,0,.35)';x.shadowBlur=16;x.shadowOffsetY=6;
+    x.fillStyle='#F6F1E6';x.fillRect(px-6,py-6,cell+12,cell+12);x.restore();
+    x.save();x.beginPath();x.rect(px,py,cell,cell);x.clip();
+    var sc=Math.max(cell/img.width,cell/img.height), dw=img.width*sc, dh=img.height*sc;
+    x.drawImage(img,px+(cell-dw)/2,py-(dh-cell)*0.18,dw,dh);
     x.restore();
   });
+  /* 오른쪽 패널 */
+  var panelX=gx+cell*2+gap+m, panelW=W-panelX-m, cx=panelX+panelW/2;
+  x.textAlign='center';
+  x.fillStyle='rgba(245,179,49,.95)';x.font='30px "Song Myung", serif';
+  x.fillText('T A M N A   Q U E S T', cx, 150);
+  x.fillStyle='rgba(242,240,234,.85)';x.font='600 24px SCDream, sans-serif';
+  x.fillText('탐라, 여섯 신을 만나다', cx, 196);
+  /* 포스터 미니어처 — 패널 정중앙 */
+  var pw=Math.min(panelW-80,420), ph=Math.round(pw*1350/1080), pxp=cx-pw/2, pyp=H/2-ph/2+20;
+  x.save();x.shadowColor='rgba(0,0,0,.5)';x.shadowBlur=30;x.shadowOffsetY=14;
+  x.fillStyle='#FFFFFF';x.fillRect(pxp-8,pyp-8,pw+16,ph+16);x.restore();
+  x.drawImage(posterImg,0,0,1080,1350,pxp,pyp,pw,ph);
+  /* 하단 캡션 */
+  var n=Object.keys(S.crew).length;
+  x.fillStyle='rgba(242,240,234,.8)';x.font='600 22px SCDream, sans-serif';
+  x.fillText('2026. 10. 17 – 21  ·  제주 시민복지타운광장', cx, H-118);
+  x.fillStyle='rgba(245,179,49,.9)';x.font='800 22px SCDream, sans-serif';
+  x.fillText('여섯 신 중 '+n+'분과 인사  ·  '+(S.name||'순례자'), cx, H-80);
   return c.toDataURL('image/jpeg',.92);
 }
 $('#btnMake').onclick=function(){
@@ -1334,7 +1354,7 @@ $('#btnMake').onclick=function(){
     var url=buildFrame();
     var out=$('#photoOut');out.src=url;$('#result').classList.add('on');
     $('#btnSave').onclick=function(){var a=document.createElement('a');a.href=url;
-      a.download='탐라문화제_4컷_'+(photoFmt==='square'?'정방형_':'')+Date.now()+'.jpg';a.click()};
+      a.download='탐라문화제_4컷_'+Date.now()+'.jpg';a.click()};
     if(!d().photo){d().photo=1;addGold(C.gold.photo,'4컷 완성')}
     $('#result').scrollIntoView({behavior:'smooth',block:'start'});
   });
