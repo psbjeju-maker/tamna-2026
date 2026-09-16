@@ -1306,7 +1306,8 @@ function buildFrame(){
   x.fillStyle='#17307A';x.fillRect(0,0,W,H);
   x.drawImage(posterImg,0,0,1080,Math.min(1350,H),0,0,1080,Math.min(1350,H));
   /* 제목·날짜·장소 텍스트 블록(포스터 y≈600까지)은 절대 가리지 않는다 */
-  var gridTop=square?600:610, bottomPad=square?24:40, gap=square?16:20, border=square?9:11;
+  /* gap은 사진 안쪽 기준이라 흰 테두리 두께를 더해야 카드 사이가 실제로 떨어져 보인다 */
+  var border=square?9:11, gridTop=square?600:610, bottomPad=square?26:40, gap=border*2+(square?26:30);
   var avail=H-gridTop-bottomPad;
   var ch=Math.floor((avail-gap)/2), cw=Math.round(ch*1.25);
   var maxW=W-2*40; if(cw*2+gap>maxW){cw=Math.floor((maxW-gap)/2);}
