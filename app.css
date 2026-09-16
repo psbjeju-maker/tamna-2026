@@ -105,7 +105,7 @@ p{margin:0}
 .hero__sub{margin-top:var(--space-2);font-size:15px;color:var(--color-text-secondary)}
 .progress{display:flex;align-items:center;gap:var(--space-3);margin-top:var(--space-5)}
 .progress__bar{flex:1;height:6px;border-radius:var(--radius-pill);background:var(--color-surface-elevated);overflow:hidden}
-.progress__fill{display:block;height:100%;width:0;background:var(--color-accent);border-radius:var(--radius-pill);transition:width var(--transition-reveal)}
+.progress__fill{display:block;height:100%;width:100%;background:var(--color-accent);border-radius:var(--radius-pill);transform-origin:left;transform:scaleX(0);transition:transform var(--transition-reveal)}
 .progress__count{font-weight:800;font-size:20px;line-height:1;white-space:nowrap}
 .progress__count small{font-size:13px;font-weight:600;color:var(--color-text-muted);margin-left:4px}
 
