@@ -762,10 +762,14 @@ function startSsireum(onDone){
     fill.style.transition='width 500ms ease';fill.style.width='18%';
     txt.textContent='으랏차! 내가 이겼네! 그래도 열심히 했으니까 복은 줄게. 이름부터 알려줘!';
     img.src='dokebi/exp_cry_laugh.png';
-    btn.textContent='좋아, 알려줄게';btn.disabled=false;
-    btn.onclick=function(){el.classList.remove('on');onDone&&onDone()};
+    btn.textContent='좋아, 알려줄게';btn.disabled=true;
+    /* 연타하던 손가락이 바로 다음 화면까지 넘겨버리지 않게 1초 뒤에야 버튼이 살아난다 */
+    setTimeout(function(){btn.disabled=false;
+      btn.onclick=function(){el.classList.remove('on');onDone&&onDone()};
+    },1000);
   }
   btn.onclick=function(){
+    if(running)return;
     running=true;t0=performance.now();btn.disabled=true;btn.textContent='눌러! 눌러!';
     txt.textContent='으랏차!! 밀어붙여!!';img.src='dokebi/exp_angry.png';
     drift=setInterval(function(){
@@ -842,6 +846,7 @@ var cineMode='face';
 /* mode: 'full'=전신컷만 계속 보여줌(오프닝용) · 'face'(기본)=표정컷을 동그란 창에 담아 매 대사마다 교체 */
 function playCinema(name,lines,onDone,mode){
   CINE_LINES=lines;cineIdx=0;cineDone=onDone;cineMode=mode||'face';
+  _cineLast=performance.now()+300;
   $('#cineName').textContent=name;
   $('#cinema').classList.add('on');
   cineStep();
@@ -857,7 +862,12 @@ function cineStep(){
   $('#cineText').textContent=l.text;
   $('#cineNext').textContent=(cineIdx===CINE_LINES.length-1)?'확인 ▶':'다음 ▶';
 }
+var _cineLast=0;
 $('#cinema').onclick=function(){
+  /* 연타 방지 — 대사 넘김은 400ms에 한 번만, 장면이 막 열린 직후 700ms는 무시 */
+  var now=performance.now();
+  if(now-_cineLast<400)return;
+  _cineLast=now;
   cineIdx++;
   if(cineIdx>=CINE_LINES.length){$('#cinema').classList.remove('on');var fn=cineDone;cineDone=null;if(fn)fn();return}
   cineStep();
