@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#0F1120">
-<title>TAMNA QUEST — 탐라, 여섯 신을 만나다</title>
+<title>도채비의 보물찾기 — 탐라문화제 × 메이커앤하비</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Song+Myung&display=swap">
-<link rel="stylesheet" href="app.css?v=6">
+<link rel="stylesheet" href="app.css?v=8">
 </head>
 <body>
 
@@ -36,111 +36,160 @@
   <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
   <symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M19 14v6H4V5h6"/></symbol>
+  <symbol id="i-clover" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12c-1-3-4-4.5-6-3s-1 4.5 2 5c-3 .5-4 3.5-2 5s5 .5 6-3c1 3.5 4 4.5 6 3s1-4.5-2-5c3-.5 4-3.5 2-5s-5-.5-6 3z"/><path d="M12 12v9"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v8h14v-8M12 8v12"/><path d="M12 8c-2-3-6-3-6-1s3 1 6 1zm0 0c2-3 6-3 6-1s-3 1-6 1z"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
   <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"/></symbol>
 </svg>
 
 <div id="app">
 
-  <!-- 헤더 (sticky 아님 — 콘텐츠와 함께 스크롤) -->
+  <!-- 헤더: 어느 화면에서든 복 포인트와 D-day가 보인다 -->
   <header class="app-header" id="hud">
     <div class="app-header__row">
-      <a class="app-header__brand" href="#" id="brandHome">TAMNA QUEST</a>
-      <button class="balance" id="balBtn" aria-label="복 포인트 잔액, 승선권 매표소로 이동">
-        <svg class="icon"><use href="#i-coin"/></svg><span id="goldN">0</span>
+      <button class="balance balance--luck" id="balBtn" aria-label="내 복 포인트">
+        <svg class="icon"><use href="#i-clover"/></svg><span id="goldN">0</span><small>복</small>
       </button>
-    </div>
-    <div class="app-header__sub">
-      <span>순례자 <b id="meName">-</b></span>
-      <span>과수원피스 <b id="ddayN">D-00</b></span>
-      <span>승선권 <b id="tkN">0</b>장</span>
+      <a class="app-header__brand" href="#" id="brandHome">도채비의 보물찾기</a>
+      <button class="dpill" id="ddayPill" aria-label="과수원피스까지 남은 날">
+        <span id="ddayN">D-00</span>
+      </button>
     </div>
   </header>
 
   <!-- ========== 인트로 / 등록 ========== -->
   <section class="screen on" id="s-intro">
     <div class="intro">
-      <div class="intro__brand">TAMNA QUEST</div>
-      <h1 class="intro__title">여섯 신을<br>만나다</h1>
+      <div class="intro__brand">DOCHAEBI'S TREASURE HUNT</div>
+      <h1 class="intro__title">도채비의<br>보물찾기</h1>
       <p class="intro__lead">
-        탐라의 오랜 이야기 속 <b>여섯 신</b>이 탐라문화제에 강림하셨습니다.
-        찾아 인사드리고 <b>도장</b>을 모으면, 10월 31일 <b>과수원피스</b>로 가는 <b>승선권</b>으로 바꿀 수 있습니다.
+        복을 모아라, 보물을 찾아라. 도채비와 함께 <b>복 포인트</b>를 모으면 10월 31일 과수원피스에서 열리는
+        <b>200,000원 상당 보물 추첨</b>의 <b>응모권</b>을 받을 수 있어요.
       </p>
       <div class="intro__form">
         <div class="field"><label for="inName">내 이름 (닉네임)</label>
           <input id="inName" placeholder="예) 감귤" maxlength="12" autocomplete="nickname"></div>
         <div class="field"><label for="inPhone">전화번호</label>
           <input id="inPhone" type="tel" inputmode="numeric" placeholder="010-0000-0000" maxlength="13" autocomplete="tel"></div>
-        <p class="caption">10월 31일 과수원피스 현장에서 같은 번호를 입력하면 여기서 모은 승선권이 그대로 이어집니다. 추첨 확인 외 다른 용도로 쓰지 않으며 행사 종료 후 삭제합니다.</p>
+        <p class="caption">10월 31일 과수원피스 현장에서 같은 번호를 입력하면 여기서 받은 응모권이 그대로 이어집니다. 추첨 확인 외 다른 용도로 쓰지 않으며 행사 종료 후 삭제합니다.</p>
       </div>
-      <button class="btn btn--primary btn--block" id="btnStart">순례 시작하기</button>
+      <button class="btn btn--primary btn--block" id="btnStart">복 모으기 시작</button>
     </div>
   </section>
 
-  <!-- ========== 신의 기록 (홈) ========== -->
-  <section class="screen" id="s-wanted">
-    <div class="hero">
-      <h1 class="hero__title">탐라의 여섯 신</h1>
-      <p class="hero__sub" id="heroSub">행사장 곳곳에 강림해 계십니다</p>
-      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" id="progWrap">
-        <div class="progress__bar"><i class="progress__fill" id="progFill"></i></div>
-        <div class="progress__count"><span id="progN">0</span><small>/ 6 발견</small></div>
-      </div>
+  <!-- ========== 홈 ========== -->
+  <section class="screen" id="s-home">
+    <p class="greet" id="greet">안녕!</p>
+
+    <div class="dok" id="homeDok">
+      <img class="dok__face" id="homeDokFace" src="dokebi/exp_smile.png" alt="도채비">
+      <div class="bubble"><div class="bubble__who">도채비의 한마디</div><div class="bubble__text" id="homeDokText">복 좀 모았어? 보물까지 얼마 안 남았는데?</div></div>
     </div>
-    <button class="btn btn--primary btn--block" id="btnScan" style="margin-top:20px">
-      <svg class="icon"><use href="#i-qr"/></svg>도장 QR 찍기
-    </button>
-    <div class="gods" id="crewGrid"></div>
+
+    <div class="treasure" id="treasureCard">
+      <div class="treasure__kicker" id="treasureKicker">10월 31일, 보물이 열린다!</div>
+      <div class="treasure__prize"><span id="prizeTxt">200,000원 상당</span></div>
+      <div class="treasure__label">보물 추첨</div>
+      <div class="treasure__meta"><span id="drawWhen"></span> · 과수원피스 현장</div>
+      <div class="treasure__dday" id="ddayBig">D-00</div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><svg class="icon"><use href="#i-clover"/></svg><div class="stat__label">내 복 포인트</div><div class="stat__num stat__num--luck" id="homeGold">0</div></div>
+      <div class="stat"><svg class="icon"><use href="#i-ticket"/></svg><div class="stat__label">내 보물 응모권</div><div class="stat__num" id="homeTk">0<small>장</small></div></div>
+    </div>
+
+    <div class="btnrow">
+      <button class="btn btn--primary" data-nav="collect"><svg class="icon"><use href="#i-clover"/></svg>복 모으기</button>
+      <button class="btn btn--secondary" data-nav="treasure"><svg class="icon"><use href="#i-gift"/></svg>보물 확인</button>
+    </div>
+  </section>
+
+  <!-- ========== 복 모으기 ========== -->
+  <section class="screen" id="s-collect">
+    <div class="hero">
+      <h1 class="hero__title">복 모으기</h1>
+      <p class="hero__sub">도채비와 함께 복을 모아보세요. 200복이 모이면 보물 응모권 1장.</p>
+    </div>
+
+    <div class="section" style="margin-top:24px">
+      <div class="section__head">
+        <h2 class="section__title">여섯 신께 인사</h2>
+        <span class="section__meta"><span id="progN">0</span> / 6</span>
+      </div>
+      <p class="section__lead" id="heroSub">행사장 곳곳에 강림해 계십니다. 만나 인사드리면 도장 QR과 복을 받아요.</p>
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" id="progWrap" style="margin-top:12px">
+        <div class="progress__bar"><i class="progress__fill" id="progFill"></i></div>
+      </div>
+      <button class="btn btn--primary btn--block" id="btnScan" style="margin-top:14px"><svg class="icon"><use href="#i-qr"/></svg>도장 QR 찍기</button>
+      <div class="gods" id="crewGrid"></div>
+    </div>
+
+    <div class="section">
+      <div class="section__head"><h2 class="section__title">인증하고 복 받기</h2></div>
+      <div class="quests" id="staffTodo"></div>
+    </div>
 
     <div class="section">
       <div class="section__head">
-        <h2 class="section__title">오늘의 순례</h2>
-        <span class="section__meta" id="todoMeta"></span>
+        <h2 class="section__title">놀이터</h2>
+        <span class="section__meta" id="decayTag">오늘 0회 · 지급률 100%</span>
       </div>
-      <div class="quests" id="todoList"></div>
-    </div>
-  </section>
-
-  <!-- ========== 놀이터 ========== -->
-  <section class="screen" id="s-game">
-    <div class="hero">
-      <h1 class="hero__title">탐라 놀이터</h1>
-      <p class="hero__sub">몇 번이든 도전할 수 있어요. 하루에 많이 할수록 복 포인트는 조금씩 줄어듭니다.</p>
-      <div style="margin-top:12px"><span class="chip" id="decayTag">오늘 0회 · 지급률 100%</span></div>
-    </div>
-    <div class="section" style="margin-top:20px">
       <div class="game">
-        <div>
-          <div class="game__title">황금귤 캐치</div>
-          <div class="game__desc">30초 동안 떨어지는 귤을 손가락으로 잘라 터뜨리세요. 큰 귤은 여러 번, 폭탄은 피할 것.</div>
-          <div class="game__best" id="best-catch">최고 0점</div>
-        </div>
+        <div><div class="game__title">황금귤 캐치</div><div class="game__desc">30초 동안 떨어지는 귤을 잘라 터뜨리세요. 폭탄은 피할 것.</div><div class="game__best" id="best-catch">최고 0점</div></div>
         <button class="btn btn--secondary btn--sm" data-game="catch">도전</button>
       </div>
       <div class="game">
-        <div>
-          <div class="game__title">영등할망의 바람</div>
-          <div class="game__desc">폰을 기울이거나 화면 좌우를 눌러 바위를 피하세요. 복떡을 먹으면 배가 진화하고 포격이 시작됩니다.</div>
-          <div class="game__best" id="best-sail">최고 0초</div>
-        </div>
+        <div><div class="game__title">영등할망의 바람</div><div class="game__desc">바위를 피하고 복떡을 먹으면 배가 진화하고 포격이 시작됩니다.</div><div class="game__best" id="best-sail">최고 0초</div></div>
         <button class="btn btn--secondary btn--sm" data-game="sail">도전</button>
       </div>
       <div class="game">
-        <div>
-          <div class="game__title">기억력 카드</div>
-          <div class="game__desc">12장 중 같은 그림 6쌍. 빠를수록 복 포인트가 큽니다.</div>
-          <div class="game__best" id="best-memo">최고 기록 없음</div>
-        </div>
+        <div><div class="game__title">기억력 카드</div><div class="game__desc">12장 중 같은 그림 6쌍. 빠를수록 복이 큽니다.</div><div class="game__best" id="best-memo">최고 기록 없음</div></div>
         <button class="btn btn--secondary btn--sm" data-game="memo">도전</button>
       </div>
+      <p class="caption" style="margin-top:12px">하루에 많이 할수록 지급률이 조금씩 줄어듭니다.</p>
     </div>
-    <p class="caption" style="margin-top:24px">여기 있는 건 맛보기입니다. 10월 31일 과수원피스에서는 미션 11종과 과수원 전체를 도는 GPS 보물찾기가 열립니다.</p>
+  </section>
+
+  <!-- ========== 보물창고 ========== -->
+  <section class="screen" id="s-treasure">
+    <div class="hero">
+      <h1 class="hero__title">보물창고</h1>
+      <p class="hero__sub">10월 31일, 과수원피스에서 보물이 열립니다.</p>
+    </div>
+
+    <div class="treasure treasure--big">
+      <div class="treasure__kicker">보물</div>
+      <div class="treasure__prize"><span id="prizeTxt2">200,000원 상당</span></div>
+      <div class="treasure__label">현장 추첨</div>
+      <div class="treasure__meta"><span id="drawWhen2"></span> · 과수원피스</div>
+      <div class="treasure__dday" id="ddayBig2">D-00</div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><svg class="icon"><use href="#i-clover"/></svg><div class="stat__label">내 복 포인트</div><div class="stat__num stat__num--luck" id="shopGold">0</div></div>
+      <div class="stat"><svg class="icon"><use href="#i-ticket"/></svg><div class="stat__label">보물 응모권</div><div class="stat__num" id="shopTk">0<small>장</small></div></div>
+    </div>
+
+    <button class="btn btn--primary btn--block" id="btnBuy">보물 응모권 받기 <span class="btn__cost" id="buyCost">200 복</span></button>
+    <p class="caption caption--center" id="shopNeed" style="margin-top:10px"></p>
+    <p class="caption caption--center" id="buyLimit">1인 최대 5장까지 받을 수 있습니다.</p>
+
+    <div class="section">
+      <div class="section__head"><h2 class="section__title" style="font-size:17px">내 응모권</h2></div>
+      <div id="tkList"></div>
+    </div>
+    <div class="note note--danger" style="margin-top:20px">
+      <b>추첨은 과수원피스 현장에서만 합니다.</b><br>
+      <span id="drawWhen3"></span>에 번호를 부릅니다. 그 자리에 없으면 바로 다시 뽑아요. 응모권을 꼭 챙겨 오세요.
+    </div>
   </section>
 
   <!-- ========== 4컷 ========== -->
   <section class="screen" id="s-photo">
     <div class="hero">
-      <h1 class="hero__title">4컷 포토</h1>
-      <p class="hero__sub">신들과 찍은 사진 4장을 넣으면 탐라문화제 공식 프레임으로 만들어 드립니다. 저장해서 SNS에 올리고 부스 스태프에게 보여주면 <b style="color:var(--color-accent-strong);font-weight:800">+300</b>.</p>
+      <h1 class="hero__title">탐라문화제 4컷</h1>
+      <p class="hero__sub">오늘의 탐라문화제를 사진으로 남겨보세요. 저장해서 SNS에 올리고 부스 스태프에게 보여주면 <b style="color:var(--color-accent-strong);font-weight:800">+300복</b>.</p>
     </div>
     <div class="slots" id="slots"></div>
     <p class="caption" style="margin-top:8px">사진을 넣은 뒤 칸 안에서 위아래로 끌면 보이는 위치를 맞출 수 있어요.</p>
@@ -154,81 +203,69 @@
       <div class="quests">
         <div class="quest">
           <svg class="icon"><use href="#i-message"/></svg>
-          <div><div class="quest__title">올린 화면을 부스 스태프에게 보여주세요</div><div class="quest__desc">하루 1회</div></div>
+          <div><div class="quest__title">올린 화면을 부스 스태프에게 보여주세요</div><div class="quest__desc">하루 1회 · +300복</div></div>
           <button class="btn btn--secondary btn--sm quest__action" id="btnSns">인증</button>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ========== 더보기 (승선권 · 부스 인증 · 안내 · 설정) ========== -->
-  <section class="screen" id="s-more">
-    <div class="section" id="sec-shop" style="margin-top:12px">
-      <h2 class="section__title">선착장 매표소</h2>
-      <p class="section__lead">모은 복 포인트로 승선권을 삽니다. 승선권은 10월 31일 과수원피스 경품 추첨에 쓰입니다.</p>
-      <div class="shop">
-        <div class="shop__label">보유 복 포인트</div>
-        <div class="shop__num" id="shopGold">0</div>
-        <div class="shop__need" id="shopNeed">승선권 1장까지 500 복 포인트</div>
-      </div>
-      <button class="btn btn--primary btn--block" id="btnBuy">승선권 1장 구매 (500 복 포인트)</button>
-      <p class="caption caption--center" id="buyLimit" style="margin-top:10px">1인 최대 5장</p>
-      <div class="section" style="margin-top:28px">
-        <div class="section__head"><h3 class="section__title" style="font-size:17px">보유 승선권</h3></div>
-        <div id="tkList"></div>
-      </div>
-      <div class="note note--danger" style="margin-top:20px">
-        <b>추첨은 과수원피스 현장에서만 합니다.</b><br>
-        <span id="drawWhen"></span>에 번호를 부릅니다. 그 자리에 없으면 바로 다시 뽑습니다. 승선권은 꼭 현장에서 쓰세요.
-      </div>
+  <!-- ========== 도채비 ========== -->
+  <section class="screen" id="s-dokebi">
+    <div class="dokstage">
+      <img class="dokstage__img" id="dokBig" src="dokebi/fullbody.png" alt="도채비">
+      <div class="bubble bubble--big"><div class="bubble__who">도채비</div><div class="bubble__text" id="dokBigText">뭐 궁금한 거 있어?</div></div>
     </div>
-
-    <div class="section" id="sec-staff">
-      <h2 class="section__title">부스 인증</h2>
-      <p class="section__lead">부스 스태프가 보여주는 코드로 인증하면 복 포인트를 드립니다.</p>
-      <div class="quests" id="staffTodo"></div>
+    <div class="chips" id="dokAsk">
+      <button class="chip chip--btn" data-ask="treasure">보물이 뭐야?</button>
+      <button class="chip chip--btn" data-ask="luck">복은 어떻게 모아?</button>
+      <button class="chip chip--btn" data-ask="where">과수원피스가 어디야?</button>
+      <button class="chip chip--btn" data-ask="who">넌 누구야?</button>
+      <button class="chip chip--btn" data-ask="random">아무 말이나 해줘</button>
     </div>
-
-    <div class="section" id="sec-info">
-      <h2 class="section__title">과수원피스 STAMPEDE</h2>
-      <div class="dday">
-        <div class="dday__label">2026.10.31 SAT</div>
-        <div class="dday__num" id="ddayBig">D-00</div>
-        <p class="dday__meta">금능석물원 · 10:00~16:00<br>입장 무료 · 항해 패스 6,000원</p>
+    <div class="section">
+      <div class="section__head"><h2 class="section__title" style="font-size:17px">과수원피스 STAMPEDE</h2></div>
+      <p class="section__lead">2026.10.31(토) 금능석물원 · 10:00~16:00 · 입장 무료 · 항해 패스 6,000원</p>
+      <div class="btnrow" style="margin-top:12px">
+        <a class="btn btn--secondary" id="lnkPre" target="_blank" rel="noopener">사전예매</a>
+        <a class="btn btn--secondary" id="lnkGuide" target="_blank" rel="noopener">행사 안내</a>
       </div>
-      <a class="btn btn--secondary btn--block" id="lnkPre" target="_blank" rel="noopener">사전예매 하러 가기 <svg class="icon"><use href="#i-external"/></svg></a>
-      <a class="btn btn--tertiary btn--block" id="lnkGuide" target="_blank" rel="noopener" style="margin-top:6px">행사 안내 보기</a>
-
-      <div class="rows" style="margin-top:20px">
-        <div class="row"><svg class="icon"><use href="#i-map"/></svg><div><div class="row__title">GPS 보물찾기</div><div class="row__desc">과수원 전체를 도는 「황금 귤을 찾아라」 · 13개 지점</div></div></div>
-        <div class="row"><svg class="icon"><use href="#i-target"/></svg><div><div class="row__title">미션 11종</div><div class="row__desc">양궁 · 사격 · 고리던지기 · 피규어 컬링…</div></div></div>
-        <div class="row"><svg class="icon"><use href="#i-store"/></svg><div><div class="row__title">서브컬처 마켓</div><div class="row__desc">피규어 · 2차창작 · 푸드 25팀</div></div></div>
-        <div class="row"><svg class="icon"><use href="#i-mic"/></svg><div><div class="row__title">무대</div><div class="row__desc">노래 · 댄스 · 퀴즈 대회, 실시간 투표</div></div></div>
-        <div class="row"><svg class="icon"><use href="#i-leaf"/></svg><div><div class="row__title">감귤 체험</div><div class="row__desc">패스 + 감귤체험 콤보 10,000원</div></div></div>
-      </div>
-      <p class="caption" style="margin-top:16px">여기서 신 6명과 미니게임 3종을 즐기셨다면, 과수원피스에선 과수원 전체가 게임판이 됩니다.</p>
+      <p class="section__lead" id="boothInfo" style="margin-top:14px"></p>
     </div>
-
-    <div class="section" id="sec-here">
-      <h2 class="section__title">지금 여기</h2>
-      <p class="section__lead" id="boothInfo"></p>
-    </div>
-
-    <div class="section" id="sec-settings">
+    <div class="section">
       <div class="divider"></div>
-      <button class="btn btn--tertiary btn--block" id="btnReset"><svg class="icon"><use href="#i-trash"/></svg>기록 초기화 (테스트용)</button>
-      <p class="caption caption--center" style="margin-top:8px;opacity:.6">프로토타입 v0.2 · 박서방 제주점</p>
+      <p class="caption">순례자 <b id="meName">-</b> · <span id="tkN">0</span>장 보유</p>
+      <button class="btn btn--tertiary btn--block" id="btnReset" style="margin-top:8px"><svg class="icon"><use href="#i-trash"/></svg>기록 초기화 (테스트용)</button>
+      <p class="caption caption--center" style="margin-top:8px;opacity:.6">프로토타입 v0.3 · 박서방 제주점</p>
     </div>
   </section>
 </div>
 
-<!-- 하단 내비게이션 (4탭) -->
-<nav id="tabs" class="nav" aria-label="주 메뉴"><div class="nav__in">
-  <button class="tab on" data-go="wanted"><svg class="icon"><use href="#i-home"/></svg>신의 기록</button>
-  <button class="tab" data-go="game"><svg class="icon"><use href="#i-game"/></svg>놀이터</button>
+<!-- 하단 내비게이션 (5탭) -->
+<nav id="tabs" class="nav" aria-label="주 메뉴"><div class="nav__in nav__in--5">
+  <button class="tab on" data-go="home"><svg class="icon"><use href="#i-home"/></svg>홈</button>
+  <button class="tab" data-go="collect"><svg class="icon"><use href="#i-clover"/></svg>복 모으기</button>
+  <button class="tab" data-go="treasure"><svg class="icon"><use href="#i-gift"/></svg>보물</button>
   <button class="tab" data-go="photo"><svg class="icon"><use href="#i-camera"/></svg>4컷</button>
-  <button class="tab" data-go="more"><svg class="icon"><use href="#i-more"/></svg>더보기</button>
+  <button class="tab" data-go="dokebi"><img class="tab__face" src="dokebi/exp_default.png" alt="">도채비</button>
 </div></nav>
+
+<!-- 도채비 팝업 말풍선 (랜덤 대화 · 보상 피드백) -->
+<div id="dokpop" class="dokpop" aria-live="polite">
+  <img class="dokpop__face" id="dokpopFace" src="dokebi/exp_smile.png" alt="">
+  <div class="dokpop__bubble"><div class="dokpop__text" id="dokpopText"></div><button class="dokpop__x" id="dokpopX" aria-label="닫기"><svg class="icon icon--sm"><use href="#i-close"/></svg></button></div>
+</div>
+
+<!-- 씨름 (온보딩) -->
+<div id="ssireum" class="ssireum">
+  <div class="ssireum__body">
+    <img class="ssireum__img" src="dokebi/exp_excited.png" alt="도채비">
+    <div class="bubble bubble--big"><div class="bubble__who">도채비</div><div class="bubble__text" id="ssText">복을 받으려면 먼저 나랑 씨름 한 판! 3초 동안 화면을 막 눌러!</div></div>
+    <div class="ssireum__meter"><i id="ssFill"></i></div>
+    <button class="btn btn--primary btn--block" id="ssBtn">으랏차!</button>
+  </div>
+</div>
+
 
 <!-- 바텀시트 -->
 <div id="modal" role="dialog" aria-modal="true"><div class="sheet" id="sheet"></div></div>
@@ -267,7 +304,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="config.js?v=gods1"></script>
+<script src="config.js?v=treasure1"></script>
 <script src="live.js"></script>
 <script>
 (function(){
@@ -381,20 +418,24 @@ function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');
   clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('on')},2100)}
 
 /* ---------------- 화면 전환 ---------------- */
-function go(id,anchor){
-  if(id==='shop'){anchor=anchor||'sec-shop';id='more'}
-  if(id==='info'){anchor=anchor||'sec-info';id='more'}
+var GO_ALIAS={wanted:'collect',game:'collect',shop:'treasure',more:'treasure',info:'dokebi'};
+function go(id){
+  id=GO_ALIAS[id]||id;
+  if(!$('#s-'+id))id='home';
   $$('.screen').forEach(function(s){s.classList.remove('on')});
   $('#s-'+id).classList.add('on');
   $$('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.go===id)});
-  if(id==='game')paintGame();
-  if(id==='more')paintShop();
-  if(anchor&&$('#'+anchor)){$('#'+anchor).scrollIntoView({block:'start'});}
-  else window.scrollTo(0,0);
+  if(id==='collect')paintGame();
+  if(id==='treasure'||id==='home')paintShop();
+  if(id==='dokebi')dokScreen();
+  window.scrollTo(0,0);
+  if(id!=='dokebi')maybeDokPop();
 }
 $$('.tab').forEach(function(t){t.onclick=function(){go(t.dataset.go)}});
-$('#balBtn').onclick=function(){go('shop')};
-$('#brandHome').onclick=function(e){e.preventDefault();go('wanted')};
+$$('[data-nav]').forEach(function(b){b.onclick=function(){go(b.dataset.nav)}});
+$('#balBtn').onclick=function(){go('collect')};
+$('#ddayPill').onclick=function(){go('treasure')};
+$('#brandHome').onclick=function(e){e.preventDefault();go('home')};
 
 /* ---------------- 등록 ---------------- */
 $('#inPhone').addEventListener('input',function(e){
@@ -411,7 +452,9 @@ $('#btnStart').onclick=function(){
 };
 function enter(){
   $('#hud').classList.add('on');$('#tabs').classList.add('on');
-  checkAttend();paint();go('wanted');
+  checkAttend();paint();go('home');
+  if(!S.flags.treasureIntro){S.flags.treasureIntro=1;save();
+    setTimeout(function(){playCinema('도채비',TREASURE_LINES,null,'face')},400);}
   refreshLive();refreshPlayerPos();
   var everyMs=(C.liveLocation&&C.liveLocation.playerRefreshMs)||25000;
   setInterval(refreshLive,everyMs);
@@ -445,15 +488,33 @@ function setNum(el,target){
 }
 function paint(){
   setNum($('#goldN'),S.gold);
+  setNum($('#homeGold'),S.gold);
   $('#meName').textContent=S.name;
   $('#tkN').textContent=S.tickets.length;
-  var days=dday();
-  $('#ddayN').textContent='D-'+days;
-  $('#ddayBig').textContent='D-'+days;
-  $('#drawWhen').textContent=C.drawTime;
+  $('#homeTk').innerHTML=S.tickets.length+'<small>장</small>';
+  $('#greet').textContent='안녕, '+(S.name||'순례자')+'!';
+  var days=dday(), dtxt=days===0?'D-DAY':'D-'+days;
+  $('#ddayN').textContent=dtxt;$('#ddayBig').textContent=dtxt;$('#ddayBig2').textContent=dtxt;
+  $$('#drawWhen,#drawWhen2,#drawWhen3').forEach(function(e){e.textContent=C.drawTime});
+  $$('#prizeTxt,#prizeTxt2').forEach(function(e){e.textContent=C.ticket.prize||'200,000원 상당'});
   $('#lnkPre').href=C.preorderUrl;$('#lnkGuide').href=C.guideUrl;
-  $('#boothInfo').innerHTML=C.boothName+'<br>'+C.festivalName+' '+C.festivalDates+'<br>'+C.boothWhere;
-  paintCrew();paintTodo();paintShop();paintStaff();
+  $('#boothInfo').innerHTML='지금 여기 · '+C.boothName+'<br>'+C.festivalName+' '+C.festivalDates+'<br>'+C.boothWhere;
+  /* 홈 도채비 한마디 — 날짜(D-day)에 맞춰 바뀐다 */
+  var hd=homeDokLine(days);
+  $('#homeDokText').textContent=hd.text;$('#homeDokFace').src='dokebi/exp_'+hd.face+'.png';
+  $('#treasureKicker').textContent=days===0?'오늘이 보물 찾는 날! 과수원피스에서 만나요':'10월 31일, 보물이 열린다!';
+  $('#homeDok').classList.toggle('dok--day',days===0);
+  paintCrew();paintShop();paintStaff();
+}
+function homeDokLine(days){
+  var n=S.tickets.length, g=S.gold;
+  if(days===0)return {text:'드디어 왔구나!! 오늘 진짜 보물 뽑는다! 응모권 잘 챙겼지?',face:'excited'};
+  if(days===1)return {text:'내일이다. 진짜 내일 과수원피스에서 보물 뽑는다. 응모권 꼭 챙겨와!',face:'surprise'};
+  if(days<=7)return {text:'D-'+days+'! 일주일밖에 안 남았어! 응모권 챙겼지?!',face:'surprise'};
+  if(n===0&&g>=C.ticket.cost)return {text:'복이 '+g+'이나 있는데 응모권이 아직 0장? 얼른 보물창고 가봐!',face:'smirk'};
+  if(n===0)return {text:'복 좀 모았어? 보물까지 얼마 안 남았는데?',face:'smile'};
+  if(n>=C.ticket.max)return {text:'응모권 '+n+'장, 꽉 채웠네! 10월 31일에 꼭 와야 돼.',face:'laugh'};
+  return {text:'응모권 '+n+'장이면 시작은 좋아. 복 더 모아서 한 장 더 어때?',face:'wink'};
 }
 function dday(){
   var t=new Date(C.mainEventDate)-new Date();
@@ -529,6 +590,7 @@ function crewInfo(c){
     '<button class="btn btn--secondary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\');">닫기</button>');
 }
 function paintTodo(){
+  if(!$('#todoList'))return;
   var t=d(), tc=todayCrew(), n=Object.keys(S.crew).length;
   var items=[
     {ic:'home',t:'여섯 신께 인사드리기',s:n+' / 6'+(tc?' · 오늘의 신은 '+C.gold.todayMultiplier+'배':''),g:'+'+C.gold.crew,done:n>=6},
@@ -562,28 +624,40 @@ function paintStaff(){
   $$('[data-staff]').forEach(function(b){b.onclick=function(){openScan(b.dataset.staff)}});
 }
 function paintShop(){
-  $('#shopGold').textContent=S.gold.toLocaleString();
-  var left=Math.max(0,C.ticket.cost-(S.gold%C.ticket.cost));
-  $('#shopNeed').textContent=S.gold>=C.ticket.cost?'지금 바로 구매할 수 있습니다':'승선권 1장까지 '+left+' 복 포인트';
+  setNum($('#shopGold'),S.gold);
+  $('#shopTk').innerHTML=S.tickets.length+'<small>장</small>';
+  var need=C.ticket.cost-S.gold;
   var full=S.tickets.length>=C.ticket.max;
-  $('#btnBuy').disabled=(S.gold<C.ticket.cost)||full;
-  $('#btnBuy').textContent=full?'보유 한도 도달':'승선권 1장 구매 ('+C.ticket.cost+' 복 포인트)';
-  $('#buyLimit').textContent='1인 최대 '+C.ticket.max+'장 · 현재 '+S.tickets.length+'장';
+  $('#shopNeed').textContent=full?'응모권을 모두 받았어요. 10월 31일에 꼭 오세요.':(S.gold>=C.ticket.cost?'지금 바로 받을 수 있어요':'응모권까지 '+need+'복 더 모으면 돼요');
+  $('#btnBuy').disabled=full;
+  $('#btnBuy').innerHTML=full?'응모권 '+C.ticket.max+'장 모두 받음':'보물 응모권 받기 <span class="btn__cost">'+C.ticket.cost+' 복</span>';
+  $('#buyLimit').textContent='1인 최대 '+C.ticket.max+'장까지 받을 수 있습니다 · 현재 '+S.tickets.length+'장';
   $('#tkList').innerHTML=S.tickets.length?S.tickets.map(function(t,i){
-    return '<div class="ticket"><b>승선권 #'+String(i+1).padStart(2,'0')+'</b><span>'+t+'</span></div>';
-  }).join(''):'<p class="caption">아직 승선권이 없습니다. 복 포인트를 모아 보세요.</p>';
+    return '<div class="ticket"><b>보물 응모권 #'+String(i+1).padStart(2,'0')+'</b><span>'+t+'</span></div>';
+  }).join(''):'<p class="caption">아직 응모권이 없어요. 복 200을 모으면 한 장 받을 수 있어요.</p>';
+}
+function dokSheetHtml(face,text){
+  return '<div class="dok" style="margin-top:6px"><img class="dok__face" src="dokebi/exp_'+face+'.png" alt="도채비">'+
+    '<div class="bubble"><div class="bubble__who">도채비</div><div class="bubble__text">'+text+'</div></div></div>';
 }
 $('#btnBuy').onclick=function(){
-  if(S.gold<C.ticket.cost||S.tickets.length>=C.ticket.max)return;
+  if(S.tickets.length>=C.ticket.max)return;
+  if(S.gold<C.ticket.cost){
+    sheet(dokSheetHtml('pout','잠깐! 복이 조금 부족한데?<br>'+C.ticket.cost+' 복을 모아오면 응모권을 줄게!<br>얼른 복 모으러 가자.')+
+      '<button class="btn btn--primary btn--block" id="goCollect">복 모으러 가기</button>'+
+      '<button class="btn btn--tertiary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">나중에</button>');
+    $('#goCollect').onclick=function(){closeModal();go('collect')};
+    return;
+  }
   S.gold-=C.ticket.cost;
   var code=(S.phone.replace(/\D/g,'').slice(-4))+'-'+Date.now().toString(36).toUpperCase().slice(-5);
   S.tickets.push(code);save();paint();
-  sheet('<h3>승선권 획득</h3><p>과수원피스로 가는 배에 자리를 잡았습니다.</p>'+
-    '<div class="ticket" style="margin-top:16px"><b>승선권 #'+String(S.tickets.length).padStart(2,'0')+
-    '</b><span>'+code+'</span></div>'+
-    '<div class="note note--danger" style="margin-top:12px"><b>추첨은 '+C.drawTime+' 과수원피스 현장에서</b><br>'+
-    '그 자리에 없으면 바로 다시 뽑습니다. 꼭 오세요.</div>'+
-    '<button class="btn btn--primary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">알겠습니다</button>');
+  sheet(dokSheetHtml('excited','오오! 진짜 보물에 도전하는구나?<br>응모권 하나 챙겨놨어!')+
+    '<div class="stats" style="margin-top:14px"><div class="stat"><div class="stat__label">복 포인트</div><div class="stat__num" style="color:var(--color-danger)">−'+C.ticket.cost+'</div></div>'+
+    '<div class="stat"><div class="stat__label">보물 응모권</div><div class="stat__num" style="color:var(--color-luck)">+1</div></div></div>'+
+    '<div class="ticket" style="margin-top:14px"><b>보물 응모권 #'+String(S.tickets.length).padStart(2,'0')+'</b><span>'+code+'</span></div>'+
+    '<p class="caption" style="margin-top:12px">추첨은 '+C.drawTime+' 과수원피스 현장에서. 그 자리에 없으면 바로 다시 뽑아요.</p>'+
+    '<button class="btn btn--primary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">알겠어!</button>');
 };
 
 /* ---------------- 코드 스캔 ---------------- */
@@ -609,10 +683,14 @@ function redeem(code,kind){
   if(!code){toast('코드를 입력해 주세요');return}
   if(kind){
     if(code!==C.staffCodes[kind].toUpperCase()){toast('코드가 맞지 않습니다');return}
-    if(kind==='sns'){ if(d().sns){toast('오늘은 이미 인증했습니다');return} d().sns=1;addGold(C.gold.sns,'SNS 인증'); }
-    if(kind==='purchase'){ if(d().buy){toast('오늘은 이미 인증했습니다');return} d().buy=1;addGold(C.gold.purchase,'구매 인증'); }
-    if(kind==='preorder'){ if(S.flags.pre){toast('이미 인증했습니다');return} S.flags.pre=1;addGold(C.gold.preorder,'사전예매'); }
-    closeModal();return;
+    var got=0;
+    if(kind==='sns'){ if(d().sns){toast('오늘은 이미 인증했습니다');return} d().sns=1;got=C.gold.sns;addGold(got,'SNS 인증'); }
+    if(kind==='purchase'){ if(d().buy){toast('오늘은 이미 인증했습니다');return} d().buy=1;got=C.gold.purchase;addGold(got,'구매 인증'); }
+    if(kind==='preorder'){ if(S.flags.pre){toast('이미 인증했습니다');return} S.flags.pre=1;got=C.gold.preorder;addGold(got,'사전예매'); }
+    closeModal();
+    var left=C.ticket.cost-(S.gold%C.ticket.cost);
+    setTimeout(function(){dokPop('오~ 잘했는데? 복 +'+got+'!\n'+(S.gold>=C.ticket.cost?'응모권 받을 수 있어. 보물창고로 가봐!':'응모권까지 '+left+'복 남았어!'),'laugh')},500);
+    return;
   }
   var hit=null;
   C.crew.forEach(function(c){if(c.code.toUpperCase()===code)hit=c});
@@ -656,14 +734,99 @@ var CINE_LINES=null, cineIdx=0, cineDone=null;
 /* 오프닝 — 등록 화면 뜨기 전, 처음 한 번만 재생. 진행자는 도채비. */
 /* 오프닝은 표정 전환 없이 전신컷 하나로만 진행(사장님 지정) */
 var OPENING_LINES=[
-  {img:'dokebi/fullbody.png', text:'어이, 거기! 나는 도채비야.'},
-  {img:'dokebi/fullbody.png', text:'탐라문화제에 여섯 신이 전부 강림해 있어.'},
-  {img:'dokebi/fullbody.png', text:'설문대할망, 소별왕, 영등할망, 자청비, 가문장아기… 그리고 나까지 여섯.'},
-  {img:'dokebi/fullbody.png', text:'인사만 드려도 도장을 줘. 다 모으면 좋은 일이 생겨.'},
-  {img:'dokebi/fullbody.png', text:'도장은 잘 모아둬. 10월 31일에 쓸모가 있을 거야.'},
-  {img:'dokebi/fullbody.png', text:'어디냐고? 「과수원피스」야. 직접 와서 확인해봐.'},
-  {img:'dokebi/fullbody.png', text:'이름부터 알려줘. 놀아보자!'}
+  {img:'dokebi/fullbody.png', text:'안녕! 나는 도채비야.'},
+  {img:'dokebi/fullbody.png', text:'탐라문화제에 여섯 신이 전부 강림해 있어. 나까지 여섯.'},
+  {img:'dokebi/fullbody.png', text:'근데 그냥 복을 줄 수는 없지. 나랑 씨름 한 판 하자!'}
 ];
+/* 등록 직후 한 번 — 보물 이야기 */
+var TREASURE_LINES=[
+  {img:'dokebi/exp_surprise.png', text:'들었어? 10월 31일에 엄청난 보물이 나온대!'},
+  {img:'dokebi/exp_excited.png', text:'200,000원 상당 보물이야. 과수원피스 현장에서 뽑아.'},
+  {img:'dokebi/exp_think.png', text:'뽑기에 참가하려면 보물 응모권이 필요한데…'},
+  {img:'dokebi/exp_smile.png', text:'복 포인트를 200 모으면 응모권 한 장! 최대 다섯 장까지.'},
+  {img:'dokebi/exp_wink.png', text:'복은 신들께 인사하고, 사진 올리고, 놀이터에서 놀면 모여. 시작해볼까?'}
+];
+/* ---- 씨름: 3초 동안 마구 누르기. 결과는 늘 도채비 승(개그) ---- */
+function startSsireum(onDone){
+  var el=$('#ssireum'), fill=$('#ssFill'), txt=$('#ssText'), btn=$('#ssBtn'), img=el.querySelector('.ssireum__img');
+  var p=50, running=false, t0=0, timer=null, drift=null;
+  el.classList.add('on');
+  function hit(){
+    if(!running)return;
+    p=Math.min(92,p+4);fill.style.width=p+'%';
+    img.classList.add('shake');setTimeout(function(){img.classList.remove('shake')},80);
+    beep(300+p*3,0.04,'square',0.05);
+  }
+  function finish(){
+    running=false;clearInterval(drift);
+    fill.style.transition='width 500ms ease';fill.style.width='18%';
+    txt.textContent='으랏차! 내가 이겼네! 그래도 열심히 했으니까 복은 줄게. 이름부터 알려줘!';
+    img.src='dokebi/exp_cry_laugh.png';
+    btn.textContent='좋아, 알려줄게';btn.disabled=false;
+    btn.onclick=function(){el.classList.remove('on');onDone&&onDone()};
+  }
+  btn.onclick=function(){
+    running=true;t0=performance.now();btn.disabled=true;btn.textContent='눌러! 눌러!';
+    txt.textContent='으랏차!! 밀어붙여!!';img.src='dokebi/exp_angry.png';
+    drift=setInterval(function(){
+      p=Math.max(8,p-3);fill.style.width=p+'%';
+      if(performance.now()-t0>3000)finish();
+    },120);
+  };
+  el.addEventListener('pointerdown',function(e){ if(e.target!==btn)hit() });
+}
+/* ---- 도채비 팝업 말풍선 ---- */
+var _popT=null;
+function dokPop(text,face,ms){
+  var el=$('#dokpop');$('#dokpopText').textContent=text;$('#dokpopFace').src='dokebi/exp_'+(face||'smile')+'.png';
+  el.classList.add('on');clearTimeout(_popT);_popT=setTimeout(function(){el.classList.remove('on')},ms||5200);
+}
+$('#dokpopX').onclick=function(){$('#dokpop').classList.remove('on')};
+$('#dokpop').onclick=function(e){ if(e.target.closest('.dokpop__x'))return; $('#dokpop').classList.remove('on') };
+/* 앱은 탐라문화제 기간(10/17~21, D-14~D-10)에만 열어두므로 대사도 "지금 행사장에 있는 사람" 기준으로 쓴다 */
+var DOK_RANDOM=[
+  {t:'너 복 꽤 많이 모았네? 혹시 보물 욕심 있는 거 아니야?',f:'smirk',when:function(){return S.gold>=300}},
+  {t:function(){var n=6-Object.keys(S.crew).length;return '여섯 신이 지금 행사장 어딘가에 계셔. 아직 못 만난 신이 '+n+'분!'},f:'surprise',when:function(){return Object.keys(S.crew).length<6}},
+  {t:'응모권 몇 장이야? 설마 아직 0장?',f:'surprise',when:function(){return S.tickets.length===0&&S.gold>=C.ticket.cost}},
+  {t:'나 사실 보물이 뭔지 알아. … 근데 안 알려줄 거야.',f:'wink'},
+  {t:function(){return '10월 31일이 딱 '+dday()+'일 뒤야. 과수원피스에서 보물 뽑는 날!'},f:'excited'},
+  {t:'4컷 찍었어? SNS에 올리고 부스에 보여주면 복 300이야.',f:'smile',when:function(){return !d().sns}},
+  {t:'놀이터에서 귤 좀 잘라봐. 복이 은근 쏠쏠해.',f:'laugh'},
+  {t:'탐라문화제 재밌지? 나도 이런 날엔 신난다.',f:'excited'},
+  {t:'복은 많이 모을수록 좋은 거야. 응모권 다섯 장까지 받을 수 있어.',f:'smile',when:function(){return S.tickets.length<C.ticket.max}}
+];
+function pickDok(){
+  var pool=DOK_RANDOM.filter(function(l){return !l.when||l.when()});
+  var l=pool[Math.floor(Math.random()*pool.length)];
+  return {t:typeof l.t==='function'?l.t():l.t,f:l.f};
+}
+function maybeDokPop(){
+  var t=d();t.dok=t.dok||0;
+  if(t.dok>=3||Math.random()>0.28)return;
+  var line=pickDok();
+  t.dok++;save();
+  setTimeout(function(){dokPop(line.t,line.f)},350);
+}
+/* ---- 도채비 화면 ---- */
+var DOK_ASK={
+  treasure:{t:'10월 31일 과수원피스에서 뽑는 200,000원 상당 보물! 뭔지는… 비밀이야.',f:'wink'},
+  luck:{t:'여섯 신께 인사(도장 QR), 4컷 만들어 SNS 올리기, 부스 인증, 놀이터 게임! 200복이면 응모권 한 장.',f:'smile'},
+  where:{t:'제주 금능석물원! 10월 31일 10시부터 4시까지. 입장은 무료, 항해 패스는 6,000원.',f:'excited'},
+  who:{t:'뿔 달리고 이빨 뾰족한 거 상상했지? 그건 오니야. 난 도깨비라고. 사람이랑 똑같이 생겼어.',f:'pout'}
+};
+function dokScreen(){
+  var n=S.tickets.length;
+  $('#dokBigText').textContent=n?'응모권 '+n+'장! 뭐 더 궁금한 거 있어?':'뭐 궁금한 거 있어? 아래에서 골라봐.';
+}
+$$('#dokAsk [data-ask]').forEach(function(b){
+  b.onclick=function(){
+    var k=b.dataset.ask, line;
+    if(k==='random'){line=pickDok();}
+    else line=DOK_ASK[k];
+    $('#dokBigText').textContent=line.t;
+    $('#dokBig').src='dokebi/exp_'+line.f+'.png';$('#dokBig').style.maxHeight='240px';
+  };
+});
 /* 표정이 대사마다 매번 바뀌면 산만하다는 피드백(2026-09-14) 반영 —
    감정이 실제로 바뀌는 지점에서만 표정을 바꾼다(7줄에 4번만 전환). */
 var DOKEBI_LINES=[
@@ -1370,10 +1533,12 @@ function buildFrame(){
   x.drawImage(posterImg,0,0,1080,1350,-pw/2,-ph/2,pw,ph);x.restore();
   /* 하단 캡션 */
   var n=Object.keys(S.crew).length;
-  x.fillStyle='rgba(242,240,234,.8)';x.font='600 22px SCDream, sans-serif';
-  x.fillText('2026. 10. 17 – 21  ·  제주 시민복지타운광장', cx, H-118);
-  x.fillStyle='rgba(245,179,49,.9)';x.font='800 22px SCDream, sans-serif';
-  x.fillText('여섯 신 중 '+n+'분과 인사  ·  '+(S.name||'순례자'), cx, H-80);
+  x.fillStyle='#F6F1E6';x.font='800 24px SCDream, sans-serif';
+  x.fillText('제65회 탐라문화제', cx, H-136);
+  x.fillStyle='rgba(242,240,234,.7)';x.font='600 16px SCDream, sans-serif';
+  x.fillText('2 0 2 6   J E J U   T A M N A   F E S T I V A L', cx, H-106);
+  x.fillStyle='rgba(245,179,49,.9)';x.font='600 17px SCDream, sans-serif';
+  x.fillText('#제65회탐라문화제  #제주', cx, H-72);
   return c.toDataURL('image/jpeg',.92);
 }
 $('#btnMake').onclick=function(){
@@ -1400,7 +1565,9 @@ $('#btnReset').onclick=function(){
 /* ---------------- 부팅 ---------------- */
 if(S.name){$('#s-intro').classList.remove('on');enter();}
 else if(!S.flags.introSeen){
-  playCinema('도채비',OPENING_LINES,function(){S.flags.introSeen=1;save()},'full');
+  playCinema('도채비',OPENING_LINES,function(){
+    startSsireum(function(){S.flags.introSeen=1;save()});
+  },'full');
 }
 })();
 </script>
