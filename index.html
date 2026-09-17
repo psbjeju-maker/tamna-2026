@@ -1290,7 +1290,7 @@ function gSail(){
   var spawn=900,foodSpawn=2600,alive=true;
   var lvl=0,evoProgress=0,evoFlashUntil=0,haloSpin=0,fireTimer=0,kills=0;
   var flashes=[],fx=[],bgParticles=[];
-  var hearts=2,invulnUntil=0;
+  var maxHearts=2,hearts=2,invulnUntil=0;
   var justCount=0;
   var justCooldownUntil=0,justComboN=0,justComboLast=-99;
   var breakComboN=0,breakComboLast=-99;
@@ -1299,32 +1299,82 @@ function gSail(){
   var bigText=null; /* {a,b,until,from,kind} 화면 중앙 큰 텍스트/배너 연출 */
   var slowmoUntil=0,pauseUntil=0;
 
-  /* 조작: 탭/드래그 둘 다 "그 지점으로 배를 이동"으로 통일 — 반응이 즉각적이어야 하므로 */
-  var dragging=false, dragX=px;
-  function setDragFromEvent(e){
-    var r=cv.getBoundingClientRect();
-    var x=(e.clientX-r.left)*(W/r.width);
-    dragX=Math.max(50,Math.min(W-50,x));
+  function pickRandom(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  var GUST_LINES=['이짝저짝 요망지게 댕기멍 보름 탐져이!','이번엔 좀 세게 불어볼거여!'];
+  var HIT_LINES=['아이고게, 정신 촐리라게!','아이고 놀란 것 좀 보라!'];
+  var END_LINES=['제라하게 보름 탈 줄 알암쪄이','오늘은 여기까지 하게마씨'];
+
+  /* ---- 업그레이드 — 뱀서라이크처럼 시간마다 3장 중 하나를 직접 탭해서 고른다 ----
+     기존 "1초 안에 배를 조종해 통로로 들어가기"는 뭘 고르는 건지 알기 어렵다는
+     피드백을 받아, 카드 3장을 눈으로 보고 직접 눌러 고르는 방식으로 바꿨다. */
+  var upg={fire:0,spread:0,heart:0,just:0,bok:0,speed:0};
+  var UPGRADES={
+    fire:  {emoji:'💥', title:'포격 강화', desc:'연사 속도가 빨라진다'},
+    spread:{emoji:'🎯', title:'다연장 확장', desc:'포탄이 하나 더 나간다'},
+    heart: {emoji:'❤️', title:'바람의 가호', desc:'최대 체력이 늘고 즉시 회복'},
+    just:  {emoji:'✨', title:'회피의 감', desc:'회피(JUST) 판정이 후해진다'},
+    bok:   {emoji:'🍊', title:'복바람', desc:'복을 더 많이 받는다'},
+    speed: {emoji:'🌀', title:'급류 조타', desc:'조작이 더 즉각적으로 반응한다'}
+  };
+  var UPG_KEYS=Object.keys(UPGRADES);
+  function applyUpgrade(key){
+    upg[key]++;
+    if(key==='heart'){ maxHearts++; hearts=Math.min(maxHearts,hearts+1); }
+    toast(UPGRADES[key].emoji+' '+UPGRADES[key].title+'!');
+    sfx('bonus',0.6);
   }
-  cv.onpointerdown=function(e){dragging=true;setDragFromEvent(e)};
-  cv.onpointermove=function(e){if(dragging)setDragFromEvent(e)};
+  function shuffle(a){ for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;} return a; }
+
+  var pick={open:false,options:[],until:0};
+  var pickRound=0, nextPickAt=10;
+  var PICK_TITLES=['바람이 하나를 골라달라 한다','요망진 걸로 골라보라이','무사 하나만 고르라!'];
+  var pickTitle='';
+  function openPick(el){
+    pick.options=shuffle(UPG_KEYS.slice()).slice(0,3);
+    pick.open=true; pick.until=el+8;
+    pickTitle=pickRandom(PICK_TITLES);
+    sfx('evolve',0.5);
+  }
+  function closePick(key,el){
+    pick.open=false;
+    applyUpgrade(key);
+    pickRound++;
+    nextPickAt=el+Math.min(26,14+pickRound*2);
+  }
+
+  /* 조작: 탭/드래그 둘 다 "그 지점으로 배를 이동"으로 통일 — 반응이 즉각적이어야 하므로.
+     단, 선택 카드가 떠 있을 때는 탭 좌표로 카드를 고르는 용도로 쓴다. */
+  var dragging=false, dragX=px;
+  function evX(e){ var r=cv.getBoundingClientRect(); return (e.clientX-r.left)*(W/r.width); }
+  cv.onpointerdown=function(e){
+    var x=evX(e);
+    if(pick.open){
+      var idx=Math.min(2,Math.max(0,Math.floor(x/(W/3))));
+      closePick(pick.options[idx], (performance.now()-t0)/1000);
+      return;
+    }
+    dragging=true; dragX=Math.max(50,Math.min(W-50,x));
+  };
+  cv.onpointermove=function(e){ if(dragging) dragX=Math.max(50,Math.min(W-50,evX(e))); };
   cv.onpointerup=function(){dragging=false};
   cv.onpointercancel=function(){dragging=false};
 
-  /* ---- 페이즈 트리거(한 번만) ---- */
+  /* ---- 페이즈 트리거 ---- */
   var tutorialDone=false;
-  var windEvt={state:'idle',chooseUntil:0,resolveUntil:0,lane:-1}; /* idle→cutin→choose→resolve→done */
-  var gustEvt={state:'idle',until:0,dir:1,cutinUntil:0};
-  var stopSpawning=false;
+  var gustEvt={state:'idle',until:0,dir:1,nextAt:18};
   var finaleUntil=0,inFinale=false,finaleKills=0;
   var awakened=false;
-  var ending=false,endingT0=0;
-  var forcedCatchupDone=false;
+  var ending=false,endingT0=0,softCapDone=false;
 
   function showCutin(text,dur){ cutin.text=text; cutin.from=performance.now(); cutin.until=cutin.from+dur; }
   function showBig(a,b,dur,kind){ bigText={a:a,b:b,from:performance.now(),until:performance.now()+dur,kind:kind}; }
   function shake(v){ cam.shake=Math.max(cam.shake,v); }
   function zoomTo(v){ cam.zoomTo=v; }
+  function triggerEnding(el){
+    if(ending) return;
+    ending=true; endingT0=el;
+    showCutin(pickRandom(END_LINES),2000);
+  }
 
   function explodeRock(x,y,r,big){
     flashes.push({x:x,y:y,t:0,r0:r*0.3,r1:r*(big?2.3:1.8)});
@@ -1333,7 +1383,7 @@ function gSail(){
       fx.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,l:1,c:i%2?'#4FC3A1':'#F2F0EA',sz:3+Math.random()*3});}
   }
 
-  /* 진화 게이지 증가 + 단계 상승 처리 — 먹거리/JUST/바람길/돌풍 등 여러 곳에서 호출 */
+  /* 진화 게이지 증가 + 단계 상승 처리 — 먹거리/JUST/돌풍 등 여러 곳에서 호출 */
   function gainEvo(n,el){
     if(lvl>=SHIP_TIERS.length-1) return;
     evoProgress+=n;
@@ -1344,8 +1394,6 @@ function gSail(){
     }
   }
   function evolveTo(newLvl,el){
-    /* 바람길 통로가 떠 있는 도중 진화가 겹치면 화면이 지저분해지므로 즉시 정리 */
-    if(windEvt.state==='choose'||windEvt.state==='resolve') windEvt.state='done';
     lvl=newLvl;
     var T=SHIP_TIERS[lvl];
     evoFlashUntil=el+1.4;
@@ -1356,13 +1404,14 @@ function gSail(){
       toast('⚓ '+T.name+'(으)로 진화! '+(T.missiles>0?'자동 포격 시작':''));
       setTimeout(function(){zoomTo(1)},420);
     } else {
-      /* 최종 각성 — 용선(龍船) */
+      /* 최종 각성 — 용선(龍船). 각성 후에도 게임은 끝나지 않고 무쌍 구간만 지나면
+         그대로 용선으로 계속 플레이한다(죽어야 끝나게 해달라는 요청 반영) */
       awakened=true;
       pauseUntil=el+0.5; zoomTo(1.3); shake(14);
       sfx('fanfare',0.85);
       showBig('영등의 바람이 깃들었다','용선(龍船) 각성',2200,'awaken');
       toast('🐉 용선 각성! 무쌍이 시작됩니다');
-      finaleUntil=el+0.5+5.0; inFinale=true; stopSpawning=false;
+      finaleUntil=el+0.5+5.0; inFinale=true;
       setTimeout(function(){zoomTo(1.08)},700);
     }
   }
@@ -1379,11 +1428,12 @@ function gSail(){
     var sdt=dt*dtScale;
     var frameK=sdt/16.67;
 
-    /* ---- 조작 입력 ---- */
-    if(dragging) px += (dragX-px)*Math.min(1,0.30*frameK);
-    else if(Math.abs(tiltX)>0.02) px += tiltX*9*frameK;
-    /* 돌풍 이벤트: 한쪽으로 지속적인 힘 */
-    if(gustEvt.state==='blow' && el<gustEvt.until){ px += gustEvt.dir*3.1*frameK; }
+    /* ---- 조작 입력 ---- (선택 카드가 떠 있을 땐 배가 움직이지 않는다) */
+    if(!pick.open){
+      if(dragging) px += (dragX-px)*Math.min(1,(0.30+upg.speed*0.05)*frameK);
+      else if(Math.abs(tiltX)>0.02) px += tiltX*(9+upg.speed*1.5)*frameK;
+      if(gustEvt.state==='blow' && el<gustEvt.until){ px += gustEvt.dir*3.1*frameK; }
+    }
     /* 배 이미지 폭이 진화할수록 커지므로(특히 용선) 화면 가장자리에서 잘리지 않게 여백도 같이 늘린다 */
     var shipMargin=Math.max(50,(40+lvl*10)*1.15+8);
     px=Math.max(shipMargin,Math.min(W-shipMargin,px));
@@ -1393,30 +1443,19 @@ function gSail(){
     /* ================= 페이즈 트리거 ================= */
     if(!tutorialDone && (el>=5 || rocks.some(function(r){return r.passed}))) tutorialDone=true;
 
-    if(windEvt.state==='idle' && el>=11.5 && el<30){
-      windEvt.state='cutin';
-      showCutin('요망진 것, 요 보름도 혼번 버텨보라이!',1800);
-      sfx('bonus',0.4);
-      setTimeout(function(){ if(windEvt.state==='cutin'){ windEvt.state='choose'; windEvt.chooseUntil=el+1.15; } },1800);
+    /* 업그레이드 선택 카드 — 정해진 간격마다 반복해서 뜬다(뱀서류처럼 계속 성장) */
+    if(!pick.open && el>=nextPickAt && !inFinale && !ending && gustEvt.state==='idle'){
+      openPick(el);
     }
-    if(windEvt.state==='choose' && el>=windEvt.chooseUntil){
-      var lane = px < W/3 ? 0 : (px < W*2/3 ? 1 : 2);
-      windEvt.lane=lane; windEvt.state='resolve'; windEvt.resolveUntil=el+2.2; windEvt.hitDuringResolve=false;
-      if(lane===0){ toast('← 순풍! 장애물이 느려집니다'); }
-      else if(lane===1){ toast('✨ 황금바람! 배가 질주합니다'); sfx('bonus',0.6); }
-      else { toast('🌪 거센바람! 위험하지만 바람이 크게 모입니다'); sfx('bonus',0.6); }
-    }
-    if(windEvt.state==='resolve' && el>=windEvt.resolveUntil){
-      windEvt.state='done';
-      if(!windEvt.hitDuringResolve){
-        if(windEvt.lane===1){ giveBok(2); toast('✨ 황금바람 성공! 복 +2'); }
-        else if(windEvt.lane===2){ gainEvo(3,el); toast('🌪 거센바람 성공! 바람이 크게 모였다'); }
-      }
+    if(pick.open && el>=pick.until){
+      /* 방치 시 자동으로 하나 골라준다(행사장에서 멈춰있지 않게) */
+      closePick(pickRandom(pick.options), el);
     }
 
-    if(gustEvt.state==='idle' && el>=19 && el<32 && windEvt.state!=='cutin' && windEvt.state!=='choose' && windEvt.state!=='resolve'){
+    /* 돌풍 이벤트 — 한 번만이 아니라 계속 반복해서 찾아온다 */
+    if(gustEvt.state==='idle' && el>=gustEvt.nextAt && !pick.open){
       gustEvt.state='cutin';
-      showCutin('이짝저짝 요망지게 댕기멍 보름 탐져이!',1700);
+      showCutin(pickRandom(GUST_LINES),1700);
       gustEvt.dir=Math.random()<0.5?-1:1;
       setTimeout(function(){
         if(gustEvt.state==='cutin'){
@@ -1427,34 +1466,25 @@ function gSail(){
       },1700);
     }
     if(gustEvt.state==='blow' && el>=gustEvt.until){
-      gustEvt.state='done';
       if(!gustEvt.hitDuringBlow){ gainEvo(2,el); }
+      gustEvt.nextAt=el+22+Math.random()*8;
+      gustEvt.state='idle';
     }
 
-    /* 너무 늦어지면(불운/저조한 플레이) 강제로 각성까지 끌어올려 절정을 반드시 보여준다 */
-    if(!forcedCatchupDone && el>=33 && lvl<SHIP_TIERS.length-1){
-      forcedCatchupDone=true;
-      evoProgress=0;
-      evolveTo(SHIP_TIERS.length-1,el);
-    }
+    /* 각성 무쌍 구간이 끝나면 게임을 끝내지 않고 그대로 용선으로 계속 진행한다 */
+    if(inFinale && el>=finaleUntil){ inFinale=false; }
 
-    if(inFinale && el>=finaleUntil){
-      inFinale=false; ending=true; endingT0=el; stopSpawning=true;
-      showCutin('제라하게 보름 탈 줄 알암쪄이',2000);
-    }
+    /* 죽지 않으면 계속 오래 할 수 있게 — 시간으로 강제 종료하지 않는다.
+       다만 행사 특성상 한 사람이 무한정 붙잡고 있을 수는 없어 3분 안전장치만 둔다. */
+    if(!softCapDone && el>=180){ softCapDone=true; triggerEnding(el); }
     if(ending && el-endingT0>3.6 && alive){
       alive=false; finishSail(el,kills,justCount); return;
     }
 
-    var suspendSpawn = (windEvt.state==='cutin'||windEvt.state==='choose') || (gustEvt.state==='cutin');
+    var suspendSpawn = (gustEvt.state==='cutin') || pick.open;
+    var mul = (gustEvt.state==='blow') ? 1.12 : 1;
 
-    var laneMul = (windEvt.state==='resolve')
-      ? (windEvt.lane===0?0.62:(windEvt.lane===2?1.55:1.12))
-      : 1;
-    var gustMul = (gustEvt.state==='blow') ? 1.12 : 1;
-    var mul = laneMul*gustMul;
-
-    if(!suspendSpawn && !stopSpawning && !inFinale){
+    if(!suspendSpawn && !inFinale && !ending){
       var spawnRate = tutorialDone ? 1 : 0.45;
       spawn-=sdt;
       if(spawn<=0){
@@ -1477,10 +1507,11 @@ function gSail(){
       if(T.missiles>0){
         fireTimer-=sdt;
         if(fireTimer<=0){
-          fireTimer=T.fireEvery*1000;
+          fireTimer=T.fireEvery*1000*Math.pow(0.85,upg.fire);
           beep(880,0.06,'sawtooth',0.09);
-          for(var mi=0;mi<T.missiles;mi++){
-            var ang=(mi-(T.missiles-1)/2)*(T.spread*Math.PI/180);
+          var mc=T.missiles+upg.spread;
+          for(var mi=0;mi<mc;mi++){
+            var ang=(mi-(mc-1)/2)*(T.spread*Math.PI/180);
             missiles.push({x:px,y:shipY-30,vx:Math.sin(ang)*3,vy:-9-lvl});
           }
         }
@@ -1490,15 +1521,16 @@ function gSail(){
       /* 무쌍 타임 — 사격 속도를 극단적으로 올려 화면을 정리한다 */
       fireTimer-=sdt;
       if(fireTimer<=0){
-        fireTimer=Math.max(70,T.fireEvery*1000*0.22);
+        fireTimer=Math.max(70,T.fireEvery*1000*0.22*Math.pow(0.85,upg.fire));
         beep(920,0.05,'sawtooth',0.08);
-        for(var mf=0;mf<T.missiles+1;mf++){
-          var angf=(mf-(T.missiles)/2)*((T.spread+10)*Math.PI/180);
+        var mcf=T.missiles+upg.spread+1;
+        for(var mf=0;mf<mcf;mf++){
+          var angf=(mf-(mcf-1)/2)*((T.spread+10)*Math.PI/180);
           missiles.push({x:px,y:shipY-30,vx:Math.sin(angf)*3.4,vy:-12});
         }
       }
       spawn-=sdt;
-      if(spawn<=0 && !stopSpawning){
+      if(spawn<=0){
         spawn=170;
         var rk2=Math.floor(Math.random()*ASSETS.rockPool.length);
         rocks.push({x:60+Math.random()*(W-120),y:-60,r:28+Math.random()*22,v:6.2,asset:ASSETS.rockPool[rk2],passed:false,dead:false,justOk:false,noHit:true});
@@ -1519,10 +1551,7 @@ function gSail(){
 
     ctx.clearRect(-40,-40,W+80,H+80);
     var g=ctx.createLinearGradient(0,0,0,H);
-    if(windEvt.state==='resolve'&&windEvt.lane===2){g.addColorStop(0,'#3A1A1A');g.addColorStop(1,'#1A0E0E');}
-    else if(windEvt.state==='resolve'&&windEvt.lane===0){g.addColorStop(0,'#15332C');g.addColorStop(1,'#0A2226');}
-    else if(windEvt.state==='resolve'&&windEvt.lane===1){g.addColorStop(0,'#3A2E10');g.addColorStop(1,'#1A1206');}
-    else if(inFinale){g.addColorStop(0,'#152040');g.addColorStop(1,'#050814');}
+    if(inFinale){g.addColorStop(0,'#152040');g.addColorStop(1,'#050814');}
     else {g.addColorStop(0,'#181B2E');g.addColorStop(1,'#0F1120');}
     ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
 
@@ -1531,7 +1560,7 @@ function gSail(){
     ctx.fillRect(0,0,W,H*0.35);
 
     /* 파도 레이어(속도 다른 3겹) + 배 진행감 */
-    var speedFeel=1+ (inFinale?0.9:0) + (windEvt.state==='resolve'&&windEvt.lane===1?0.6:0) + (gustEvt.state==='blow'?0.2:0);
+    var speedFeel=1+ (inFinale?0.9:0) + (gustEvt.state==='blow'?0.2:0);
     wave+=.035*frameK*speedFeel;
     [ [0.12,7,24,9], [0.08,5,34,13], [0.05,4,46,19] ].forEach(function(cfg,li){
       ctx.strokeStyle='rgba(79,195,161,'+cfg[0]+')';ctx.lineWidth=2.4;
@@ -1557,7 +1586,7 @@ function gSail(){
     /* 돌풍 방향 스트릭 */
     if(gustEvt.state==='blow'){
       for(var gi=0;gi<2;gi++){
-        var gy=(el*260*gustEvt.dir*0+ (el*220)%H + gi*H/2)%H;
+        var gy=((el*220)%H + gi*H/2)%H;
         var gx=W/2+ Math.sin(el*3+gi)*W*0.3;
         ctx.globalAlpha=0.5;
         if(!drawImgFit(ASSETS.windStreak,gx,gy,140,40,gustEvt.dir>0?0:Math.PI)){
@@ -1565,31 +1594,6 @@ function gSail(){
           ctx.beginPath();ctx.moveTo(gx-40*gustEvt.dir,gy);ctx.lineTo(gx+40*gustEvt.dir,gy);ctx.stroke();
         }
         ctx.globalAlpha=1;
-      }
-    }
-
-    /* ================= 바람길(윈드 이벤트) 통로 ================= */
-    if(windEvt.state==='choose' || windEvt.state==='resolve'){
-      var laneW=W/3;
-      var laneInfo=[
-        {label:'← 순풍',color:'rgba(79,195,161,.22)',asset:ASSETS.windSwirlBlue},
-        {label:'✨ 황금바람',color:'rgba(245,179,49,.22)',asset:null},
-        {label:'🌪 거센바람 →',color:'rgba(180,90,220,.24)',asset:ASSETS.windSwirlPurple}
-      ];
-      for(var lI=0;lI<3;lI++){
-        var lx=lI*laneW;
-        var active = windEvt.state==='choose' ? (px>=lx&&px<lx+laneW) : (windEvt.lane===lI);
-        ctx.fillStyle=laneInfo[lI].color;
-        ctx.fillRect(lx,0,laneW,H);
-        if(active){ ctx.fillStyle='rgba(255,255,255,.10)'; ctx.fillRect(lx,0,laneW,H); }
-        if(imgOk(ASSETS.windFeather)){
-          ctx.globalAlpha=0.35;
-          drawImgFit(ASSETS.windFeather,lx+laneW/2,H*0.4,60,H*0.7,0);
-          ctx.globalAlpha=1;
-        }
-        ctx.textAlign='center';ctx.font='800 20px SCDream, sans-serif';
-        ctx.fillStyle=active?'#F2F0EA':'rgba(242,240,234,.55)';
-        ctx.fillText(laneInfo[lI].label,lx+laneW/2,86);
       }
     }
 
@@ -1626,10 +1630,9 @@ function gSail(){
           ctx.moveTo(r.x,r.y-r.r);ctx.lineTo(r.x+r.r*.5,r.y+r.r*.2);ctx.lineTo(r.x,r.y+r.r*.4);ctx.closePath();ctx.fill();
         }
         var dx=Math.abs(r.x-px), dy=Math.abs(r.y-shipY);
-        var nearBand=26, hitBand=r.r+30;
+        var nearBand=26+upg.just*6, hitBand=r.r+30;
         if(dx<hitBand && dy<r.r+34){
           if(!r.noHit) hit=true;
-          if(windEvt.state==='resolve') windEvt.hitDuringResolve=true;
           if(gustEvt.state==='blow') gustEvt.hitDuringBlow=true;
         } else if(r.justOk && !r.dead && dy<r.r+34+nearBand && dx<hitBand+nearBand && dy>=r.r+34-6){
           /* 회피 성공 라인을 스치듯 지나가는 순간 = JUST */
@@ -1714,7 +1717,7 @@ function gSail(){
     if(invuln && Math.floor(el*10)%2===0) ctx.globalAlpha=0.4;
     /* 배 뒤쪽 wake */
     ctx.globalAlpha*=0.8;
-    if(!drawImgFit(ASSETS.windTrail,0,70+ (dragX-px)*0,26,90*speedFeel,0)){
+    if(!drawImgFit(ASSETS.windTrail,0,70,26,90*speedFeel,0)){
       ctx.fillStyle='rgba(255,255,255,.18)';ctx.beginPath();ctx.ellipse(0,60,14,40*speedFeel,0,0,7);ctx.fill();
     }
     ctx.globalAlpha = invuln && Math.floor(el*10)%2===0 ? 0.4 : 1;
@@ -1735,9 +1738,9 @@ function gSail(){
     } else {
       ctx.font='700 12px SCDream, sans-serif';ctx.fillStyle='rgba(245,179,49,.85)';ctx.fillText('MAX',W-22,54);
     }
-    /* 하트 */
+    /* 하트 — 업그레이드로 늘어날 수 있어 maxHearts만큼 그린다 */
     ctx.textAlign='left';ctx.font='22px sans-serif';
-    for(var hi=0;hi<2;hi++){ ctx.fillText(hi<hearts?'❤️':'🖤', 22+hi*30, 96); }
+    for(var hi=0;hi<maxHearts;hi++){ ctx.fillText(hi<hearts?'❤️':'🖤', 22+hi*30, 96); }
 
     /* ---- 각성 시 커다란 용 파도 백드롭(장식) ---- */
     if(awakened && imgOk(ASSETS.dragonWave)){
@@ -1835,6 +1838,37 @@ function gSail(){
       ctx.globalAlpha=1;
     } else if(bigText){ bigText=null; }
 
+    /* ---- 업그레이드 선택 카드(3장, 탭해서 선택) ---- */
+    if(pick.open){
+      ctx.fillStyle='rgba(6,10,20,.6)';ctx.fillRect(0,0,W,H);
+      ctx.textAlign='center';ctx.font='800 22px SCDream, sans-serif';ctx.fillStyle='#F5B331';
+      ctx.fillText(pickTitle, W/2, H*0.22);
+      ctx.font='700 14px SCDream, sans-serif';ctx.fillStyle='rgba(242,240,234,.65)';
+      ctx.fillText('카드를 탭해서 하나만 고른다', W/2, H*0.22+26);
+      var cw=W/3, cardW=cw-22, cardH=H*0.3, cardY=H*0.3;
+      pick.options.forEach(function(key,i){
+        var cx=i*cw+cw/2, cx0=cx-cardW/2, cy0=cardY;
+        var pctLeft=Math.max(0,(pick.until-el)/8);
+        ctx.fillStyle='rgba(20,28,46,.94)';
+        if(ctx.roundRect){ ctx.beginPath();ctx.roundRect(cx0,cy0,cardW,cardH,18);ctx.fill(); }
+        else ctx.fillRect(cx0,cy0,cardW,cardH);
+        ctx.strokeStyle='#4FC3A1';ctx.lineWidth=2;
+        if(ctx.roundRect){ ctx.beginPath();ctx.roundRect(cx0,cy0,cardW,cardH,18);ctx.stroke(); }
+        else ctx.strokeRect(cx0,cy0,cardW,cardH);
+        ctx.textAlign='center';ctx.font='40px sans-serif';ctx.fillStyle='#F2F0EA';
+        ctx.fillText(UPGRADES[key].emoji, cx, cy0+58);
+        ctx.font='800 17px SCDream, sans-serif';ctx.fillStyle='#F2F0EA';
+        ctx.fillText(UPGRADES[key].title, cx, cy0+92);
+        var dSize=13, dtxt=UPGRADES[key].desc;
+        ctx.font='700 '+dSize+'px SCDream, sans-serif';
+        while(ctx.measureText(dtxt).width>cardW-20 && dSize>9){ dSize-=1; ctx.font='700 '+dSize+'px SCDream, sans-serif'; }
+        ctx.fillStyle='rgba(242,240,234,.72)';
+        ctx.fillText(dtxt, cx, cy0+116);
+        ctx.fillStyle='rgba(255,255,255,.14)';ctx.fillRect(cx0+12,cy0+cardH-14,cardW-24,5);
+        ctx.fillStyle='#F5B331';ctx.fillRect(cx0+12,cy0+cardH-14,(cardW-24)*pctLeft,5);
+      });
+    }
+
     /* ---- 엔딩: 결과 요약(2~3초 안에 파악 가능한 4줄만) ---- */
     if(ending && el-endingT0>1.5){
       var pnAlpha=Math.min(1,(el-endingT0-1.5)/0.3);
@@ -1856,15 +1890,15 @@ function gSail(){
 
     $('#stScore').textContent='';
 
-    if(hit && !invuln && !inFinale && !ending){
+    if(hit && !invuln && !inFinale && !ending && !pick.open){
       hearts--;
       invulnUntil=el+1.3; shake(9);
       sfx('boom',0.6); beep(120,0.3,'square',0.2);
       if(hearts>0){
-        showCutin('아이고게, 정신 촐리라게!',1500);
+        showCutin(pickRandom(HIT_LINES),1500);
         toast('쾅! 정신 차리고 다시!');
       } else {
-        alive=false; finishSail(el,kills,justCount); return;
+        triggerEnding(el);
       }
     }
 
@@ -1874,7 +1908,7 @@ function gSail(){
   var evoTimer=null;
   function giveBok(n){
     /* 화면에 즉시 보이는 작은 보상 피드백 — 실제 지급은 finishSail에서 합산 */
-    bokEarned+=n;
+    bokEarned+=Math.round(n*(1+upg.bok*0.25));
   }
   var bokEarned=0;
 
