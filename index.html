@@ -347,20 +347,79 @@ function compassSvg(bearingDeg,known,size){
 }
 /* ---------------- 큰 추적 화면 ----------------
    카드를 탭하면 이 화면이 뜬다 — 작은 배지 대신 진짜 "추적하는 느낌"을 주기 위해
-   나침반을 크게 띄우고, 걸으면서 몇 초마다 갱신되게 한다. */
-var trackGod=null, trackTimer=null;
+   나침반을 크게 띄우고, 열려있는 동안은 (1) GPS를 고정밀 watch로 자주 갱신하고
+   (2) 기기 방향 센서(있으면)로 화살표가 실제 폰을 돌리는 방향에 반응하게 한다.
+   기기 컴퍼스가 없는 기종(대부분 데스크톱/일부 안드로이드)은 예전처럼
+   "북쪽이 위" 고정 모드로 자연스럽게 폴백된다. */
+var trackGod=null, trackTimer=null, trackWatchId=null;
+var deviceHeading=null, headingSource=null, trkAngle=0, lastCompassPaint=0;
+function trackCompassShell(){
+  return '<svg class="compass compass--big" width="220" height="220" viewBox="0 0 34 34" style="flex:none">'+
+    '<circle cx="17" cy="17" r="15" fill="rgba(245,179,49,.14)" stroke="#F5B331" stroke-width="1.5"/>'+
+    '<circle cx="17" cy="17" r="1.6" fill="#F5B331" id="trkDot" hidden></circle>'+
+    '<g id="trkNeedle" hidden><polygon points="17,4 21.5,19 17,15.5 12.5,19" fill="#F5B331"/></g>'+
+    '<text id="trkQ" x="17" y="21" text-anchor="middle" font-size="13" font-weight="800" fill="#F5B331">?</text>'+
+  '</svg>';
+}
+function setNeedleAngle(targetDeg){
+  var diff=((targetDeg-trkAngle+540)%360)-180; /* 최단 경로로 회전 — 350도→10도가 한바퀴 안 돌게 */
+  trkAngle+=diff;
+  var g=$('#trkNeedle');
+  if(g)g.setAttribute('transform','rotate('+trkAngle+' 17 17)');
+}
+function handleHeadingEvent(e){
+  var h=null;
+  if(typeof e.webkitCompassHeading==='number'&&!isNaN(e.webkitCompassHeading))h=e.webkitCompassHeading;
+  else if(e.alpha!=null)h=(360-e.alpha+360)%360;
+  if(h==null||isNaN(h))return;
+  deviceHeading=h;
+  var now=performance.now();
+  if(now-lastCompassPaint>120){lastCompassPaint=now;trackTick();}
+}
+function onAbsoluteHeading(e){headingSource='abs';handleHeadingEvent(e);}
+function onOrientation(e){if(headingSource==='abs')return;handleHeadingEvent(e);}
+function startHeading(){
+  deviceHeading=null;headingSource=null;
+  var attach=function(){
+    window.addEventListener('deviceorientationabsolute',onAbsoluteHeading);
+    window.addEventListener('deviceorientation',onOrientation);
+  };
+  if(window.DeviceOrientationEvent&&DeviceOrientationEvent.requestPermission){
+    DeviceOrientationEvent.requestPermission().then(function(r){if(r==='granted')attach()}).catch(function(){});
+  } else attach();
+}
+function stopHeading(){
+  window.removeEventListener('deviceorientationabsolute',onAbsoluteHeading);
+  window.removeEventListener('deviceorientation',onOrientation);
+  deviceHeading=null;headingSource=null;
+}
+function startPosWatch(){
+  if(!navigator.geolocation||trackWatchId!=null)return;
+  trackWatchId=navigator.geolocation.watchPosition(function(pos){
+    playerPos={lat:pos.coords.latitude,lng:pos.coords.longitude};
+    trackTick();paintCrew();
+  }, function(){ /* 실패 시 조용히 무시 — 기존 6초 타이머가 계속 재시도 */ },
+  {enableHighAccuracy:true, maximumAge:4000, timeout:8000});
+}
+function stopPosWatch(){
+  if(trackWatchId!=null){navigator.geolocation.clearWatch(trackWatchId);trackWatchId=null}
+}
 function openTracker(c){
   trackGod=c;
+  trkAngle=0;
   $('#trackName').textContent=c.name+' 추적 중';
+  $('#trackCompassWrap').innerHTML=trackCompassShell();
   $('#tracker').classList.add('on');
   refreshPlayerPos();refreshLive();
   trackTick();
+  startHeading();startPosWatch();
   if(trackTimer)clearInterval(trackTimer);
-  trackTimer=setInterval(trackTick,6000);
+  trackTimer=setInterval(function(){refreshLive();trackTick();},5000);
 }
 function closeTracker(){
   $('#tracker').classList.remove('on');
   if(trackTimer){clearInterval(trackTimer);trackTimer=null}
+  stopHeading();stopPosWatch();
   trackGod=null;
 }
 function trackTick(){
@@ -368,22 +427,26 @@ function trackTick(){
   var h=liveHints[trackGod.id];
   var stale=h&&h.updatedAt&&h.updatedAt.toMillis&&(Date.now()-h.updatedAt.toMillis()>(C.liveLocation.staleMs||90000));
   if(!h||!h.active||h.lat==null||stale){
-    $('#trackCompassWrap').innerHTML=compassSvg(0,false,220);
+    $('#trkQ').hidden=false;$('#trkDot').hidden=true;$('#trkNeedle').hidden=true;
     $('#trackDist').textContent='신호 없음';
     $('#trackNote').textContent='지금은 위치를 안 알려주고 계세요. 잠시 후 다시 열어보세요.';
     return;
   }
   if(!playerPos){
-    $('#trackCompassWrap').innerHTML=compassSvg(0,false,220);
+    $('#trkQ').hidden=false;$('#trkDot').hidden=true;$('#trkNeedle').hidden=true;
     $('#trackDist').textContent='내 위치 확인 중…';
     $('#trackNote').textContent='위치 권한을 허용하면 방향까지 보여드려요.';
     return;
   }
   var d=TamnaLive.distanceM(playerPos.lat,playerPos.lng,h.lat,h.lng);
   var b=TamnaLive.bearingDeg(playerPos.lat,playerPos.lng,h.lat,h.lng);
-  $('#trackCompassWrap').innerHTML=compassSvg(b,true,220);
+  var angle=deviceHeading!=null?((b-deviceHeading+360)%360):b;
+  $('#trkQ').hidden=true;$('#trkDot').hidden=false;$('#trkNeedle').hidden=false;
+  setNeedleAngle(angle);
   $('#trackDist').textContent=TamnaLive.dirLabel(b)+'쪽 · 약 '+TamnaLive.fmtDist(d);
-  $('#trackNote').textContent='조금씩 움직이면서 다시 확인해보세요. 가까워질수록 거리가 줄어들어요.';
+  $('#trackNote').textContent=deviceHeading!=null
+    ? '폰을 든 채 천천히 돌아보세요. 화살표가 가리키는 쪽으로 걸어가면 가까워져요.'
+    : '조금씩 움직이면서 다시 확인해보세요. 가까워질수록 거리가 줄어들어요.';
 }
 function liveHintHtml(c){
   var h=liveHints[c.id];
