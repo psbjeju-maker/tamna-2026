@@ -374,12 +374,15 @@ function gSail(){
       }
       /* 생존 시간에 따른 아주 조금씩의 경험치 — 드래곤플라이트처럼 가만히 있어도 조금은 큰다 */
       xpTrickle+=sdt;
-      if(xpTrickle>=1000){ xpTrickle-=1000; gainXp(1,el); }
+      if(xpTrickle>=800){ xpTrickle-=800; gainXp(1,el); }
 
-      if(T.missiles>0){
+      /* 조각배(1단계)는 원래 포격이 없지만, 다연장 확장을 하나라도 골랐다면
+         그때부터는 쏠 수 있어야 초반 카드 선택이 헛되지 않는다 */
+      if(T.missiles>0 || upg.spread>0){
         fireTimer-=sdt;
         if(fireTimer<=0){
-          fireTimer=T.fireEvery*1000*Math.pow(0.85,upg.fire);
+          var baseFireEvery = T.fireEvery>0 ? T.fireEvery : 1.4;
+          fireTimer=baseFireEvery*1000*Math.pow(0.85,upg.fire);
           beep(880,0.06,'sawtooth',0.09);
           var mc=T.missiles+upg.spread;
           for(var mi=0;mi<mc;mi++){
