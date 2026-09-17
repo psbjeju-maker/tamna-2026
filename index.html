@@ -1414,7 +1414,7 @@ function gSail(){
       }
     }
 
-    if(gustEvt.state==='idle' && el>=19 && el<32 && windEvt.state!=='cutin' && windEvt.state!=='choose'){
+    if(gustEvt.state==='idle' && el>=19 && el<32 && windEvt.state!=='cutin' && windEvt.state!=='choose' && windEvt.state!=='resolve'){
       gustEvt.state='cutin';
       showCutin('이짝저짝 요망지게 댕기멍 보름 탐져이!',1700);
       gustEvt.dir=Math.random()<0.5?-1:1;
@@ -1511,9 +1511,11 @@ function gSail(){
     cam.zoom += (cam.zoomTo-cam.zoom)*0.16;
     cam.shake *= 0.90; if(cam.shake<0.05) cam.shake=0;
     var shx=(Math.random()*2-1)*cam.shake, shy=(Math.random()*2-1)*cam.shake;
-    ctx.translate(W/2,H/2);
+    /* 화면 중앙이 아니라 배 위치를 기준으로 확대해야 한다 — 배가 화면 아래쪽에
+       있는 상태로 중앙 기준 줌을 걸면 확대할수록 배가 화면 밖으로 밀려나 잘려 보였다 */
+    ctx.translate(px,shipY);
     ctx.scale(cam.zoom,cam.zoom);
-    ctx.translate(-W/2+shx,-H/2+shy);
+    ctx.translate(-px+shx,-shipY+shy);
 
     ctx.clearRect(-40,-40,W+80,H+80);
     var g=ctx.createLinearGradient(0,0,0,H);
