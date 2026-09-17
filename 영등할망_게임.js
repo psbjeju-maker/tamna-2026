@@ -224,7 +224,9 @@ function gSail(){
     else if(Math.abs(tiltX)>0.02) px += tiltX*9*frameK;
     /* 돌풍 이벤트: 한쪽으로 지속적인 힘 */
     if(gustEvt.state==='blow' && el<gustEvt.until){ px += gustEvt.dir*3.1*frameK; }
-    px=Math.max(50,Math.min(W-50,px));
+    /* 배 이미지 폭이 진화할수록 커지므로(특히 용선) 화면 가장자리에서 잘리지 않게 여백도 같이 늘린다 */
+    var shipMargin=Math.max(50,(40+lvl*10)*1.15+8);
+    px=Math.max(shipMargin,Math.min(W-shipMargin,px));
 
     var T=SHIP_TIERS[lvl];
 
@@ -594,25 +596,27 @@ function gSail(){
       var cp=1-(cutin.until-performance.now())/(cutin.until-cutin.from);
       var cAlpha=cp<0.15?cp/0.15:(cp>0.85?(1-cp)/0.15:1);
       ctx.globalAlpha=cAlpha;
-      /* 크고 화면 중앙에 — 아바타·이름·대사를 세로로 쌓아 한눈에 들어오게 */
-      var cbY=110, cbH=224;
-      ctx.fillStyle='rgba(8,12,24,.8)';ctx.fillRect(0,cbY,W,cbH);
+      /* 원형 아바타 대신 얼굴이 크게 보이는 세로 카드 — 왼쪽에 크게, 오른쪽에 이름+대사 */
+      var pad=16, pW=132, pH=pW*(580/420);
+      var cbY=100, cbH=pH+pad*2;
+      ctx.fillStyle='rgba(8,12,24,.82)';ctx.fillRect(0,cbY,W,cbH);
       var avImg=ASSETS.yeongdeung, avOk=imgOk(avImg);
-      var avR=46, avX=W/2, avY=cbY+64;
-      ctx.save();ctx.beginPath();ctx.arc(avX,avY,avR,0,7);ctx.clip();
-      if(avOk){ drawImgFit(avImg,avX,avY,avR*2.05,avR*2.05,0); }
-      else if(!drawImgFit(ASSETS.windSwirlBlue,avX,avY,avR*2.1,avR*2.1,el*1.4)){
-        ctx.fillStyle='#1c2e4a';ctx.fillRect(avX-avR,avY-avR,avR*2,avR*2);
+      var pX=pad, pY=cbY+pad;
+      if(avOk){ ctx.drawImage(avImg,pX,pY,pW,pH); }
+      else if(!drawImgFit(ASSETS.windSwirlBlue,pX+pW/2,pY+pH/2,pW*0.9,pW*0.9,el*1.4)){
+        ctx.fillStyle='#1c2e4a';ctx.fillRect(pX,pY,pW,pH);
       }
-      ctx.restore();
-      ctx.strokeStyle='#F5B331';ctx.lineWidth=3;ctx.beginPath();ctx.arc(avX,avY,avR,0,7);ctx.stroke();
-      ctx.textAlign='center';ctx.font='800 24px SCDream, sans-serif';ctx.fillStyle='#F5B331';
-      ctx.fillText('영등할망', W/2, cbY+134);
-      var tSize=40;
+      ctx.strokeStyle='#F5B331';ctx.lineWidth=3;
+      if(ctx.roundRect){ ctx.beginPath();ctx.roundRect(pX,pY,pW,pH,14);ctx.stroke(); }
+      else ctx.strokeRect(pX,pY,pW,pH);
+      var txX0=pX+pW+pad, txAreaW=W-txX0-pad, txCX=txX0+txAreaW/2;
+      ctx.textAlign='center';ctx.font='800 22px SCDream, sans-serif';ctx.fillStyle='#F5B331';
+      ctx.fillText('영등할망', txCX, cbY+pad+30);
+      var tSize=36;
       ctx.font='800 '+tSize+'px SCDream, sans-serif';
-      while(ctx.measureText(cutin.text).width>W*0.88 && tSize>22){ tSize-=2; ctx.font='800 '+tSize+'px SCDream, sans-serif'; }
+      while(ctx.measureText(cutin.text).width>txAreaW-8 && tSize>18){ tSize-=2; ctx.font='800 '+tSize+'px SCDream, sans-serif'; }
       ctx.fillStyle='#F2F0EA';
-      ctx.fillText(cutin.text, W/2, cbY+182);
+      ctx.fillText(cutin.text, txCX, cbY+pH/2+34);
       ctx.textAlign='left';
       ctx.globalAlpha=1;
     }
