@@ -594,21 +594,26 @@ function gSail(){
       var cp=1-(cutin.until-performance.now())/(cutin.until-cutin.from);
       var cAlpha=cp<0.15?cp/0.15:(cp>0.85?(1-cp)/0.15:1);
       ctx.globalAlpha=cAlpha;
-      var cbY=108, cbH=72; /* HUD(생존/하트) 아래로 내려서 겹치지 않게, 모바일 가독성 위해 확대 */
-      ctx.fillStyle='rgba(10,14,26,.72)';ctx.fillRect(0,cbY,W,cbH);
+      /* 크고 화면 중앙에 — 아바타·이름·대사를 세로로 쌓아 한눈에 들어오게 */
+      var cbY=110, cbH=224;
+      ctx.fillStyle='rgba(8,12,24,.8)';ctx.fillRect(0,cbY,W,cbH);
       var avImg=ASSETS.yeongdeung, avOk=imgOk(avImg);
-      var avR=27, avX=20+avR, avY=cbY+cbH/2;
+      var avR=46, avX=W/2, avY=cbY+64;
       ctx.save();ctx.beginPath();ctx.arc(avX,avY,avR,0,7);ctx.clip();
       if(avOk){ drawImgFit(avImg,avX,avY,avR*2.05,avR*2.05,0); }
       else if(!drawImgFit(ASSETS.windSwirlBlue,avX,avY,avR*2.1,avR*2.1,el*1.4)){
         ctx.fillStyle='#1c2e4a';ctx.fillRect(avX-avR,avY-avR,avR*2,avR*2);
       }
       ctx.restore();
-      ctx.strokeStyle='#F5B331';ctx.lineWidth=2;ctx.beginPath();ctx.arc(avX,avY,avR,0,7);ctx.stroke();
-      ctx.textAlign='left';ctx.font='800 16px SCDream, sans-serif';ctx.fillStyle='#F5B331';
-      ctx.fillText('영등할망',avX+avR+14,cbY+28);
-      ctx.font='700 21px SCDream, sans-serif';ctx.fillStyle='#F2F0EA';
-      ctx.fillText(cutin.text,avX+avR+14,cbY+52);
+      ctx.strokeStyle='#F5B331';ctx.lineWidth=3;ctx.beginPath();ctx.arc(avX,avY,avR,0,7);ctx.stroke();
+      ctx.textAlign='center';ctx.font='800 24px SCDream, sans-serif';ctx.fillStyle='#F5B331';
+      ctx.fillText('영등할망', W/2, cbY+134);
+      var tSize=40;
+      ctx.font='800 '+tSize+'px SCDream, sans-serif';
+      while(ctx.measureText(cutin.text).width>W*0.88 && tSize>22){ tSize-=2; ctx.font='800 '+tSize+'px SCDream, sans-serif'; }
+      ctx.fillStyle='#F2F0EA';
+      ctx.fillText(cutin.text, W/2, cbY+182);
+      ctx.textAlign='left';
       ctx.globalAlpha=1;
     }
 
