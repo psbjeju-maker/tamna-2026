@@ -1522,8 +1522,8 @@ function gSail(){
 
   /* ---- 페이즈 트리거 ---- */
   var tutorialDone=false;
-  var rush={state:'idle',until:0,nextAt:26,spawnTimer:0};
-  var boss={alive:false,hp:0,maxHp:5,x:0,y:0,r:92,v:1.15,asset:null,nextAt:34,flashUntil:0};
+  var rush={state:'idle',announceUntil:0,until:0,nextAt:26,spawnTimer:0};
+  var boss={state:'idle',announceUntil:0,hp:0,maxHp:5,x:0,y:0,r:92,v:1.15,asset:null,nextAt:34,flashUntil:0};
   var finaleUntil=0,inFinale=false,finaleKills=0;
   var awakened=false;
   var ending=false,endingT0=0;
@@ -1568,6 +1568,9 @@ function gSail(){
     }
   }
 
+  /* 시작하자마자 영등할망이 큰 글씨로 한 마디 — 이 동안은 게임이 완전히 멈춰 있다 */
+  showCutin('이레 저레 움직영 보름 타보라이!',2200);
+
   var wave=0;
   function loop(now){
     if(!alive)return;
@@ -1580,8 +1583,12 @@ function gSail(){
     var sdt=dt*dtScale;
     var frameK=sdt/16.67;
 
-    /* ---- 조작 입력 ---- (선택 카드가 떠 있을 땐 배가 움직이지 않는다) */
-    if(!pick.open){
+    /* 카드 선택/이벤트 알림/대사가 떠 있는 동안은 게임이 완전히 멈춰야 한다는
+       요청 반영 — 배 이동부터 바위·먹거리·포격까지 전부 이 플래그로 묶는다 */
+    var frozen = pick.open || rush.state==='announce' || boss.state==='announce' || cutin.until>performance.now();
+
+    /* ---- 조작 입력 ---- (얼어있는 동안엔 배가 움직이지 않는다) */
+    if(!frozen){
       if(dragging) px += (dragX-px)*Math.min(1,(0.30+upg.speed*0.05)*frameK);
       else if(Math.abs(tiltX)>0.02) px += tiltX*(9+upg.speed*1.5)*frameK;
     }
@@ -1599,10 +1606,13 @@ function gSail(){
       closePick(pickRandom(pick.options), el);
     }
 
-    /* 골든 러시 — 5초간 복이 잔뜩 쏟아지고 위험은 전혀 없다 */
-    if(rush.state==='idle' && el>=rush.nextAt && !pick.open && !boss.alive){
-      rush.state='active'; rush.until=el+5; rush.spawnTimer=0;
+    /* 골든 러시 — 알림 문구가 뜨는 동안은 완전히 멈추고, 문구가 끝나야 실제로 시작된다 */
+    if(rush.state==='idle' && el>=rush.nextAt && !frozen && boss.state==='idle'){
+      rush.state='announce'; rush.announceUntil=el+1.4;
       showCutin(pickRandom(RUSH_LINES),1400);
+    }
+    if(rush.state==='announce' && el>=rush.announceUntil){
+      rush.state='active'; rush.until=el+5; rush.spawnTimer=0;
       toast('✨ 골든 러시! 마음껏 쓸어담으라!');
       sfx('bonus',0.7);
     }
@@ -1610,13 +1620,16 @@ function gSail(){
       rush.state='idle'; rush.nextAt=el+32+Math.random()*14;
     }
 
-    /* 미니보스 — 레벨이 오를수록 점점 더 자주 나온다("보스도 개많이") */
-    if(!boss.alive && el>=boss.nextAt && !pick.open && rush.state!=='active'){
-      boss.alive=true; boss.hp=5; boss.maxHp=5;
+    /* 미니보스 — 알림 문구가 뜨는 동안 완전히 멈춘 뒤 등장한다. 레벨이 오를수록 더 자주 나온다 */
+    if(boss.state==='idle' && el>=boss.nextAt && !frozen && rush.state==='idle'){
+      boss.state='announce'; boss.announceUntil=el+1.5;
+      showCutin(pickRandom(BOSS_LINES),1500);
+    }
+    if(boss.state==='announce' && el>=boss.announceUntil){
+      boss.state='alive'; boss.hp=5; boss.maxHp=5;
       boss.x=Math.max(shipMargin,Math.min(W-shipMargin,W/2)); boss.y=-140; boss.r=92;
       boss.v=1.0+Math.min(1.2,lv*0.03);
       boss.asset=ASSETS.rockPool[ASSETS.rockPool.length-1];
-      showCutin(pickRandom(BOSS_LINES),1500);
       toast('👹 거대 바위 출현! 대포로 부숴라');
       sfx('boom',0.5);
     }
@@ -1629,16 +1642,18 @@ function gSail(){
       alive=false; finishSail(el,kills,justCount); return;
     }
 
-    var suspendSpawn = pick.open || rush.state==='active';
+    var suspendSpawn = frozen || rush.state==='active';
 
     if(!suspendSpawn && !inFinale && !ending){
       var spawnRate = tutorialDone ? 1 : 0.45;
+      /* 10레벨까지는 쉬워야 한다는 요청 — 시간에 따른 난이도 상승폭을 절반 가까이 줄인다 */
+      var diffEase = lv<10 ? 0.55 : 1;
       spawn-=sdt;
       if(spawn<=0){
-        spawn=Math.max(110,(620-el*22-lv*4)/spawnRate);
+        spawn=Math.max(110,(620-el*22*diffEase-lv*4)/spawnRate);
         var rk=Math.floor(Math.random()*ASSETS.rockPool.length);
-        var zz = lv>=8 && Math.random()<0.35;
-        rocks.push({x:60+Math.random()*(W-120),y:-60,r:32+Math.random()*26,v:3.6+el*0.11+lv*0.15,asset:ASSETS.rockPool[rk],passed:false,dead:false,justOk:true,zigzag:zz,zzPhase:Math.random()*Math.PI*2});
+        var zz = lv>=10 && Math.random()<0.35;
+        rocks.push({x:60+Math.random()*(W-120),y:-60,r:32+Math.random()*26,v:3.6+el*0.11*diffEase+lv*0.15,asset:ASSETS.rockPool[rk],passed:false,dead:false,justOk:true,zigzag:zz,zzPhase:Math.random()*Math.PI*2});
       }
       foodSpawn-=sdt;
       if(foodSpawn<=0){
@@ -1747,8 +1762,8 @@ function gSail(){
     var hit=false;
 
     /* ---- 미니보스 ---- */
-    if(boss.alive){
-      boss.y+=boss.v*frameK*2.6;
+    if(boss.state==='alive'){
+      if(!frozen) boss.y+=boss.v*frameK*2.6;
       if(!drawImgFit(boss.asset,boss.x,boss.y,boss.r*2.3,boss.r*2.4,0)){
         ctx.fillStyle='#2A2F4A';ctx.beginPath();
         ctx.moveTo(boss.x-boss.r,boss.y+boss.r);ctx.lineTo(boss.x,boss.y-boss.r);ctx.lineTo(boss.x+boss.r,boss.y+boss.r);ctx.closePath();ctx.fill();
@@ -1768,15 +1783,15 @@ function gSail(){
             kills+=3; gainXp(30,el); giveBok(20);
             showBig('BREAK ×보스!','',1000,'break');
             toast('👹 거대 바위 격파! 큰 보상 획득');
-            boss.alive=false; boss.nextAt=el+Math.max(20,45-lv*0.6);
+            boss.state='idle'; boss.nextAt=el+Math.max(20,45-lv*0.6);
             break;
           }
         }
       }
-      if(boss.alive){
+      if(boss.state==='alive'){
         var bdx=Math.abs(boss.x-px), bdy=Math.abs(boss.y-shipY);
         if(bdx<boss.r+30 && bdy<boss.r+34){ hit=true; }
-        if(boss.y>H+160){ boss.alive=false; boss.nextAt=el+Math.max(20,45-lv*0.6); }
+        if(boss.y>H+160){ boss.state='idle'; boss.nextAt=el+Math.max(20,45-lv*0.6); }
       }
     }
 
@@ -1861,9 +1876,9 @@ function gSail(){
       ctx.globalAlpha=Math.max(0,p.l);ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,p.sz||5,0,7);ctx.fill();ctx.globalAlpha=1});
     fx=fx.filter(function(p){return p.l>0});
 
-    /* 먹거리 */
+    /* 먹거리 — 얼어있는 동안엔 떨어지지도, 먹히지도 않는다 */
     foods.forEach(function(f){
-      f.y+=f.v*2.4*frameK;
+      if(!frozen) f.y+=f.v*2.4*frameK;
       if(!drawImgFit(f.asset,f.x,f.y,f.r*2.1,f.r*2.1,0)){
         ctx.save();ctx.translate(f.x,f.y);
         var fg2=ctx.createRadialGradient(-f.r*.3,-f.r*.3,2,0,0,f.r);
@@ -1872,7 +1887,7 @@ function gSail(){
         ctx.restore();
       }
       var dx=Math.abs(f.x-px), dy=Math.abs(f.y-shipY);
-      if(!f.eaten && dx<f.r+30 && dy<f.r+34){
+      if(!frozen && !f.eaten && dx<f.r+30 && dy<f.r+34){
         f.eaten=true;
         var val = f.kind==='bag'?5:(f.kind==='tangerine'?2:1);
         var xpVal = f.kind==='bag'?10:(f.kind==='tangerine'?5:3);
@@ -1922,13 +1937,6 @@ function gSail(){
       ctx.globalAlpha=0.22;
       drawImgFit(ASSETS.dragonWave, W/2, H*0.32, W*0.9, W*0.9*(ASSETS.dragonWave.naturalHeight/ASSETS.dragonWave.naturalWidth), 0);
       ctx.globalAlpha=1;
-    }
-
-    /* ---- 튜토리얼 안내 ---- */
-    if(!tutorialDone){
-      ctx.textAlign='center';ctx.font='700 20px SCDream, sans-serif';
-      ctx.fillStyle='rgba(242,240,234,.85)';
-      ctx.fillText('이레 저레 움직영 보름 타보라이!', W/2, H*0.42);
     }
 
     /* ---- 컷인(영등할망 대사) ---- */
@@ -2062,7 +2070,7 @@ function gSail(){
 
     $('#stScore').textContent='';
 
-    if(hit && !invuln && !inFinale && !ending && !pick.open){
+    if(hit && !invuln && !inFinale && !ending && !frozen){
       hearts--;
       invulnUntil=el+1.3; shake(9);
       sfx('boom',0.6); beep(120,0.3,'square',0.2);
