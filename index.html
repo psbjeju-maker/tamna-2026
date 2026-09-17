@@ -321,15 +321,53 @@ var today = function(){var d=new Date();return d.getFullYear()+'-'+String(d.getM
 var liveHints = {}, playerPos = null;
 function refreshLive(){
   if(!window.TamnaLive || !TamnaLive.hasDb())return;
-  TamnaLive.getAll().then(function(data){ liveHints=data||{}; paintCrew(); });
+  TamnaLive.getAll().then(function(data){ liveHints=data||{}; paintCrew(); checkProximity(); });
 }
 function refreshPlayerPos(){
   if(!navigator.geolocation)return;
   navigator.geolocation.getCurrentPosition(function(pos){
     playerPos={lat:pos.coords.latitude,lng:pos.coords.longitude};
-    paintCrew();
+    paintCrew(); checkProximity();
   }, function(){ /* 권한 거부·실패 — 조용히 무시, 힌트는 방향 없이만 표시 */ },
   {enableHighAccuracy:false, maximumAge:20000, timeout:8000});
+}
+/* ---------------- 근처 자동 발견 ----------------
+   나침반으로 직접 방향을 찾아가지 않아도, 흐려진 위치 기준으로 신과
+   "바로 근처"(<30m, live.js의 fmtDist 기준과 동일)까지 가까워지면
+   도채비가 말풍선으로 알려주고 그 자리에서 자동으로 도장이 찍힌다.
+   스태프는 코드를 보여주거나 뭔가 할 필요가 전혀 없다 — 그냥 그 자리에
+   있기만 하면 된다. 다시 멀어졌다가 재접근하면 또 트리거된다(재도전/재인사).
+   이미 인사드린 신이면 복 재지급 없이 반가운 인사말만 다시 뜬다. */
+var NEAR_M = 30;
+var nearState = {};
+function uiBusy(){
+  return $('#modal').classList.contains('on') || $('#stage').classList.contains('on') ||
+    $('#tracker').classList.contains('on') || $('#cinema').classList.contains('on') ||
+    $('#ssireum').classList.contains('on');
+}
+function checkProximity(){
+  if(!playerPos)return;
+  Object.keys(liveHints).forEach(function(gid){
+    var h=liveHints[gid];
+    if(!h||!h.active||h.lat==null){nearState[gid]=false;return}
+    if(h.updatedAt&&h.updatedAt.toMillis&&(Date.now()-h.updatedAt.toMillis()>(C.liveLocation.staleMs||90000))){nearState[gid]=false;return}
+    var d=TamnaLive.distanceM(playerPos.lat,playerPos.lng,h.lat,h.lng);
+    if(d>=NEAR_M){nearState[gid]=false;return}
+    if(nearState[gid])return; /* 같은 접근에서 이미 처리함 — 붙어있는 동안 반복 트리거 방지 */
+    if(uiBusy())return; /* 다른 화면 떠있으면 다음 체크 때(몇 초 뒤) 재시도 */
+    nearState[gid]=true;
+    onNearGod(gid);
+  });
+}
+function onNearGod(gid){
+  var hit=null; C.crew.forEach(function(c){if(c.id===gid)hit=c});
+  if(!hit)return;
+  if(S.crew[gid]){
+    dokPop(hit.name+'다! 또 만났네, 반가워서 인사하러 왔어 — 사진 한 장 더 찍어봐!','laugh',5200);
+    return;
+  }
+  dokPop('어? '+hit.name+' 같은데? 가까이 왔어! 얼른 사진 찍어봐!','excited',4200);
+  setTimeout(function(){ if(!uiBusy())grantCrew(hit); },1200);
 }
 /* 나침반 SVG — 방위각(bearing)만큼 바늘을 돌린다. 폰 자체의 방향(기기 컴퍼스)은
    안 쓴다 — 기기마다 지원이 들쭉날쭉해서, 항상 "북쪽이 위"인 지도용 나침반으로
@@ -407,7 +445,7 @@ function startPosWatch(){
   if(!navigator.geolocation||trackWatchId!=null)return;
   trackWatchId=navigator.geolocation.watchPosition(function(pos){
     playerPos={lat:pos.coords.latitude,lng:pos.coords.longitude};
-    trackTick();paintCrew();
+    trackTick();paintCrew();checkProximity();
   }, function(){ /* 실패 시 조용히 무시 — 기존 6초 타이머가 계속 재시도 */ },
   {enableHighAccuracy:true, maximumAge:4000, timeout:8000});
 }
@@ -769,6 +807,11 @@ function redeem(code,kind){
   C.crew.forEach(function(c){if(c.code.toUpperCase()===code)hit=c});
   if(!hit){toast('그런 신은 안 계십니다');return}
   if(S.crew[hit.id]){toast('이미 인사드린 신입니다');return}
+  grantCrew(hit);
+}
+/* 신을 처음 만났을 때의 보상·연출 — 코드 입력(수동)과 근처 자동 발견(GPS) 둘 다 여기로 온다.
+   이미 인사드린 신은 여기까지 오지 않는다(재방문 인사는 onNearGod에서 복 재지급 없이 따로 처리). */
+function grantCrew(hit){
   var mult = (todayCrew()===hit.id)?C.gold.todayMultiplier:1;
   var g=(hit.bounty||C.gold.crew)*mult;
   S.crew[hit.id]=today();S.gold+=g;save();revealId=hit.id;paint();
