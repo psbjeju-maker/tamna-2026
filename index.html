@@ -1194,8 +1194,7 @@ function drawImgFit(im, x, y, w, h, rot){
 }
 var ASSETS = {
   ship:      [loadAsset('ship1.png'), loadAsset('ship2.png'), loadAsset('ship3.png'), loadAsset('ship4.png')],
-  rockPool:  [loadAsset('rock1.png'), loadAsset('rock2.png'), loadAsset('rock3.png'), loadAsset('rock4.png'),
-              loadAsset('barrel.png'), loadAsset('crate.png'), loadAsset('branch.png')],
+  rockPool:  [loadAsset('rock1.png'), loadAsset('rock2.png'), loadAsset('rock3.png'), loadAsset('rock4.png')],
   foodRice:      loadAsset('bokRiceCake.png'),
   foodTangerine: loadAsset('tangerine.png'),
   foodBag:       loadAsset('bokBag.png'),
@@ -1394,9 +1393,9 @@ function gSail(){
 
     if(windEvt.state==='idle' && el>=11.5 && el<30){
       windEvt.state='cutin';
-      showCutin('요망진 것, 요 보름도 혼번 버텨보라이!',1500);
+      showCutin('요망진 것, 요 보름도 혼번 버텨보라이!',1800);
       sfx('bonus',0.4);
-      setTimeout(function(){ if(windEvt.state==='cutin'){ windEvt.state='choose'; windEvt.chooseUntil=el+1.15; } },1500);
+      setTimeout(function(){ if(windEvt.state==='cutin'){ windEvt.state='choose'; windEvt.chooseUntil=el+1.15; } },1800);
     }
     if(windEvt.state==='choose' && el>=windEvt.chooseUntil){
       var lane = px < W/3 ? 0 : (px < W*2/3 ? 1 : 2);
@@ -1415,7 +1414,7 @@ function gSail(){
 
     if(gustEvt.state==='idle' && el>=19 && el<32 && windEvt.state!=='cutin' && windEvt.state!=='choose'){
       gustEvt.state='cutin';
-      showCutin('이짝저짝 요망지게 댕기멍 보름 탐져이!',1400);
+      showCutin('이짝저짝 요망지게 댕기멍 보름 탐져이!',1700);
       gustEvt.dir=Math.random()<0.5?-1:1;
       setTimeout(function(){
         if(gustEvt.state==='cutin'){
@@ -1423,7 +1422,7 @@ function gSail(){
           toast(gustEvt.dir>0?'🌪 동풍!':'🌪 서풍!');
           sfx('evolve',0.5);
         }
-      },1400);
+      },1700);
     }
     if(gustEvt.state==='blow' && el>=gustEvt.until){
       gustEvt.state='done';
@@ -1439,7 +1438,7 @@ function gSail(){
 
     if(inFinale && el>=finaleUntil){
       inFinale=false; ending=true; endingT0=el; stopSpawning=true;
-      showCutin('제라하게 보름 탈 줄 알암쪄이',1800);
+      showCutin('제라하게 보름 탈 줄 알암쪄이',2000);
     }
     if(ending && el-endingT0>3.6 && alive){
       alive=false; finishSail(el,kills,justCount); return;
@@ -1755,21 +1754,21 @@ function gSail(){
       var cp=1-(cutin.until-performance.now())/(cutin.until-cutin.from);
       var cAlpha=cp<0.15?cp/0.15:(cp>0.85?(1-cp)/0.15:1);
       ctx.globalAlpha=cAlpha;
-      var cbY=108; /* HUD(생존/하트) 아래로 내려서 겹치지 않게 */
-      ctx.fillStyle='rgba(10,14,26,.62)';ctx.fillRect(0,cbY,W,54);
+      var cbY=108, cbH=72; /* HUD(생존/하트) 아래로 내려서 겹치지 않게, 모바일 가독성 위해 확대 */
+      ctx.fillStyle='rgba(10,14,26,.72)';ctx.fillRect(0,cbY,W,cbH);
       var avImg=ASSETS.yeongdeung, avOk=imgOk(avImg);
-      var avX=54,avY=cbY+27;
-      if(avOk){ drawImgFit(avImg,avX,avY,44,44,0); }
-      else {
-        if(!drawImgFit(ASSETS.windSwirlBlue,avX,avY,46,46,el*1.4)){
-          ctx.fillStyle='#1c2e4a';ctx.beginPath();ctx.arc(avX,avY,20,0,7);ctx.fill();
-          ctx.strokeStyle='#4FC3A1';ctx.lineWidth=2;ctx.stroke();
-        }
+      var avR=27, avX=20+avR, avY=cbY+cbH/2;
+      ctx.save();ctx.beginPath();ctx.arc(avX,avY,avR,0,7);ctx.clip();
+      if(avOk){ drawImgFit(avImg,avX,avY,avR*2.05,avR*2.05,0); }
+      else if(!drawImgFit(ASSETS.windSwirlBlue,avX,avY,avR*2.1,avR*2.1,el*1.4)){
+        ctx.fillStyle='#1c2e4a';ctx.fillRect(avX-avR,avY-avR,avR*2,avR*2);
       }
-      ctx.textAlign='left';ctx.font='800 13px SCDream, sans-serif';ctx.fillStyle='#F5B331';
-      ctx.fillText('영등할망',86,cbY+20);
-      ctx.font='700 17px SCDream, sans-serif';ctx.fillStyle='#F2F0EA';
-      ctx.fillText(cutin.text,86,cbY+40);
+      ctx.restore();
+      ctx.strokeStyle='#F5B331';ctx.lineWidth=2;ctx.beginPath();ctx.arc(avX,avY,avR,0,7);ctx.stroke();
+      ctx.textAlign='left';ctx.font='800 16px SCDream, sans-serif';ctx.fillStyle='#F5B331';
+      ctx.fillText('영등할망',avX+avR+14,cbY+28);
+      ctx.font='700 21px SCDream, sans-serif';ctx.fillStyle='#F2F0EA';
+      ctx.fillText(cutin.text,avX+avR+14,cbY+52);
       ctx.globalAlpha=1;
     }
 
@@ -1851,7 +1850,7 @@ function gSail(){
       invulnUntil=el+1.3; shake(9);
       sfx('boom',0.6); beep(120,0.3,'square',0.2);
       if(hearts>0){
-        showCutin('아이고게, 정신 촐리라게!',1300);
+        showCutin('아이고게, 정신 촐리라게!',1500);
         toast('쾅! 정신 차리고 다시!');
       } else {
         alive=false; finishSail(el,kills,justCount); return;
