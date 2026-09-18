@@ -1312,8 +1312,12 @@ function drawImgFit(im, x, y, w, h, rot){
 }
 var ASSETS = {
   ship:      [loadAsset('ship1.png'), loadAsset('ship2.png'), loadAsset('ship3.png'), loadAsset('ship4.png')],
-  rockPool:  [loadAsset('rock1.png'), loadAsset('rock2.png'), loadAsset('rock3.png'), loadAsset('rock4.png')],
+  rockPool:  [loadAsset('rock1.png'), loadAsset('rock2.png'), loadAsset('rock3.png'), loadAsset('rock4.png'),
+              loadAsset('rock5.png'), loadAsset('rock6.png'), loadAsset('rock7.png'), loadAsset('rock8.png')],
   debrisPool:[loadAsset('barrel.png'), loadAsset('crate.png'), loadAsset('branch.png')],
+  windOrb:     loadAsset('windOrb.png'),     /* 최종 시련(Lv30) 바람구슬·약점 코어 전용 */
+  bossVortex:  loadAsset('bossVortex.png'),  /* 미니보스 전용 */
+  enemyShot:   loadAsset('enemyShot.png'),   /* 해양쓰레기 몬스터가 쏘는 파편 전용 */
   foodRice:      loadAsset('bokRiceCake.png'),
   foodTangerine: loadAsset('tangerine.png'),
   foodBag:       loadAsset('bokBag.png'),
@@ -1707,7 +1711,7 @@ function gSail(){
       boss.state='alive'; boss.hp=5; boss.maxHp=5;
       boss.x=Math.max(shipMargin,Math.min(W-shipMargin,W/2)); boss.y=-140; boss.r=92;
       boss.v=1.0+Math.min(1.2,lv*0.03);
-      boss.asset=ASSETS.rockPool[ASSETS.rockPool.length-1];
+      boss.asset=ASSETS.bossVortex;
       toast('👹 거대 바위 출현! 대포로 부숴라');
       sfx('boom',0.5);
     }
@@ -1950,7 +1954,7 @@ function gSail(){
     if(finalBoss.state==='orbs'){
       finalBoss.orbs.forEach(function(o){
         if(o.dead) return;
-        if(!drawImgFit(ASSETS.rockPool[ASSETS.rockPool.length-1],o.x,o.y,o.r*2.1,o.r*2.1,el*1.4)){
+        if(!drawImgFit(ASSETS.windOrb,o.x,o.y,o.r*2.1,o.r*2.1,el*1.4)){
           ctx.fillStyle='rgba(150,210,255,.9)';ctx.beginPath();ctx.arc(o.x,o.y,o.r,0,7);ctx.fill();
         }
         var obw=o.r*1.6;
@@ -1978,7 +1982,7 @@ function gSail(){
     }
     if(finalBoss.state==='assault'){
       var coreY=150;
-      if(!drawImgFit(ASSETS.rockPool[ASSETS.rockPool.length-1],W/2,coreY,150,150,el*2)){
+      if(!drawImgFit(ASSETS.windOrb,W/2,coreY,150,150,el*2)){
         ctx.fillStyle='rgba(255,140,135,.9)';ctx.beginPath();ctx.arc(W/2,coreY,74,0,7);ctx.fill();
       }
       for(var fmi=missiles.length-1;fmi>=0;fmi--){
@@ -2042,14 +2046,16 @@ function gSail(){
     });
     debris=debris.filter(function(dm){ return !dm.dead && dm.y<H+100; });
 
-    /* 해양쓰레기가 쏘는 파편 — 배의 청록색 포탄과 구분되도록 붉은색으로 그린다 */
+    /* 해양쓰레기가 쏘는 파편 — 배의 청록색 포탄과 구분되도록 보라색 계열로 그린다 */
     enemyShots.forEach(function(es){
       if(!frozen){ es.x+=es.vx*frameK; es.y+=es.vy*frameK; }
-      ctx.save();ctx.translate(es.x,es.y);ctx.rotate(Math.atan2(es.vy,es.vx));
-      var eg=ctx.createLinearGradient(-10,0,10,0);
-      eg.addColorStop(0,'#3A1410');eg.addColorStop(1,'#E0645A');
-      ctx.fillStyle=eg;ctx.beginPath();ctx.moveTo(10,0);ctx.lineTo(-6,5);ctx.lineTo(-6,-5);ctx.closePath();ctx.fill();
-      ctx.restore();
+      if(!drawImgFit(ASSETS.enemyShot,es.x,es.y,32,58,Math.atan2(es.vy,es.vx)+Math.PI/2)){
+        ctx.save();ctx.translate(es.x,es.y);ctx.rotate(Math.atan2(es.vy,es.vx));
+        var eg=ctx.createLinearGradient(-10,0,10,0);
+        eg.addColorStop(0,'#3A1410');eg.addColorStop(1,'#E0645A');
+        ctx.fillStyle=eg;ctx.beginPath();ctx.moveTo(10,0);ctx.lineTo(-6,5);ctx.lineTo(-6,-5);ctx.closePath();ctx.fill();
+        ctx.restore();
+      }
       if(!frozen){
         var edx=Math.abs(es.x-px), edy=Math.abs(es.y-shipY);
         if(edx<28 && edy<32){ hit=true; es.dead=true; }
