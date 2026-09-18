@@ -1398,11 +1398,11 @@ function gSail(){
   var W=cv.width,H=cv.height,px=W/2,rocks=[],foods=[],missiles=[],t0=performance.now(),lastNow=t0;
   var shipY=H-160;
   var spawn=900,foodSpawn=2600,alive=true;
-  var evoFlashUntil=0,haloSpin=0,fireTimer=0,kills=0;
+  var evoFlashUntil=0,haloSpin=0,fireTimer=0,kills=0,bossKillCount=0;
   var flashes=[],fx=[],bgParticles=[];
   var maxHearts=2,hearts=2,invulnUntil=0;
-  var justCount=0,justCooldownUntil=0;
   var breakComboN=0,breakComboLast=-99;
+  var ROCK_XP=3; /* 바위 하나 파괴할 때 주는 경험치 — 자동공격/폭발탄으로 죽여도 동일 적용 */
   var cam=makeCam();
   var cutin=makeCutin();
   var bigText=null; /* {a,b,until,from,kind} 화면 중앙 큰 텍스트/배너 연출 */
@@ -1416,40 +1416,68 @@ function gSail(){
 
   /* ================= Lv/EXP 시스템 ================= *
      드래곤플라이트처럼 레벨이 항상 눈에 보이고, 레벨업마다(뱀서라이크처럼)
-     업그레이드 카드 3장이 뜬다. 복(보상 재화)과는 완전히 분리된 경험치다. */
-  var lv=1, xp=0, xpNeed=6+lv*3;
+     업그레이드 카드 3장이 뜬다. 복(보상 재화)과는 완전히 분리된 경험치다.
+     초반 레벨업이 너무 느리다는 피드백으로 요구량을 한 번 더 낮췄다
+     (목표: Lv10까지 대략 30초~1분). */
+  var lv=1, xp=0, xpNeed=4+lv*2;
   var xpTrickle=0;
   var shipTier=0, prestige=0;
   function tierForLevel(l){ if(l>=20) return 3; if(l>=10) return 2; if(l>=5) return 1; return 0; }
 
-  /* ---- 업그레이드 카드 — 희귀도 포함 ---- */
-  var upg={fire:0,spread:0,heart:0,just:0,bok:0,speed:0};
+  /* ---- 업그레이드 카드 — JUST(회피의 감) 삭제, 신규 5종 추가, 전부 MAX 상한 ----
+     "카드가 무한히 쌓여서 절대 안 죽는다"는 문제를 해결하기 위해 레벨마다
+     상한(MAX)을 두고, MAX에 도달하면 카드 풀에서 빠진다. 특정 두 카드가
+     둘 다 MAX면 더 강한 특수 무기로 합쳐진다(진화 조합). */
+  var upgLevel={fire:0,spread:0,heart:0,bok:0,speed:0,bomb:0,pierce:0,lightning:0,windpush:0,focus:0,shield:0};
+  var UPG_MAX ={fire:5,spread:4,heart:5,bok:5,speed:5,bomb:3,pierce:3,lightning:3,windpush:3,focus:3,shield:3};
   var UPGRADES={
-    fire:  {emoji:'💥', title:'포격 강화', desc:'연사 속도가 빨라진다'},
-    spread:{emoji:'🎯', title:'다연장 확장', desc:'포탄이 더 나간다'},
-    heart: {emoji:'❤️', title:'바람의 가호', desc:'최대 체력이 늘고 즉시 회복'},
-    just:  {emoji:'✨', title:'회피의 감', desc:'회피 판정이 후해진다'},
-    bok:   {emoji:'🍊', title:'복바람', desc:'복을 더 많이 받는다'},
-    speed: {emoji:'🌀', title:'급류 조타', desc:'조작이 더 즉각적으로 반응한다'}
+    fire:     {emoji:'💥', title:'포격 강화',   desc:'연사 속도가 빨라진다'},
+    spread:   {emoji:'🎯', title:'다연장 확장', desc:'포탄이 더 나간다'},
+    heart:    {emoji:'❤️', title:'바람의 가호', desc:'최대 체력이 늘고 즉시 회복'},
+    bok:      {emoji:'🍊', title:'복바람',      desc:'복을 더 많이 받는다'},
+    speed:    {emoji:'🌀', title:'급류 조타',   desc:'조작이 더 즉각적으로 반응한다'},
+    bomb:     {emoji:'💣', title:'폭발탄',      desc:'바위 파괴 시 주변에도 피해'},
+    pierce:   {emoji:'🌊', title:'관통탄',      desc:'포탄이 바위를 뚫고 지나간다'},
+    lightning:{emoji:'⚡', title:'벼락',        desc:'주기적으로 바위를 자동 공격'},
+    windpush: {emoji:'🌪', title:'영등바람',    desc:'주기적으로 주변 바위를 밀어낸다'},
+    focus:    {emoji:'🔥', title:'화력 집중',   desc:'큰 상대에게 강한 한 방'},
+    shield:   {emoji:'🛡', title:'바람막이',    desc:'가끔 피격을 한 번 막아준다'}
   };
   var UPG_KEYS=Object.keys(UPGRADES);
   var RARITY=[
-    {key:'common',   label:'일반', p:0.70, mult:1,   discrete:1, color:'#8FA3B8'},
-    {key:'rare',     label:'희귀', p:0.25, mult:1.6, discrete:2, color:'#4FC3A1'},
-    {key:'legendary',label:'전설', p:0.05, mult:2.5, discrete:3, color:'#F5B331'}
+    {key:'common',   label:'일반', p:0.70, discrete:1, color:'#8FA3B8'},
+    {key:'rare',     label:'희귀', p:0.25, discrete:2, color:'#4FC3A1'},
+    {key:'legendary',label:'전설', p:0.05, discrete:3, color:'#F5B331'}
   ];
   function rollRarity(){
     var r=Math.random(), acc=0;
     for(var i=0;i<RARITY.length;i++){ acc+=RARITY[i].p; if(r<acc) return RARITY[i]; }
     return RARITY[0];
   }
-  var DISCRETE_KEYS={spread:1,heart:1}; /* 정수 단위라 희귀도만큼 덩어리로 오른다 */
+  /* 두 카드가 모두 MAX면 특수 무기로 진화한다 */
+  var FUSION=[
+    {a:'fire',b:'spread',key:'typhoon',name:'태풍포',emoji:'🌀',desc:'포탄이 관통하며 터진다'},
+    {a:'bomb',b:'pierce',key:'tsunami',name:'해일포',emoji:'🌊',desc:'폭발 범위와 관통력이 크게 강화된다'}
+  ];
+  var fusion={};
+  function checkFusions(){
+    FUSION.forEach(function(f){
+      if(!fusion[f.key] && upgLevel[f.a]>=UPG_MAX[f.a] && upgLevel[f.b]>=UPG_MAX[f.b]){
+        fusion[f.key]=true;
+        showBig('무기 진화!', f.emoji+' '+f.name+' 완성!', 1800,'fusion');
+        toast('💫 '+f.name+' 완성! '+f.desc);
+        sfx('fanfare',0.8);
+      }
+    });
+  }
   function applyUpgrade(key,rarity){
-    var step = DISCRETE_KEYS[key] ? rarity.discrete : rarity.mult;
-    upg[key]+=step;
-    if(key==='heart'){ maxHearts+=rarity.discrete; hearts=Math.min(maxHearts,hearts+rarity.discrete); }
-    toast(UPGRADES[key].emoji+' '+UPGRADES[key].title+' ('+rarity.label+')!');
+    var before=upgLevel[key];
+    upgLevel[key]=Math.min(UPG_MAX[key], upgLevel[key]+rarity.discrete);
+    var after=upgLevel[key];
+    if(key==='heart'){ var d=after-before; maxHearts+=d; hearts=Math.min(maxHearts,hearts+d); }
+    toast(UPGRADES[key].emoji+' '+UPGRADES[key].title+' Lv.'+after+(after>=UPG_MAX[key]?' MAX!':'')+' ('+rarity.label+')');
     sfx('bonus',0.6);
+    checkFusions();
   }
   function shuffle(a){ for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;} return a; }
 
@@ -1458,7 +1486,9 @@ function gSail(){
   var pickTitle='';
   var upgHistory={}; /* 결과화면에 보여줄 획득 카드 집계 */
   function openPick(el){
-    var keys=shuffle(UPG_KEYS.slice()).slice(0,3);
+    var pool=UPG_KEYS.filter(function(k){ return upgLevel[k]<UPG_MAX[k]; });
+    if(pool.length===0) return; /* 전부 MAX면 더 뽑을 카드가 없다 */
+    var keys=shuffle(pool.slice()).slice(0,Math.min(3,pool.length));
     pick.options=keys.map(function(k){ return {key:k, rarity:rollRarity()}; });
     pick.open=true; pick.until=el+8;
     pickTitle=pickRandom(PICK_TITLES);
@@ -1469,11 +1499,12 @@ function gSail(){
     upgHistory[opt.key]=(upgHistory[opt.key]||0)+1;
   }
 
-  /* 경험치 획득 + 레벨업 처리 — 바위 파괴/생존시간/먹거리/은근한 회피에서 들어온다 */
+  /* 경험치 획득 + 레벨업 처리 — 바위 파괴/생존시간/먹거리에서 들어온다
+     (근접 회피 보너스는 삭제 — 의미가 없다는 피드백 반영) */
   function gainXp(n,el){
     xp+=n;
     while(xp>=xpNeed){
-      xp-=xpNeed; lv++; xpNeed=6+lv*3;
+      xp-=xpNeed; lv++; xpNeed=4+lv*2;
       onLevelUp(el);
     }
   }
@@ -1497,7 +1528,8 @@ function gSail(){
   cv.onpointerdown=function(e){
     var x=evX(e);
     if(pick.open){
-      var idx=Math.min(2,Math.max(0,Math.floor(x/(W/3))));
+      var cwp=W/pick.options.length;
+      var idx=Math.min(pick.options.length-1,Math.max(0,Math.floor(x/cwp)));
       closePick(pick.options[idx], (performance.now()-t0)/1000);
       return;
     }
@@ -1514,6 +1546,7 @@ function gSail(){
   var finaleUntil=0,inFinale=false,finaleKills=0;
   var awakened=false;
   var ending=false,endingT0=0;
+  var lightningTimer=2000, windpushTimer=4000, shieldTimer=8000, shieldCharge=0;
 
   function showCutin(text,dur,freeze){ cutin.text=text; cutin.from=performance.now(); cutin.until=cutin.from+dur; cutin.freeze=!!freeze; }
   function showBig(a,b,dur,kind){ bigText={a:a,b:b,from:performance.now(),until:performance.now()+dur,kind:kind}; }
@@ -1576,8 +1609,8 @@ function gSail(){
 
     /* ---- 조작 입력 ---- (얼어있는 동안엔 배가 움직이지 않는다) */
     if(!frozen){
-      if(dragging) px += (dragX-px)*Math.min(1,(0.30+upg.speed*0.05)*frameK);
-      else if(Math.abs(tiltX)>0.02) px += tiltX*(9+upg.speed*1.5)*frameK;
+      if(dragging) px += (dragX-px)*Math.min(1,(0.30+upgLevel.speed*0.05)*frameK);
+      else if(Math.abs(tiltX)>0.02) px += tiltX*(9+upgLevel.speed*1.5)*frameK;
     }
     /* 배 이미지 폭이 진화할수록 커지므로(특히 용선) 화면 가장자리에서 잘리지 않게 여백도 같이 늘린다 */
     var shipMargin=Math.max(50,(40+shipTier*10)*1.15+8);
@@ -1626,7 +1659,7 @@ function gSail(){
 
     /* 죽어야만 끝난다 — 시간 강제종료 안전장치 없음(개인용 앱이라 대기열 문제 없음) */
     if(ending && el-endingT0>3.6 && alive){
-      alive=false; finishSail(el,kills,justCount); return;
+      alive=false; finishSail(el,kills); return;
     }
 
     var suspendSpawn = frozen || rush.state==='active';
@@ -1641,7 +1674,7 @@ function gSail(){
         spawn=Math.max(160,(620-el*22*diffEase-lv*4*diffEase)/spawnRate);
         var rk=Math.floor(Math.random()*ASSETS.rockPool.length);
         var zz = lv>=10 && Math.random()<0.35;
-        rocks.push({x:60+Math.random()*(W-120),y:-60,r:32+Math.random()*26,v:Math.min(lv<10?4.2:99, 3.2+el*0.11*diffEase+lv*0.15*diffEase),asset:ASSETS.rockPool[rk],passed:false,dead:false,justOk:true,zigzag:zz,zzPhase:Math.random()*Math.PI*2});
+        rocks.push({x:60+Math.random()*(W-120),y:-60,r:32+Math.random()*26,v:Math.min(lv<10?4.2:99, 3.2+el*0.11*diffEase+lv*0.15*diffEase),asset:ASSETS.rockPool[rk],passed:false,dead:false,zigzag:zz,zzPhase:Math.random()*Math.PI*2});
       }
       foodSpawn-=sdt;
       if(foodSpawn<=0){
@@ -1653,22 +1686,58 @@ function gSail(){
       }
       /* 생존 시간에 따른 아주 조금씩의 경험치 — 드래곤플라이트처럼 가만히 있어도 조금은 큰다 */
       xpTrickle+=sdt;
-      if(xpTrickle>=800){ xpTrickle-=800; gainXp(1,el); }
+      if(xpTrickle>=650){ xpTrickle-=650; gainXp(1,el); }
 
       /* 조각배(1단계)는 원래 포격이 없지만 Lv2부터는 자동으로 포탄 1개가 나가고,
          다연장 확장 카드를 고르면 그 즉시 1개씩 더 늘어난다(1→2→3개) */
       var baseShot = (shipTier===0 && lv>=2) ? 1 : 0;
-      var mc=T.missiles+baseShot+upg.spread;
+      var mc=T.missiles+baseShot+upgLevel.spread;
       if(mc>0){
         fireTimer-=sdt;
         if(fireTimer<=0){
           var baseFireEvery = T.fireEvery>0 ? T.fireEvery : 1.4;
-          fireTimer=baseFireEvery*1000*Math.pow(0.85,upg.fire);
+          fireTimer=baseFireEvery*1000*Math.pow(0.85,upgLevel.fire);
           beep(880,0.06,'sawtooth',0.09);
+          var pierceHp=1+upgLevel.pierce+(fusion.typhoon?3:0)+(fusion.tsunami?3:0);
           for(var mi=0;mi<mc;mi++){
             var ang=(mi-(mc-1)/2)*(T.spread*Math.PI/180);
-            missiles.push({x:px,y:shipY-30,vx:Math.sin(ang)*3,vy:-9-shipTier});
+            missiles.push({x:px,y:shipY-30,vx:Math.sin(ang)*3,vy:-9-shipTier,hp:pierceHp});
           }
+        }
+      }
+
+      /* ⚡ 벼락 — 조준 없이 주기적으로 화면의 바위 하나를 자동으로 파괴한다 */
+      if(upgLevel.lightning>0){
+        lightningTimer-=sdt;
+        if(lightningTimer<=0){
+          lightningTimer=Math.max(800,3000-upgLevel.lightning*700);
+          var aliveRocks=rocks.filter(function(r){return !r.dead;});
+          if(aliveRocks.length>0){
+            var target=pickRandom(aliveRocks);
+            target.dead=true; explodeRock(target.x,target.y,target.r);
+            sfx('pop',0.4); kills++; gainXp(ROCK_XP,el);
+          }
+        }
+      }
+      /* 🌪 영등바람 — 주기적으로 배 주변 바위를 한번에 밀어낸다(파괴) */
+      if(upgLevel.windpush>0){
+        windpushTimer-=sdt;
+        if(windpushTimer<=0){
+          windpushTimer=Math.max(2500,6000-upgLevel.windpush*1200);
+          var radius=80+upgLevel.windpush*40, pushed=0;
+          rocks.forEach(function(r){
+            if(!r.dead && Math.hypot(r.x-px,r.y-shipY)<radius){ r.dead=true; explodeRock(r.x,r.y,r.r); pushed++; }
+          });
+          if(pushed>0){ kills+=pushed; gainXp(pushed*ROCK_XP,el); sfx('evolve',0.3); shake(3); toast('🌪 영등바람이 불었다!'); }
+        }
+      }
+      /* 🛡 바람막이 — 주기적으로 보호막 1회분을 충전한다 */
+      if(upgLevel.shield>0 && shieldCharge<1){
+        shieldTimer-=sdt;
+        if(shieldTimer<=0){
+          shieldTimer=Math.max(10000,25000-upgLevel.shield*5000);
+          shieldCharge=1;
+          toast('🛡 바람막이 준비됨');
         }
       }
     }
@@ -1685,19 +1754,20 @@ function gSail(){
       /* 무쌍 타임 — 사격 속도를 극단적으로 올려 화면을 정리한다 */
       fireTimer-=sdt;
       if(fireTimer<=0){
-        fireTimer=Math.max(70,T.fireEvery*1000*0.22*Math.pow(0.85,upg.fire));
+        fireTimer=Math.max(70,T.fireEvery*1000*0.22*Math.pow(0.85,upgLevel.fire));
         beep(920,0.05,'sawtooth',0.08);
-        var mcf=T.missiles+upg.spread+1;
+        var mcf=T.missiles+upgLevel.spread+1;
+        var pierceHpF=1+upgLevel.pierce+(fusion.typhoon?3:0)+(fusion.tsunami?3:0);
         for(var mf=0;mf<mcf;mf++){
           var angf=(mf-(mcf-1)/2)*((T.spread+10)*Math.PI/180);
-          missiles.push({x:px,y:shipY-30,vx:Math.sin(angf)*3.4,vy:-12});
+          missiles.push({x:px,y:shipY-30,vx:Math.sin(angf)*3.4,vy:-12,hp:pierceHpF});
         }
       }
       spawn-=sdt;
       if(spawn<=0){
         spawn=170;
         var rk2=Math.floor(Math.random()*ASSETS.rockPool.length);
-        rocks.push({x:60+Math.random()*(W-120),y:-60,r:28+Math.random()*22,v:6.2,asset:ASSETS.rockPool[rk2],passed:false,dead:false,justOk:false,noHit:true});
+        rocks.push({x:60+Math.random()*(W-120),y:-60,r:28+Math.random()*22,v:6.2,asset:ASSETS.rockPool[rk2],passed:false,dead:false,noHit:true});
       }
     }
 
@@ -1765,11 +1835,13 @@ function gSail(){
       for(var bmi=missiles.length-1;bmi>=0;bmi--){
         var bm=missiles[bmi];
         if(Math.hypot(bm.x-boss.x,bm.y-boss.y)<boss.r+8){
-          missiles.splice(bmi,1); boss.hp--; boss.flashUntil=el+0.08; shake(3);
+          /* 🔥 화력 집중 — 보스에게는 한 발당 데미지가 더 크다 */
+          boss.hp-=(1+upgLevel.focus);
+          missiles.splice(bmi,1); boss.flashUntil=el+0.08; shake(3);
           sfx('pop',0.4);
           if(boss.hp<=0){
             explodeRock(boss.x,boss.y,boss.r,true); sfx('boom',0.7); shake(12);
-            kills+=3; gainXp(30,el); giveBok(20);
+            kills+=3; bossKillCount++; gainXp(30,el); giveBok(20);
             showBig('BREAK ×보스!','',1000,'break');
             toast('👹 거대 바위 격파! 큰 보상 획득');
             boss.state='idle'; boss.nextAt=el+Math.max(20,45-lv*0.6);
@@ -1794,8 +1866,19 @@ function gSail(){
         for(var mi2=missiles.length-1;mi2>=0;mi2--){
           var m=missiles[mi2];
           if(!r.dead&&Math.hypot(m.x-r.x,m.y-r.y)<r.r+10){
-            r.dead=true;missiles.splice(mi2,1);explodeRock(r.x,r.y,r.r,inFinale);sfx('pop',0.45);kills++;
-            gainXp(2,el);
+            r.dead=true;
+            m.hp--; if(m.hp<=0) missiles.splice(mi2,1); /* 🌊 관통탄 — hp가 남아있으면 계속 날아간다 */
+            explodeRock(r.x,r.y,r.r,inFinale);sfx('pop',0.45);kills++;
+            gainXp(ROCK_XP,el);
+            /* 💣 폭발탄 — 주변 바위도 같이 파괴 */
+            var bombRadius=(upgLevel.bomb>0?40+upgLevel.bomb*30:0)+(fusion.typhoon?50:0)+(fusion.tsunami?80:0);
+            if(bombRadius>0){
+              rocks.forEach(function(r2){
+                if(r2!==r && !r2.dead && Math.hypot(r2.x-r.x,r2.y-r.y)<bombRadius){
+                  r2.dead=true; explodeRock(r2.x,r2.y,r2.r); kills++; gainXp(ROCK_XP,el);
+                }
+              });
+            }
             if(inFinale){
               finaleKills++;
               if(finaleKills===7||finaleKills===12||finaleKills===18||finaleKills%25===0) showBig('BREAK ×'+finaleKills,'',700,'break');
@@ -1817,17 +1900,7 @@ function gSail(){
           ctx.moveTo(r.x,r.y-r.r);ctx.lineTo(r.x+r.r*.5,r.y+r.r*.2);ctx.lineTo(r.x,r.y+r.r*.4);ctx.closePath();ctx.fill();
         }
         var dx=Math.abs(r.x-px), dy=Math.abs(r.y-shipY);
-        var nearBand=26+upg.just*6, hitBand=r.r+30;
-        if(dx<hitBand && dy<r.r+34){
-          if(!r.noHit) hit=true;
-        } else if(r.justOk && !r.dead && dy<r.r+34+nearBand && dx<hitBand+nearBand && dy>=r.r+34-6){
-          /* 회피 성공 라인을 스치듯 지나가는 순간 = JUST — 요청대로 조용히 경험치만 준다 */
-          if(el>=justCooldownUntil){
-            r.justOk=false; justCount++; justCooldownUntil=el+0.35;
-            gainXp(1,el);
-            sfx('bonus',0.15);
-          }
-        }
+        if(dx<r.r+30 && dy<r.r+34){ if(!r.noHit) hit=true; }
         if(!r.passed && r.y>shipY+40){ r.passed=true; }
         return r.y<H+90;
       });
@@ -1903,6 +1976,12 @@ function gSail(){
     }
     ctx.globalAlpha = invuln && Math.floor(el*10)%2===0 ? 0.4 : 1;
     drawShip(ctx,shipTier,pulse);
+    if(shieldCharge>0){
+      ctx.globalAlpha=0.6+Math.sin(el*6)*0.15;
+      ctx.strokeStyle='#4FC3A1';ctx.lineWidth=3;
+      ctx.beginPath();ctx.arc(0,-20,60,0,7);ctx.stroke();
+      ctx.globalAlpha=1;
+    }
     ctx.restore();
 
     /* ---- HUD ---- */
@@ -1992,6 +2071,12 @@ function gSail(){
           ctx.textAlign='center';ctx.font='800 30px SCDream, sans-serif';ctx.fillStyle='#F5B331';
           ctx.fillText(bigText.b, W/2, H/2);
         }
+      } else if(bigText.kind==='fusion'){
+        ctx.fillStyle='rgba(4,6,14,'+(0.5*bAlpha)+')';ctx.fillRect(0,0,W,H);
+        ctx.textAlign='center';ctx.font='800 22px SCDream, sans-serif';ctx.fillStyle='#F5B331';
+        ctx.fillText(bigText.a, W/2, H*0.42);
+        ctx.font='800 30px SCDream, sans-serif';ctx.fillStyle='#4FC3A1';
+        ctx.fillText(bigText.b, W/2, H*0.42+44);
       } else if(bigText.kind==='break'){
         ctx.textAlign='center';ctx.font='800 26px SCDream, sans-serif';ctx.fillStyle='#F58C87';
         ctx.fillText(bigText.a, W/2, H*0.22);
@@ -2002,14 +2087,14 @@ function gSail(){
       ctx.globalAlpha=1;
     } else if(bigText){ bigText=null; }
 
-    /* ---- 업그레이드 선택 카드(3장, 탭해서 선택 — 희귀도에 따라 테두리색이 다르다) ---- */
+    /* ---- 업그레이드 선택 카드(최대 3장, 탭해서 선택 — 희귀도에 따라 테두리색이 다르다) ---- */
     if(pick.open){
       ctx.fillStyle='rgba(6,10,20,.6)';ctx.fillRect(0,0,W,H);
       ctx.textAlign='center';ctx.font='800 22px SCDream, sans-serif';ctx.fillStyle='#F5B331';
       ctx.fillText(pickTitle, W/2, H*0.2);
       ctx.font='700 14px SCDream, sans-serif';ctx.fillStyle='rgba(242,240,234,.65)';
       ctx.fillText('카드를 탭해서 하나만 고른다', W/2, H*0.2+26);
-      var cw=W/3, cardW=cw-22, cardH=H*0.32, cardY=H*0.28;
+      var cw=W/pick.options.length, cardW=cw-22, cardH=H*0.34, cardY=H*0.28;
       pick.options.forEach(function(opt,i){
         var key=opt.key, rarity=opt.rarity;
         var cx=i*cw+cw/2, cx0=cx-cardW/2, cy0=cardY;
@@ -2031,6 +2116,9 @@ function gSail(){
         while(ctx.measureText(dtxt).width>cardW-20 && dSize>9){ dSize-=1; ctx.font='700 '+dSize+'px SCDream, sans-serif'; }
         ctx.fillStyle='rgba(242,240,234,.72)';
         ctx.fillText(dtxt, cx, cy0+122);
+        var curLv=upgLevel[key], newLv=Math.min(UPG_MAX[key],curLv+rarity.discrete);
+        ctx.font='700 12px SCDream, sans-serif';ctx.fillStyle='rgba(242,240,234,.5)';
+        ctx.fillText('Lv.'+curLv+' → '+newLv+' / '+UPG_MAX[key], cx, cy0+cardH-24);
         ctx.fillStyle='rgba(255,255,255,.14)';ctx.fillRect(cx0+12,cy0+cardH-14,cardW-24,5);
         ctx.fillStyle=rarity.color;ctx.fillRect(cx0+12,cy0+cardH-14,(cardW-24)*pctLeft,5);
       });
@@ -2060,14 +2148,20 @@ function gSail(){
     $('#stScore').textContent='';
 
     if(hit && !invuln && !inFinale && !ending && !frozen){
-      hearts--;
-      invulnUntil=el+1.5; shake(9);
-      sfx('boom',0.6); beep(120,0.3,'square',0.2);
-      if(hearts>0){
-        showCutin(pickRandom(HIT_LINES),1500);
-        toast('쾅! 정신 차리고 다시!');
+      if(shieldCharge>0){
+        /* 🛡 바람막이 — 하트 대신 보호막을 소모한다 */
+        shieldCharge=0; invulnUntil=el+1.0; shake(6); sfx('bonus',0.5);
+        toast('🛡 바람막이가 막아냈다!');
       } else {
-        triggerEnding(el);
+        hearts--;
+        invulnUntil=el+1.5; shake(9);
+        sfx('boom',0.6); beep(120,0.3,'square',0.2);
+        if(hearts>0){
+          showCutin(pickRandom(HIT_LINES),1500);
+          toast('쾅! 정신 차리고 다시!');
+        } else {
+          triggerEnding(el);
+        }
       }
     }
 
@@ -2076,18 +2170,18 @@ function gSail(){
 
   function giveBok(n){
     /* 화면에 즉시 보이는 작은 보상 피드백 — 실제 지급은 finishSail에서 합산 */
-    bokEarned+=Math.round(n*(1+upg.bok*0.25));
+    bokEarned+=Math.round(n*(1+upgLevel.bok*0.25));
   }
   var bokEarned=0;
 
   raf=requestAnimationFrame(loop);
 
-  function finishSail(sec,kills,justN){
+  function finishSail(sec,kills){
     var s=Math.floor(sec);stopGame();
     var isBest=s>(S.best.sail||0);
     if(isBest)S.best.sail=s;
     sfx(isBest?'fanfare':'bonus',0.7);
-    var bonus=(kills||0)*3+(justN||0)*2+bokEarned+lv*5;
+    var bonus=(kills||0)*3+bossKillCount*15+bokEarned+lv*5;
     reward(s*2+bonus,'영등할망의 바람 · '+s+'초 생존 · Lv.'+lv+(bonus?' · 보너스 +'+bonus:''));
   }
 }
