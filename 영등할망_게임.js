@@ -252,7 +252,7 @@ function gSail(){
   var awakened=false;
   var ending=false,endingT0=0;
 
-  function showCutin(text,dur){ cutin.text=text; cutin.from=performance.now(); cutin.until=cutin.from+dur; }
+  function showCutin(text,dur,freeze){ cutin.text=text; cutin.from=performance.now(); cutin.until=cutin.from+dur; cutin.freeze=!!freeze; }
   function showBig(a,b,dur,kind){ bigText={a:a,b:b,from:performance.now(),until:performance.now()+dur,kind:kind}; }
   function shake(v){ cam.shake=Math.max(cam.shake,v); }
   function zoomTo(v){ cam.zoomTo=v; }
@@ -293,7 +293,7 @@ function gSail(){
   }
 
   /* 시작하자마자 영등할망이 큰 글씨로 한 마디 — 이 동안은 게임이 완전히 멈춰 있다 */
-  showCutin('이레 저레 움직영 보름 타보라이!',2200);
+  showCutin('이레 저레 움직영 보름 타보라이!',2200,true);
 
   var wave=0;
   function loop(now){
@@ -309,7 +309,7 @@ function gSail(){
 
     /* 카드 선택/이벤트 알림/대사가 떠 있는 동안은 게임이 완전히 멈춰야 한다는
        요청 반영 — 배 이동부터 바위·먹거리·포격까지 전부 이 플래그로 묶는다 */
-    var frozen = pick.open || rush.state==='announce' || boss.state==='announce' || cutin.until>performance.now();
+    var frozen = pick.open || rush.state==='announce' || boss.state==='announce' || (cutin.freeze && cutin.until>performance.now());
 
     /* ---- 조작 입력 ---- (얼어있는 동안엔 배가 움직이지 않는다) */
     if(!frozen){
@@ -333,7 +333,7 @@ function gSail(){
     /* 골든 러시 — 알림 문구가 뜨는 동안은 완전히 멈추고, 문구가 끝나야 실제로 시작된다 */
     if(rush.state==='idle' && el>=rush.nextAt && !frozen && boss.state==='idle'){
       rush.state='announce'; rush.announceUntil=el+1.4;
-      showCutin(pickRandom(RUSH_LINES),1400);
+      showCutin(pickRandom(RUSH_LINES),1400,true);
     }
     if(rush.state==='announce' && el>=rush.announceUntil){
       rush.state='active'; rush.until=el+5; rush.spawnTimer=0;
@@ -347,7 +347,7 @@ function gSail(){
     /* 미니보스 — 알림 문구가 뜨는 동안 완전히 멈춘 뒤 등장한다. 레벨이 오를수록 더 자주 나온다 */
     if(boss.state==='idle' && el>=boss.nextAt && !frozen && rush.state==='idle'){
       boss.state='announce'; boss.announceUntil=el+1.5;
-      showCutin(pickRandom(BOSS_LINES),1500);
+      showCutin(pickRandom(BOSS_LINES),1500,true);
     }
     if(boss.state==='announce' && el>=boss.announceUntil){
       boss.state='alive'; boss.hp=5; boss.maxHp=5;
@@ -369,15 +369,16 @@ function gSail(){
     var suspendSpawn = frozen || rush.state==='active';
 
     if(!suspendSpawn && !inFinale && !ending){
-      var spawnRate = tutorialDone ? 1 : 0.45;
-      /* 10레벨까지는 쉬워야 한다는 요청 — 시간에 따른 난이도 상승폭을 절반 가까이 줄인다 */
-      var diffEase = lv<10 ? 0.55 : 1;
+      /* 10레벨까지는 튜토리얼 수준으로 계속 쉬워야 한다는 요청 — 스폰 간격도
+         튜토리얼과 같은 배율을 유지하고, 시간/레벨에 따른 상승폭은 거의 없앤다 */
+      var diffEase = lv<10 ? 0.1 : 1;
+      var spawnRate = (tutorialDone && lv>=10) ? 1 : 0.45;
       spawn-=sdt;
       if(spawn<=0){
-        spawn=Math.max(110,(620-el*22*diffEase-lv*4)/spawnRate);
+        spawn=Math.max(160,(620-el*22*diffEase-lv*4*diffEase)/spawnRate);
         var rk=Math.floor(Math.random()*ASSETS.rockPool.length);
         var zz = lv>=10 && Math.random()<0.35;
-        rocks.push({x:60+Math.random()*(W-120),y:-60,r:32+Math.random()*26,v:3.6+el*0.11*diffEase+lv*0.15,asset:ASSETS.rockPool[rk],passed:false,dead:false,justOk:true,zigzag:zz,zzPhase:Math.random()*Math.PI*2});
+        rocks.push({x:60+Math.random()*(W-120),y:-60,r:32+Math.random()*26,v:Math.min(lv<10?4.2:99, 3.2+el*0.11*diffEase+lv*0.15*diffEase),asset:ASSETS.rockPool[rk],passed:false,dead:false,justOk:true,zigzag:zz,zzPhase:Math.random()*Math.PI*2});
       }
       foodSpawn-=sdt;
       if(foodSpawn<=0){
@@ -796,7 +797,7 @@ function gSail(){
 
     if(hit && !invuln && !inFinale && !ending && !frozen){
       hearts--;
-      invulnUntil=el+1.3; shake(9);
+      invulnUntil=el+1.5; shake(9);
       sfx('boom',0.6); beep(120,0.3,'square',0.2);
       if(hearts>0){
         showCutin(pickRandom(HIT_LINES),1500);
