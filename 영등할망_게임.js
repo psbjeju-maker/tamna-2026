@@ -115,9 +115,9 @@ function tiltH(e){
     /* 사람마다 폰을 쥔 각도가 다르므로 첫 값을 "중립 자세"로 삼고 거기서부터의
        변화량만 상하 이동에 쓴다(원시 beta값을 그대로 쓰면 쥔 각도에 따라 한쪽으로 쏠림) */
     if(tiltBetaBase == null) tiltBetaBase = e.beta;
-    /* 예전엔 부호가 반대라 "꺼꾸로 움직인다"는 피드백을 받았다 — 기울이는
-       쪽으로 배가 가도록 마이너스를 붙임 */
-    tiltY = Math.max(-1, Math.min(1, -(e.beta - tiltBetaBase)/25));
+    /* 실기기 확인 결과 마이너스(반전) 버전이 반대였음 — 플러스가 정답으로
+       확정됨(폰을 앞으로 기울이면 배가 위로 간다) */
+    tiltY = Math.max(-1, Math.min(1, (e.beta - tiltBetaBase)/25));
   }
 }
 
@@ -641,19 +641,17 @@ function gSail(){
           beep(880,0.06,'sawtooth',0.09);
           muzzleFlashes.push({x:px,y:shipY-30,until:el+0.12,big:mc>=3});
           var pierceHp=1+upgLevel.pierce+(fusion.typhoon?3:0)+(fusion.tsunami?3:0);
+          /* 몬스터가 사방에서 몰려오므로 포격도 위쪽 고정이 아니라 가장 가까운
+             위협을 자동 조준해서 그쪽으로 나간다(뱀서라이크 오토에임).
+             주변에 적이 하나도 없을 때만(초반 등) 사방을 훑는 스윕으로 대체 */
           var baseAng, fireSpeed=9+shipTier;
-          if(mc===1){
-            /* 포탄이 1발뿐일 때(조각배 초반)는 조준할 게 없으니 쏠 때마다 30도씩
-               돌아가며 사방을 훑는다 — 타겟팅 로직 없이도 전방위 커버가 된다 */
+          baseAng=null;
+          var nearestD=Infinity;
+          rocks.forEach(function(rr){ if(!rr.dead){ var d0=Math.hypot(rr.x-px,rr.y-shipY); if(d0<nearestD){nearestD=d0; baseAng=Math.atan2(rr.y-shipY,rr.x-px);} } });
+          debris.forEach(function(dd){ if(!dd.dead){ var d0=Math.hypot(dd.x-px,dd.y-shipY); if(d0<nearestD){nearestD=d0; baseAng=Math.atan2(dd.y-shipY,dd.x-px);} } });
+          if(baseAng==null){
             baseAng=fireRotation;
             fireRotation+=Math.PI/6;
-          } else {
-            /* 몬스터가 사방에서 몰려오므로 포격도 위쪽 고정이 아니라 가장 가까운
-               위협을 자동 조준해서 그쪽으로 나간다(뱀서라이크 오토에임) */
-            baseAng=-Math.PI/2;
-            var nearestD=Infinity;
-            rocks.forEach(function(rr){ if(!rr.dead){ var d0=Math.hypot(rr.x-px,rr.y-shipY); if(d0<nearestD){nearestD=d0; baseAng=Math.atan2(rr.y-shipY,rr.x-px);} } });
-            debris.forEach(function(dd){ if(!dd.dead){ var d0=Math.hypot(dd.x-px,dd.y-shipY); if(d0<nearestD){nearestD=d0; baseAng=Math.atan2(dd.y-shipY,dd.x-px);} } });
           }
           /* 포탄이 2발 이상인데 spread각이 0이면 전부 같은 궤적에 겹쳐 보여서
              "늘어나도 안 늘어난 것처럼" 보이는 문제가 있었다 — 최소 각도를 보장하고,
