@@ -362,10 +362,10 @@ function onNearGod(gid){
   var hit=null; C.crew.forEach(function(c){if(c.id===gid)hit=c});
   if(!hit)return;
   if(S.crew[gid]){
-    dokPop(hit.name+'다! 또 만났네, 반가워서 인사하러 왔어 — 사진 한 장 더 찍어봐!','laugh',5200);
+    dokPop(hit.name+'다! 또 만났네 — 사진 한 장 더 찍어봐!','laugh',5200);
     return;
   }
-  dokPop('어? '+hit.name+' 같은데? 가까이 왔어! 얼른 사진 찍어봐!','excited',4200);
+  dokPop('어? '+hit.name+' 같은데? 얼른 사진 찍어봐!','excited',4200);
   setTimeout(function(){ if(!uiBusy())grantCrew(hit); },1200);
 }
 /* 나침반 SVG — 방위각(bearing)만큼 바늘을 돌린다. 폰 자체의 방향(기기 컴퍼스)은
@@ -754,7 +754,7 @@ function dokSheetHtml(face,text){
 $('#btnBuy').onclick=function(){
   if(S.tickets.length>=C.ticket.max)return;
   if(S.gold<C.ticket.cost){
-    sheet(dokSheetHtml('pout','잠깐! 복이 조금 부족한데?<br>'+C.ticket.cost+' 복을 모아오면 응모권을 줄게!<br>얼른 복 모으러 가자.')+
+    sheet(dokSheetHtml('pout','복이 조금 부족한데?<br>'+C.ticket.cost+'복 모아오면 바로 줄게!')+
       '<button class="btn btn--primary btn--block" id="goCollect">복 모으러 가기</button>'+
       '<button class="btn btn--tertiary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">나중에</button>');
     $('#goCollect').onclick=function(){closeModal();go('collect')};
@@ -763,7 +763,7 @@ $('#btnBuy').onclick=function(){
   S.gold-=C.ticket.cost;
   var code=(S.phone.replace(/\D/g,'').slice(-4))+'-'+Date.now().toString(36).toUpperCase().slice(-5);
   S.tickets.push(code);save();paint();
-  sheet(dokSheetHtml('excited','오오! 진짜 보물에 도전하는구나?<br>응모권 하나 챙겨놨어!')+
+  sheet(dokSheetHtml('excited','오오, 보물에 도전하는구나!<br>응모권 하나 챙겨놨어!')+
     '<div class="stats" style="margin-top:14px"><div class="stat"><div class="stat__label">복 포인트</div><div class="stat__num" style="color:var(--color-danger)">−'+C.ticket.cost+'</div></div>'+
     '<div class="stat"><div class="stat__label">보물 응모권</div><div class="stat__num" style="color:var(--color-luck)">+1</div></div></div>'+
     '<div class="ticket" style="margin-top:14px"><b>보물 응모권 #'+String(S.tickets.length).padStart(2,'0')+'</b><span>'+code+'</span></div>'+
@@ -800,7 +800,7 @@ function redeem(code,kind){
   if(kind==='preorder'){ if(S.flags.pre){toast('이미 인증했습니다');return} S.flags.pre=1;got=C.gold.preorder;addGold(got,'사전예매'); }
   closeModal();
   var left=C.ticket.cost-(S.gold%C.ticket.cost);
-  setTimeout(function(){dokPop('오~ 잘했는데? 복 +'+got+'!\n'+(S.gold>=C.ticket.cost?'응모권 받을 수 있어. 보물창고로 가봐!':'응모권까지 '+left+'복 남았어!'),'laugh')},500);
+  setTimeout(function(){dokPop('복 +'+got+'! 잘했어~\n'+(S.gold>=C.ticket.cost?'응모권 받으러 보물창고로 가봐!':'응모권까지 '+left+'복 남았어!'),'laugh')},500);
 }
 /* 신을 처음 만났을 때의 보상·연출 — 근처 자동 발견(GPS)과 나침반 화면의
    "인사하기" 버튼(greetGod) 둘 다 여기로 온다.
@@ -834,7 +834,7 @@ function greetGod(){
   var hit=trackGod;
   if(!hit)return;
   closeTracker();
-  if(S.crew[hit.id]){dokPop(hit.name+'다! 또 만났네, 반가워서 인사하러 왔어 — 사진 한 장 더 찍어봐!','laugh',5200);return}
+  if(S.crew[hit.id]){dokPop(hit.name+'다! 또 만났네 — 사진 한 장 더 찍어봐!','laugh',5200);return}
   grantCrew(hit);
 }
 
@@ -877,7 +877,7 @@ function startSsireum(onDone){
   function finish(){
     running=false;clearInterval(drift);
     fill.style.transition='width 500ms ease';fill.style.width='18%';
-    txt.textContent='으랏차! 내가 이겼네! 그래도 열심히 했으니까 복은 줄게. 이름부터 알려줘!';
+    txt.textContent='으랏차! 내가 이겼어~ 이름부터 알려줘!';
     img.src='dokebi/exp_cry_laugh.png';
     btn.textContent='좋아, 알려줄게';btn.disabled=true;
     /* 연타하던 손가락이 바로 다음 화면까지 넘겨버리지 않게 1초 뒤에야 버튼이 살아난다 */
@@ -932,8 +932,8 @@ function maybeDokPop(){
 var DOK_ASK={
   treasure:{t:'10월 31일 과수원피스에서 뽑는 200,000원 상당 보물! 뭔지는… 비밀이야.',f:'wink'},
   luck:{t:'여섯 신께 인사, 4컷 만들어 SNS 올리기, 부스 인증, 놀이터 게임! 200복이면 응모권 한 장.',f:'smile'},
-  where:{t:'제주 금능석물원! 10월 31일 10시부터 4시까지. 입장은 무료, 항해 패스는 6,000원.',f:'excited'},
-  who:{t:'뿔 달리고 이빨 뾰족한 거 상상했지? 그건 오니야. 난 도깨비라고. 사람이랑 똑같이 생겼어.',f:'pout'}
+  where:{t:'제주 금능석물원, 10월 31일 10시~4시야. 입장 무료, 항해 패스는 6,000원.',f:'excited'},
+  who:{t:'뿔 달린 거 상상했지? 그건 오니야, 난 도깨비라고!',f:'pout'}
 };
 function dokScreen(){
   var n=S.tickets.length;
