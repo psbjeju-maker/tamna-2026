@@ -115,7 +115,9 @@ function tiltH(e){
     /* 사람마다 폰을 쥔 각도가 다르므로 첫 값을 "중립 자세"로 삼고 거기서부터의
        변화량만 상하 이동에 쓴다(원시 beta값을 그대로 쓰면 쥔 각도에 따라 한쪽으로 쏠림) */
     if(tiltBetaBase == null) tiltBetaBase = e.beta;
-    tiltY = Math.max(-1, Math.min(1, (e.beta - tiltBetaBase)/25));
+    /* 예전엔 부호가 반대라 "꺼꾸로 움직인다"는 피드백을 받았다 — 기울이는
+       쪽으로 배가 가도록 마이너스를 붙임 */
+    tiltY = Math.max(-1, Math.min(1, -(e.beta - tiltBetaBase)/25));
   }
 }
 
@@ -176,7 +178,13 @@ function makeCam(){ return { shake:0, zoom:1, zoomTo:1 }; }
 function gSail(){
   openStage('영등할망의 바람');
   sfxAmbient('ocean',0.22);
-  /* 자이로는 기기마다 편차가 커서 다시 손을 뗐다 — 드래그 전용으로 유지 */
+  /* 자이로 조작 — 기울이는 쪽으로 배가 움직인다. 판마다 쥔 자세를
+     새 중립값으로 다시 잡고, 손을 대고 있으면 드래그가 우선한다 */
+  tiltX=0; tiltY=0; tiltBetaBase=null;
+  if(window.DeviceOrientationEvent&&DeviceOrientationEvent.requestPermission){
+    DeviceOrientationEvent.requestPermission().then(function(r){
+      if(r==='granted')window.addEventListener('deviceorientation',tiltH)}).catch(function(){});
+  } else window.addEventListener('deviceorientation',tiltH);
 
   var W=cv.width,H=cv.height,px=W/2,rocks=[],foods=[],missiles=[],debris=[],enemyShots=[],t0=performance.now(),lastNow=t0;
   /* 상하좌우 자유 이동(드래그) — 뱀서라이크답게 화면 전체를 자유롭게 오갈 수 있다
@@ -507,11 +515,18 @@ function gSail(){
        요청 반영 — 배 이동부터 바위·먹거리·포격까지 전부 이 플래그로 묶는다 */
     var frozen = pick.open || boss.state==='announce' || (cutin.freeze && cutin.until>performance.now());
 
-    /* ---- 조작 입력 ---- (얼어있는 동안엔 배가 움직이지 않는다, 드래그 전용) */
-    if(!frozen && dragging){
-      var followK=Math.min(1,(0.14+upgLevel.speed*0.025)*frameK);
-      px += (dragX-px)*followK;
-      shipY += (dragY-shipY)*followK;
+    /* ---- 조작 입력 ---- (얼어있는 동안엔 배가 움직이지 않는다)
+       드래그가 우선이고, 손을 안 대고 있을 땐 자이로로 기울이는 쪽으로 움직인다 */
+    if(!frozen){
+      if(dragging){
+        var followK=Math.min(1,(0.14+upgLevel.speed*0.025)*frameK);
+        px += (dragX-px)*followK;
+        shipY += (dragY-shipY)*followK;
+      } else {
+        var tiltPow=(5+upgLevel.speed*0.8)*frameK;
+        if(Math.abs(tiltX)>0.02) px += tiltX*tiltPow;
+        if(Math.abs(tiltY)>0.02) shipY += tiltY*tiltPow;
+      }
     }
     /* 배 이미지 폭이 진화할수록 커지므로(특히 용선) 화면 가장자리에서 잘리지 않게 여백도 같이 늘린다 */
     var shipMargin=Math.max(50,(40+shipTier*10)*1.15+8);
