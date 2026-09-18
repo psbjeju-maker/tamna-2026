@@ -1689,8 +1689,7 @@ function gSail(){
 
   /* ---- 페이즈 트리거 ---- */
   var tutorialDone=false;
-  var boss={state:'idle',announceUntil:0,hp:0,maxHp:5,x:0,y:0,r:92,v:1.15,asset:null,nextAt:34,flashUntil:0};
-  var finaleUntil=0,inFinale=false,finaleKills=0;
+  var boss={state:'idle',announceUntil:0,hp:0,maxHp:5,x:0,y:0,r:92,v:1.15,asset:null,nextAt:34,flashUntil:0,shotTimer:0,phase:0,phaseUntil:0};
   var awakened=false;
   var ending=false,endingT0=0,endingWon=false;
   /* Lv30 최종 보스 — 별도 단계 연출 없이 평소 스웜 속에서 아주 강한 적 하나를
@@ -1760,15 +1759,15 @@ function gSail(){
     } else if(shipTier<SHIP_TIERS.length-1){
       playEvoBanner(el);
     } else {
-      /* 최종 각성 — 용선(龍船). 각성 후에도 게임은 끝나지 않고 무쌍 구간만 지나면
-         그대로 용선으로 계속 플레이한다(죽어야 끝나게 해달라는 요청 반영) */
+      /* 최종 각성 — 용선(龍船). 배가 가장 강해지는 순간이라 연출은 크게 주되,
+         스폰 정지·무적·연사강화 같은 "다른 게임처럼 바뀌는" 특수 구간은 넣지
+         않는다 — 뱀서라이크 스웜 진행은 그대로 유지하고 배만 최종형태가 된다 */
       awakened=true;
       pauseUntil=el+0.5; zoomTo(1.3); shake(14);
       sfx('fanfare',0.85);
       showCutin(AWAKEN_LINE,1900,true); /* 8. 용선 각성·피버타임 */
       showBig('영등의 바람이 깃들었다','용선(龍船) 각성',2200,'awaken');
-      toast('🐉 Lv.'+lv+' — 용선 각성! 무쌍이 시작됩니다');
-      finaleUntil=el+0.5+5.0; inFinale=true;
+      toast('🐉 Lv.'+lv+' — 용선 각성! 화력이 최고조에 달했습니다');
       setTimeout(function(){zoomTo(1.08)},700);
     }
   }
@@ -1840,14 +1839,12 @@ function gSail(){
       /* "보스는 정말 강력하게" — 체력을 레벨에 비례해서 계속 키운다(고정 5는 너무 약했음) */
       boss.state='alive'; boss.maxHp=14+Math.floor(lv*0.8); boss.hp=boss.maxHp;
       boss.x=Math.max(shipMargin,Math.min(W-shipMargin,W/2)); boss.y=-160; boss.r=130;
-      boss.v=1.0+Math.min(1.2,lv*0.03);
+      boss.restY=H*0.26; boss.v=1.0+Math.min(1.2,lv*0.03);
+      boss.shotTimer=900; boss.patternStep=0;
       boss.asset=pickRandom(ASSETS.elitePool);
       toast('👹 강력한 존재 출현! 대포로 부숴라');
       sfx('boom',0.5);
     }
-
-    /* 각성 무쌍 구간이 끝나면 게임을 끝내지 않고 그대로 용선으로 계속 진행한다 */
-    if(inFinale && el>=finaleUntil){ inFinale=false; }
 
     /* 죽어야만 끝난다 — 시간 강제종료 안전장치 없음(개인용 앱이라 대기열 문제 없음).
        단, 완주(승리) 시에는 "항해 완료" 또는 "초월 항해"를 직접 탭해서 골라야 하므로
@@ -1861,7 +1858,7 @@ function gSail(){
 
     var suspendSpawn = frozen;
 
-    if(!suspendSpawn && !inFinale && !ending){
+    if(!suspendSpawn && !ending){
       /* 10레벨까지는 튜토리얼 수준으로 계속 쉬워야 한다는 요청 — 스폰 간격도
          튜토리얼과 같은 배율을 유지하고, 시간/레벨에 따른 상승폭은 거의 없앤다 */
       var diffEase = lv<10 ? 0.1 : 1;
@@ -2031,27 +2028,6 @@ function gSail(){
         }
       }
     }
-    if(inFinale){
-      /* 무쌍 타임 — 사격 속도를 극단적으로 올려 화면을 정리한다 */
-      fireTimer-=sdt;
-      if(fireTimer<=0){
-        fireTimer=Math.max(70,T.fireEvery*1000*0.22*Math.pow(0.85,upgLevel.fire));
-        beep(920,0.05,'sawtooth',0.08);
-        var mcf=T.missiles+upgLevel.spread+1;
-        var pierceHpF=1+upgLevel.pierce+(fusion.typhoon?3:0)+(fusion.tsunami?3:0);
-        for(var mf=0;mf<mcf;mf++){
-          var angf=(mf-(mcf-1)/2)*((T.spread+10)*Math.PI/180);
-          missiles.push({x:px,y:shipY-30,vx:Math.sin(angf)*3.4,vy:-12,hp:pierceHpF});
-        }
-      }
-      spawn-=sdt;
-      if(spawn<=0){
-        spawn=170;
-        var rk2=Math.floor(Math.random()*ASSETS.rockShapePool.length);
-        rocks.push({x:60+Math.random()*(W-120),y:-60,r:28+Math.random()*22,v:6.2,asset:ASSETS.rockShapePool[rk2],passed:false,dead:false,noHit:true,id:++rockIdCounter});
-      }
-    }
-
     /* ================= 배경 ================= */
     ctx.save();
     /* 카메라 흔들림/줌 */
@@ -2066,8 +2042,7 @@ function gSail(){
 
     ctx.clearRect(-40,-40,W+80,H+80);
     var g=ctx.createLinearGradient(0,0,0,H);
-    if(inFinale){g.addColorStop(0,'#152040');g.addColorStop(1,'#050814');}
-    else {g.addColorStop(0,'#181B2E');g.addColorStop(1,'#0F1120');}
+    g.addColorStop(0,'#181B2E');g.addColorStop(1,'#0F1120');
     ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
 
     /* 먼 바다 안개 */
@@ -2075,7 +2050,7 @@ function gSail(){
     ctx.fillRect(0,0,W,H*0.35);
 
     /* 파도 레이어(속도 다른 3겹) + 배 진행감 */
-    var speedFeel=1+ (inFinale?0.9:0);
+    var speedFeel=1;
     wave+=.035*frameK*speedFeel;
     [ [0.12,7,24,9], [0.08,5,34,13], [0.05,4,46,19] ].forEach(function(cfg,li){
       ctx.strokeStyle='rgba(79,195,161,'+cfg[0]+')';ctx.lineWidth=2.4;
@@ -2100,9 +2075,13 @@ function gSail(){
 
     var hit=false;
 
-    /* ---- 미니보스 ---- */
+    /* ---- 미니보스 ---- (그냥 지나가는 장애물이 아니라 한 자리에 버티고 서서
+       패턴 공격을 반복하는 진짜 보스전 — 격파해야만 물러간다) */
     if(boss.state==='alive'){
-      if(!frozen) boss.y+=boss.v*frameK*2.6;
+      if(!frozen){
+        if(boss.y<boss.restY) boss.y+=boss.v*frameK*2.6;
+        else boss.x=Math.max(boss.r+10,Math.min(W-boss.r-10,W/2+Math.sin(el*0.5)*(W*0.28)));
+      }
       if(!drawImgFit(boss.asset,boss.x,boss.y,boss.r*2.3,boss.r*2.4,0)){
         ctx.fillStyle='#2A2F4A';ctx.beginPath();
         ctx.moveTo(boss.x-boss.r,boss.y+boss.r);ctx.lineTo(boss.x,boss.y-boss.r);ctx.lineTo(boss.x+boss.r,boss.y+boss.r);ctx.closePath();ctx.fill();
@@ -2132,7 +2111,28 @@ function gSail(){
       if(boss.state==='alive'){
         var bdx=Math.abs(boss.x-px), bdy=Math.abs(boss.y-shipY);
         if(bdx<boss.r+30 && bdy<boss.r+34){ hit=true; }
-        if(boss.y>H+160){ boss.state='idle'; boss.nextAt=el+Math.max(20,45-lv*0.6); }
+      }
+      /* 패턴 공격 — 조준 3연발과 전방위 확산탄을 번갈아 쏜다(자리 잡은 뒤부터) */
+      if(boss.state==='alive' && !frozen && boss.y>=boss.restY){
+        boss.shotTimer-=sdt;
+        if(boss.shotTimer<=0){
+          boss.patternStep=(boss.patternStep+1)%3;
+          if(boss.patternStep===0){
+            /* 패턴 B: 전방위 확산탄 */
+            for(var bri=0;bri<10;bri++){
+              var brang=(bri/10)*Math.PI*2;
+              enemyShots.push({x:boss.x,y:boss.y,vx:Math.cos(brang)*3.0,vy:Math.sin(brang)*3.0,dead:false});
+            }
+            boss.shotTimer=2600;
+          } else {
+            /* 패턴 A: 배를 노리는 3way 조준탄 */
+            var baang=Math.atan2(shipY-boss.y,px-boss.x);
+            [-0.26,0,0.26].forEach(function(boff){
+              enemyShots.push({x:boss.x,y:boss.y,vx:Math.cos(baang+boff)*3.6,vy:Math.sin(baang+boff)*3.6,dead:false});
+            });
+            boss.shotTimer=1100;
+          }
+        }
       }
     }
 
@@ -2284,7 +2284,7 @@ function gSail(){
     if(finalBoss.state==='announce' && el>=finalBoss.announceUntil){
       finalBoss.state='alive';
       finalBoss.maxHp=90; finalBoss.hp=90;
-      finalBoss.x=W/2; finalBoss.y=-180; finalBoss.restY=H*0.22; finalBoss.shotTimer=1400;
+      finalBoss.x=W/2; finalBoss.y=-180; finalBoss.restY=H*0.22; finalBoss.shotTimer=1200; finalBoss.patternStep=0;
       finalBoss.asset=ASSETS.krakenBoss; /* 대사집에서 "크라켄"으로 특정된 최종보스 */
       toast('영등할망의 마지막 시련 — 강력한 존재가 나타났다!');
       sfx('boom',0.6);
@@ -2314,12 +2314,30 @@ function gSail(){
           }
         }
       }
+      /* 크라켄도 최종보스답게 조준탄/확산탄/촉수 부채꼴 3가지 패턴을 순환한다 */
       if(finalBoss.state==='alive' && !frozen && finalBoss.y>=finalBoss.restY){
         finalBoss.shotTimer-=sdt;
         if(finalBoss.shotTimer<=0){
-          finalBoss.shotTimer=1400+Math.random()*600;
+          finalBoss.patternStep=(finalBoss.patternStep+1)%3;
           var fang=Math.atan2(shipY-finalBoss.y,px-finalBoss.x);
-          enemyShots.push({x:finalBoss.x,y:finalBoss.y,vx:Math.cos(fang)*3.6,vy:Math.sin(fang)*3.6,dead:false});
+          if(finalBoss.patternStep===0){
+            /* 패턴: 전방위 촉수 확산탄 */
+            for(var fri=0;fri<12;fri++){
+              var frang=(fri/12)*Math.PI*2;
+              enemyShots.push({x:finalBoss.x,y:finalBoss.y,vx:Math.cos(frang)*3.2,vy:Math.sin(frang)*3.2,dead:false});
+            }
+            finalBoss.shotTimer=2800;
+          } else if(finalBoss.patternStep===1){
+            /* 패턴: 배를 노리는 5way 부채꼴 조준탄 */
+            [-0.5,-0.25,0,0.25,0.5].forEach(function(foff){
+              enemyShots.push({x:finalBoss.x,y:finalBoss.y,vx:Math.cos(fang+foff)*3.8,vy:Math.sin(fang+foff)*3.8,dead:false});
+            });
+            finalBoss.shotTimer=1500;
+          } else {
+            /* 패턴: 빠르고 강한 정조준 저격탄 */
+            enemyShots.push({x:finalBoss.x,y:finalBoss.y,vx:Math.cos(fang)*4.4,vy:Math.sin(fang)*4.4,dead:false});
+            finalBoss.shotTimer=800;
+          }
           sfx('pop',0.3);
         }
       }
@@ -2411,29 +2429,23 @@ function gSail(){
             m.hp--; if(m.hp<=0) missiles.splice(mi2,1); /* 🌊 관통탄 — hp가 남아있으면 계속 날아간다 */
             hitFlashes.push({x:r.x,y:r.y,until:el+0.1,big:r.r>44});
             splashes.push({x:r.x,y:r.y,until:el+0.22,tier:r.r>50?2:(r.r>36?1:0)});
-            explodeRock(r.x,r.y,r.r,inFinale);sfx('pop',0.45);kills++;
-            /* 경험치는 즉시 들어오지 않고 복주머니로 떨어진다 — 직접 먹어야 레벨업.
-               단, 무쌍(각성) 구간은 원래도 짧은 축제 타임이라 예외로 즉시 지급한다 */
-            if(inFinale) gainXp(ROCK_XP,el); else dropXpPouch(r.x,r.y,ROCK_XP,el);
+            explodeRock(r.x,r.y,r.r);sfx('pop',0.45);kills++;
+            /* 경험치는 즉시 들어오지 않고 복주머니로 떨어진다 — 직접 먹어야 레벨업 */
+            dropXpPouch(r.x,r.y,ROCK_XP,el);
             /* 🌀 태풍포 융합(포격강화+다연장 MAX) — 일반 포탄에도 작은 폭발이 붙는다.
                폭발탄 자체는 이제 별도 투사체(bombShots)로 분리됐다 */
             if(fusion.typhoon){
               rocks.forEach(function(r2){
                 if(r2!==r && !r2.dead && Math.hypot(r2.x-r.x,r2.y-r.y)<55){
                   r2.dead=true; explodeRock(r2.x,r2.y,r2.r); kills++;
-                  if(inFinale) gainXp(ROCK_XP,el); else dropXpPouch(r2.x,r2.y,ROCK_XP,el);
+                  dropXpPouch(r2.x,r2.y,ROCK_XP,el);
                 }
               });
             }
-            if(inFinale){
-              finaleKills++;
-              if(finaleKills===7||finaleKills===12||finaleKills===18||finaleKills%25===0) showBig('BREAK ×'+finaleKills,'',700,'break');
-            } else {
-              if(el-breakComboLast<0.7) breakComboN++; else breakComboN=1;
-              breakComboLast=el;
-              if(breakComboN>=2) showBig('BREAK ×'+breakComboN,'',600,'break');
-              shake(2.2);
-            }
+            if(el-breakComboLast<0.7) breakComboN++; else breakComboN=1;
+            breakComboLast=el;
+            if(breakComboN>=2) showBig('BREAK ×'+breakComboN,'',600,'break');
+            shake(2.2);
           }
         }
       });
@@ -2784,7 +2796,7 @@ function gSail(){
 
     $('#stScore').textContent='';
 
-    if(hit && !invuln && !inFinale && !ending && !frozen){
+    if(hit && !invuln && !ending && !frozen){
       if(shieldCharge>0){
         /* 🛡 바람막이 — 하트 대신 보호막을 소모한다 */
         shieldCharge=0; invulnUntil=el+1.0; shake(6); sfx('bonus',0.5);
