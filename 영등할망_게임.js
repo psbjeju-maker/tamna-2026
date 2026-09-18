@@ -6,6 +6,8 @@
 
    ── 의존 요소 (index.html 다른 곳에 있음) ──
    · <canvas id="gcv"></canvas>            게임을 그리는 캔버스
+   · <div id="lightningFlash"></div>       번개 카드용 CSS 플래시 오버레이(캔버스 위,
+     #canvasWrap 안에 position:relative로 겹쳐둠 — app.css의 #lightningFlash 참고)
    · var cv=$('#gcv'), ctx=cv.getContext('2d'), raf=null;
    · openStage(title) / stopGame()          게임 화면 열기/닫기
    · sfx(name,vol) / sfxAmbient(name,vol) / beep(freq,dur,type,vol)
@@ -57,16 +59,26 @@ var ASSETS = {
 };
 
 /* ---------------- 기울기(선택 조작) ---------------- */
-var tiltX = 0;
-function tiltH(e){ if(e.gamma != null) tiltX = Math.max(-1, Math.min(1, e.gamma/25)); }
+var tiltX = 0, tiltY = 0, tiltBetaBase = null;
+function tiltH(e){
+  if(e.gamma != null) tiltX = Math.max(-1, Math.min(1, e.gamma/25));
+  if(e.beta != null){
+    /* 사람마다 폰을 쥔 각도가 다르므로 첫 값을 "중립 자세"로 삼고 거기서부터의
+       변화량만 상하 이동에 쓴다(원시 beta값을 그대로 쓰면 쥔 각도에 따라 한쪽으로 쏠림) */
+    if(tiltBetaBase == null) tiltBetaBase = e.beta;
+    tiltY = Math.max(-1, Math.min(1, (e.beta - tiltBetaBase)/25));
+  }
+}
 
 /* 배 진화 4단계 — need는 "그 단계까지 오는데 필요한 진화 게이지" 증분값.
    2단계부터 자동으로 미사일을 쏴서 앞을 가로막는 바위를 직접 파괴할 수 있다. */
+/* 단계마다 포탄 수·발사속도·각도가 눈에 띄게 달라져야 "진화했다"는 느낌이 나므로
+   이전엔 조각배→풍선 전환이 사실상 총알 1개 그대로라 체감이 없었던 것을 고쳤다 */
 var SHIP_TIERS=[
   {name:'조각배',   need:0, fireEvery:0,    missiles:0, spread:0,    aura:false},
-  {name:'풍선(風船)',need:2, fireEvery:1.2,  missiles:1, spread:0,    aura:false},
-  {name:'범선',     need:3, fireEvery:0.85, missiles:2, spread:12,   aura:true },
-  {name:'용선(龍船)',need:3, fireEvery:0.22, missiles:3, spread:18,   aura:true }
+  {name:'풍선(風船)',need:2, fireEvery:1.0,  missiles:2, spread:14,   aura:false},
+  {name:'범선',     need:3, fireEvery:0.65, missiles:3, spread:16,   aura:true },
+  {name:'용선(龍船)',need:3, fireEvery:0.22, missiles:4, spread:20,   aura:true }
 ];
 
 function drawShip(ctx,lvl,glowPulse){
@@ -115,13 +127,17 @@ function makeCam(){ return { shake:0, zoom:1, zoomTo:1 }; }
 function gSail(){
   openStage('영등할망의 바람');
   sfxAmbient('ocean',0.22);
+  tiltX=0; tiltY=0; tiltBetaBase=null; /* 이번 판을 쥔 자세를 새 중립값으로 다시 잡는다 */
   if(window.DeviceOrientationEvent&&DeviceOrientationEvent.requestPermission){
     DeviceOrientationEvent.requestPermission().then(function(r){
       if(r==='granted')window.addEventListener('deviceorientation',tiltH)}).catch(function(){});
   } else window.addEventListener('deviceorientation',tiltH);
 
   var W=cv.width,H=cv.height,px=W/2,rocks=[],foods=[],missiles=[],debris=[],enemyShots=[],t0=performance.now(),lastNow=t0;
-  var shipY=H-160;
+  /* 상하좌우 자유 이동(자이로+드래그) — 아래쪽 바닥에 붙어있지 않고 화면 중하단
+     영역을 오가며 장애물을 직접 피해다닐 수 있게 세로 이동 범위를 둔다 */
+  var shipYMin=H*0.38, shipYMax=H-140;
+  var shipY=shipYMax, dragY=shipY;
   var spawn=900,foodSpawn=2600,debrisSpawn=6000,alive=true;
   var evoFlashUntil=0,haloSpin=0,fireTimer=0,kills=0,bossKillCount=0;
   var flashes=[],fx=[],bgParticles=[];
@@ -137,7 +153,6 @@ function gSail(){
   var HIT_LINES=['아이고게, 정신 촐리라게!','아이고 놀란 것 좀 보라!'];
   var LV10_LINE='이제 보롬 쎄게 불거난 정신 촐리라이~';
   var END_LINES=['제라하게 보름 탈 줄 알암쪄이','오늘은 여기까지 하게마씨'];
-  var RUSH_LINES=['바당에서 복이 쏟아진다!'];
   var BOSS_LINES=['큰 게 온다, 정신 차리라이!','저건 요망진 놈이여!'];
   var FINALBOSS_LINES=['이제 마지막 시련이여, 날 도와 이겨내라!','이 폭풍만 넘기면 진짜배기여'];
   var WIN_LINES=['허허, 여기까지 왔구나','제법이여, 잘 버텼저'];
@@ -281,15 +296,14 @@ function gSail(){
       closePick(pick.options[idx], (performance.now()-t0)/1000);
       return;
     }
-    dragging=true; dragX=Math.max(50,Math.min(W-50,x));
+    dragging=true; dragX=Math.max(50,Math.min(W-50,x)); dragY=Math.max(shipYMin,Math.min(shipYMax,evY(e)));
   };
-  cv.onpointermove=function(e){ if(dragging) dragX=Math.max(50,Math.min(W-50,evX(e))); };
+  cv.onpointermove=function(e){ if(dragging){ dragX=Math.max(50,Math.min(W-50,evX(e))); dragY=Math.max(shipYMin,Math.min(shipYMax,evY(e))); } };
   cv.onpointerup=function(){dragging=false};
   cv.onpointercancel=function(){dragging=false};
 
   /* ---- 페이즈 트리거 ---- */
   var tutorialDone=false;
-  var rush={state:'idle',announceUntil:0,until:0,nextAt:26,spawnTimer:0};
   var boss={state:'idle',announceUntil:0,hp:0,maxHp:5,x:0,y:0,r:92,v:1.15,asset:null,nextAt:34,flashUntil:0};
   var finaleUntil=0,inFinale=false,finaleKills=0;
   var awakened=false;
@@ -314,6 +328,13 @@ function gSail(){
     showCutin(pickRandom(FINALBOSS_LINES),2200,true);
   }
 
+  var lightningFlashEl=$('#lightningFlash');
+  function flashLightning(){
+    if(!lightningFlashEl) return;
+    lightningFlashEl.classList.remove('on');
+    void lightningFlashEl.offsetWidth; /* 리플로우를 강제해서 연속으로 쳐도 애니메이션이 다시 재생되게 */
+    lightningFlashEl.classList.add('on');
+  }
   function explodeRock(x,y,r,big){
     flashes.push({x:x,y:y,t:0,r0:r*0.3,r1:r*(big?2.3:1.8)});
     var n=big?18:12;
@@ -370,16 +391,26 @@ function gSail(){
 
     /* 카드 선택/이벤트 알림/대사가 떠 있는 동안은 게임이 완전히 멈춰야 한다는
        요청 반영 — 배 이동부터 바위·먹거리·포격까지 전부 이 플래그로 묶는다 */
-    var frozen = pick.open || rush.state==='announce' || boss.state==='announce' || (cutin.freeze && cutin.until>performance.now());
+    var frozen = pick.open || boss.state==='announce' || (cutin.freeze && cutin.until>performance.now());
 
-    /* ---- 조작 입력 ---- (얼어있는 동안엔 배가 움직이지 않는다) */
+    /* ---- 조작 입력 ---- (얼어있는 동안엔 배가 움직이지 않는다)
+       배를 조심조심 몰아가는 느낌을 위해 반응 속도를 전체적으로 낮췄고,
+       좌우뿐 아니라 상하로도 움직여서 장애물을 직접 피해다닐 수 있다 */
     if(!frozen){
-      if(dragging) px += (dragX-px)*Math.min(1,(0.30+upgLevel.speed*0.05)*frameK);
-      else if(Math.abs(tiltX)>0.02) px += tiltX*(9+upgLevel.speed*1.5)*frameK;
+      if(dragging){
+        var followK=Math.min(1,(0.14+upgLevel.speed*0.025)*frameK);
+        px += (dragX-px)*followK;
+        shipY += (dragY-shipY)*followK;
+      } else {
+        var tiltPow=(5+upgLevel.speed*0.8)*frameK;
+        if(Math.abs(tiltX)>0.02) px += tiltX*tiltPow;
+        if(Math.abs(tiltY)>0.02) shipY -= tiltY*tiltPow;
+      }
     }
     /* 배 이미지 폭이 진화할수록 커지므로(특히 용선) 화면 가장자리에서 잘리지 않게 여백도 같이 늘린다 */
     var shipMargin=Math.max(50,(40+shipTier*10)*1.15+8);
     px=Math.max(shipMargin,Math.min(W-shipMargin,px));
+    shipY=Math.max(shipYMin,Math.min(shipYMax,shipY));
 
     var T=SHIP_TIERS[shipTier];
 
@@ -391,22 +422,8 @@ function gSail(){
       closePick(pickRandom(pick.options), el);
     }
 
-    /* 골든 러시 — 알림 문구가 뜨는 동안은 완전히 멈추고, 문구가 끝나야 실제로 시작된다 */
-    if(rush.state==='idle' && el>=rush.nextAt && !frozen && boss.state==='idle' && finalBoss.state==='idle'){
-      rush.state='announce'; rush.announceUntil=el+1.4;
-      showCutin(pickRandom(RUSH_LINES),1400,true);
-    }
-    if(rush.state==='announce' && el>=rush.announceUntil){
-      rush.state='active'; rush.until=el+5; rush.spawnTimer=0;
-      toast('✨ 골든 러시! 마음껏 쓸어담으라!');
-      sfx('bonus',0.7);
-    }
-    if(rush.state==='active' && el>=rush.until){
-      rush.state='idle'; rush.nextAt=el+32+Math.random()*14;
-    }
-
     /* 미니보스 — 알림 문구가 뜨는 동안 완전히 멈춘 뒤 등장한다. 레벨이 오를수록 더 자주 나온다 */
-    if(boss.state==='idle' && el>=boss.nextAt && !frozen && rush.state==='idle' && lv>=10 && finalBoss.state==='idle'){
+    if(boss.state==='idle' && el>=boss.nextAt && !frozen && lv>=10 && finalBoss.state==='idle'){
       boss.state='announce'; boss.announceUntil=el+1.5;
       showCutin(pickRandom(BOSS_LINES),1500,true);
     }
@@ -432,7 +449,7 @@ function gSail(){
       alive=false; finishSail(el,kills); return;
     }
 
-    var suspendSpawn = frozen || rush.state==='active';
+    var suspendSpawn = frozen;
 
     if(!suspendSpawn && !inFinale && !ending){
       /* 10레벨까지는 튜토리얼 수준으로 계속 쉬워야 한다는 요청 — 스폰 간격도
@@ -441,12 +458,14 @@ function gSail(){
       var spawnRate = (tutorialDone && lv>=10) ? 1 : 0.45;
       spawn-=sdt;
       if(spawn<=0){
-        spawn=Math.max(160,(620-el*22*diffEase-lv*4*diffEase)/spawnRate);
+        /* "피하기 게임인데 못 피한다"는 피드백 반영 — 스폰 간격 최저치와 낙하속도 상한을
+           크게 올려서 레벨/시간이 아무리 쌓여도 실제로 빠져나갈 틈이 남게 한다 */
+        spawn=Math.max(420,(620-el*10*diffEase-lv*2*diffEase)/spawnRate);
         var rk=Math.floor(Math.random()*ASSETS.rockPool.length);
         /* 호밍 바위 — Lv10부터 등장, 지그재그 바위와는 겹치지 않게 서로 배타적으로 뽑는다 */
         var homing = lv>=10 && Math.random()<0.3;
         var zz = !homing && lv>=10 && Math.random()<0.35;
-        rocks.push({x:60+Math.random()*(W-120),y:-60,r:32+Math.random()*26,v:Math.min(lv<10?4.2:99, 3.2+el*0.11*diffEase+lv*0.15*diffEase),asset:ASSETS.rockPool[rk],passed:false,dead:false,zigzag:zz,zzPhase:Math.random()*Math.PI*2,homing:homing});
+        rocks.push({x:60+Math.random()*(W-120),y:-60,r:32+Math.random()*26,v:Math.min(lv<10?4.2:7.5, 3.2+el*0.05*diffEase+lv*0.08*diffEase),asset:ASSETS.rockPool[rk],passed:false,dead:false,zigzag:zz,zzPhase:Math.random()*Math.PI*2,homing:homing});
       }
       foodSpawn-=sdt;
       if(foodSpawn<=0){
@@ -483,13 +502,17 @@ function gSail(){
           beep(880,0.06,'sawtooth',0.09);
           var pierceHp=1+upgLevel.pierce+(fusion.typhoon?3:0)+(fusion.tsunami?3:0);
           for(var mi=0;mi<mc;mi++){
-            var ang=(mi-(mc-1)/2)*(T.spread*Math.PI/180);
+            /* 포탄이 2발 이상인데 spread각이 0이면 전부 같은 궤적에 겹쳐 보여서
+               "늘어나도 안 늘어난 것처럼" 보이는 문제가 있었다 — 최소 각도를 보장 */
+            var ang=(mi-(mc-1)/2)*(Math.max(T.spread,10)*Math.PI/180);
             missiles.push({x:px,y:shipY-30,vx:Math.sin(ang)*3,vy:-9-shipTier,hp:pierceHp});
           }
         }
       }
 
-      /* ⚡ 벼락 — 조준 없이 주기적으로 화면의 바위 하나를 자동으로 파괴한다 */
+      /* ⚡ 벼락 — 조준 없이 주기적으로 화면의 바위 하나를 자동으로 파괴한다.
+         번쩍이는 연출은 캔버스에 직접 그리지 않고 캔버스 위 오버레이 div를
+         CSS 애니메이션으로 잠깐 켰다 끄는 방식으로 가볍게 처리한다 */
       if(upgLevel.lightning>0){
         lightningTimer-=sdt;
         if(lightningTimer<=0){
@@ -499,6 +522,7 @@ function gSail(){
             var target=pickRandom(aliveRocks);
             target.dead=true; explodeRock(target.x,target.y,target.r);
             sfx('pop',0.4); kills++; gainXp(ROCK_XP,el);
+            flashLightning();
           }
         }
       }
@@ -522,15 +546,6 @@ function gSail(){
           shieldCharge=1;
           toast('🛡 바람막이 준비됨');
         }
-      }
-    }
-    if(rush.state==='active'){
-      rush.spawnTimer-=sdt;
-      if(rush.spawnTimer<=0){
-        rush.spawnTimer=200;
-        var rroll=Math.random(),rkind='rice',rasset=ASSETS.foodRice;
-        if(rroll<0.25){rkind='bag';rasset=ASSETS.foodBag;} else if(rroll<0.6){rkind='tangerine';rasset=ASSETS.foodTangerine;}
-        foods.push({x:40+Math.random()*(W-80),y:-30,r:24,v:3.2,kind:rkind,asset:rasset});
       }
     }
     if(inFinale){
@@ -568,8 +583,7 @@ function gSail(){
 
     ctx.clearRect(-40,-40,W+80,H+80);
     var g=ctx.createLinearGradient(0,0,0,H);
-    if(rush.state==='active'){g.addColorStop(0,'#3A2E10');g.addColorStop(1,'#1A1206');}
-    else if(inFinale){g.addColorStop(0,'#152040');g.addColorStop(1,'#050814');}
+    if(inFinale){g.addColorStop(0,'#152040');g.addColorStop(1,'#050814');}
     else {g.addColorStop(0,'#181B2E');g.addColorStop(1,'#0F1120');}
     ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
 
@@ -578,7 +592,7 @@ function gSail(){
     ctx.fillRect(0,0,W,H*0.35);
 
     /* 파도 레이어(속도 다른 3겹) + 배 진행감 */
-    var speedFeel=1+ (inFinale?0.9:0) + (rush.state==='active'?0.3:0);
+    var speedFeel=1+ (inFinale?0.9:0);
     wave+=.035*frameK*speedFeel;
     [ [0.12,7,24,9], [0.08,5,34,13], [0.05,4,46,19] ].forEach(function(cfg,li){
       ctx.strokeStyle='rgba(79,195,161,'+cfg[0]+')';ctx.lineWidth=2.4;
