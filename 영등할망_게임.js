@@ -15,10 +15,13 @@
    · $('#stScore')                          canvas 밖 상단 점수 텍스트(지금은 비워둠)
    · d() / S.best.sail                      오늘 기록 저장소
 
-   ── 이미지 에셋 (assets/sail-game/*.png) ──
-   탐라문화제 원본 스프라이트시트에서 잘라낸 실제 그림 36장이 이미
-   assets/sail-game/ 안에 들어있습니다. 파일이 없거나 로드에 실패해도
-   게임은 죽지 않고 기존 Canvas 도형으로 자동 대체됩니다(ASSETS 참고).
+   ── 이미지 에셋 (assets/sail-game/*.png, assets/sail-game/sheet/*.png) ──
+   탐라문화제 원본 스프라이트시트에서 잘라낸 실제 그림들이 이미
+   assets/sail-game/ 안에 들어있습니다(배·바위·몬스터·발사체 등).
+   assets/sail-game/sheet/ 안에는 4x4 그리드 시트 8장(01~08)에서 잘라낸
+   128개 항해감/이펙트/HUD/진화 그림이 들어있습니다(파일명은 ASSETS 참고).
+   파일이 없거나 로드에 실패해도 게임은 죽지 않고 기존 Canvas 도형으로
+   자동 대체됩니다(ASSETS 참고).
    ============================================================ */
 
 /* ---------------- 에셋 ---------------- */
@@ -59,7 +62,13 @@ var ASSETS = {
   windParticle:  loadAsset('windParticle.png'),
   windSwirlBlue:   loadAsset('windSwirlBlue.png'),
   windSwirlPurple: loadAsset('windSwirlPurple.png'),
-  yeongdeung:    loadAsset('yeongdeung.png') /* 아직 없음 — 실루엣은 자동으로 스웰 아이콘으로 대체됨 */
+  yeongdeung:    loadAsset('yeongdeung.png'), /* 아직 없음 — 실루엣은 자동으로 스웰 아이콘으로 대체됨 */
+  /* 항해감(배 뒤 물살) 전용 — 속도 단계별(0=거의정지~3=고속) 세트 */
+  wakeV:      [loadAsset('sheet/wake_v_s1.png'), loadAsset('sheet/wake_v_s2.png'), loadAsset('sheet/wake_v_s3.png'), loadAsset('sheet/wake_v_fast.png')],
+  foamStern:  [loadAsset('sheet/foam_stern_1.png'), loadAsset('sheet/foam_stern_2.png'), loadAsset('sheet/foam_stern_3.png'), loadAsset('sheet/foam_stern_fast.png')],
+  sprayBow:   [loadAsset('sheet/spray_bow_s.png'), loadAsset('sheet/spray_bow_m.png'), loadAsset('sheet/spray_bow_l.png')],
+  wakeTurnLeft:  loadAsset('sheet/wake_turn_left.png'),
+  wakeTurnRight: loadAsset('sheet/wake_turn_right.png')
 };
 
 /* ---------------- 기울기(선택 조작) ---------------- */
@@ -141,6 +150,8 @@ function gSail(){
   var shipY=shipYMax, dragY=shipY;
   var spawn=900,foodSpawn=2600,debrisSpawn=6000,alive=true;
   var evoFlashUntil=0,haloSpin=0,fireTimer=0,kills=0,bossKillCount=0;
+  /* 항해감 — 실제 이동량(프레임 정규화 속도)으로 기울기·물살을 정한다 */
+  var prevPx=px, prevShipY=shipY, shipVX=0, shipVY=0, turnSprayUntil=0, turnSprayDir=0;
   var flashes=[],fx=[],bgParticles=[];
   var maxHearts=2,hearts=2,invulnUntil=0;
   var breakComboN=0,breakComboLast=-99;
@@ -422,6 +433,15 @@ function gSail(){
     var shipMargin=Math.max(50,(40+shipTier*10)*1.15+8);
     px=Math.max(shipMargin,Math.min(W-shipMargin,px));
     shipY=Math.max(shipYMin,Math.min(shipYMax,shipY));
+
+    /* 프레임 정규화 실제 이동 속도 — 항해감(기울기·물살 연출)에 쓴다 */
+    var fkSafe=Math.max(0.1,frameK);
+    var newVX=(px-prevPx)/fkSafe, newVY=(shipY-prevShipY)/fkSafe;
+    if(newVX*shipVX<0 && Math.abs(newVX)>1.4 && el>=turnSprayUntil-1.2){
+      turnSprayUntil=el+0.32; turnSprayDir=newVX>0?1:-1;
+    }
+    shipVX=newVX; shipVY=newVY;
+    prevPx=px; prevShipY=shipY;
 
     var T=SHIP_TIERS[shipTier];
 
@@ -1053,21 +1073,6 @@ function gSail(){
       });
     }
 
-    /* 파괴 이펙트 */
-    flashes.forEach(function(fl){fl.t+=frameK;var p=Math.min(1,fl.t/14);var rad=fl.r0+(fl.r1-fl.r0)*p;
-      ctx.globalAlpha=1-p;
-      if(!drawImgFit(ASSETS.rockExplosion,fl.x,fl.y,rad*2.4,rad*2.4,0)){
-        var fg=ctx.createRadialGradient(fl.x,fl.y,0,fl.x,fl.y,rad);
-        fg.addColorStop(0,'rgba(220,250,255,.9)');fg.addColorStop(.5,'rgba(79,195,161,.5)');fg.addColorStop(1,'rgba(79,195,161,0)');
-        ctx.fillStyle=fg;ctx.beginPath();ctx.arc(fl.x,fl.y,rad,0,7);ctx.fill();
-      }
-      ctx.globalAlpha=1});
-    flashes=flashes.filter(function(fl){return fl.t/14<1});
-    if(fx.length>90) fx.splice(0,fx.length-90);
-    fx.forEach(function(p){p.x+=p.vx*2*frameK;p.y+=p.vy*2*frameK;p.vy+=.1*frameK;p.l-=.05*frameK;
-      ctx.globalAlpha=Math.max(0,p.l);ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,p.sz||5,0,7);ctx.fill();ctx.globalAlpha=1});
-    fx=fx.filter(function(p){return p.l>0});
-
     /* 먹거리 — 얼어있는 동안엔 떨어지지도, 먹히지도 않는다 */
     foods.forEach(function(f){
       if(!frozen) f.y+=f.v*2.4*frameK;
@@ -1092,20 +1097,44 @@ function gSail(){
     });
     foods=foods.filter(function(f){return f.y<H+80&&!f.eaten});
 
-    /* 배 그리기 */
+    /* 배 그리기 — 실제 이동 속도 기반 항해감(기울기·물살·이물보라·급회전 물보라).
+       예전엔 자이로 각도(tiltX)로 기울였는데 자이로를 없애면서 죽은 코드였다 —
+       이제는 프레임간 실제 이동량(shipVX/shipVY)으로 기울인다 */
     haloSpin+=0.012*frameK;
     var pulse=(Math.sin(el*4)+1)/2;
     var invuln = el<invulnUntil;
-    ctx.save();ctx.translate(px,shipY);ctx.rotate(tiltX*.12+(dragX-px)*0.0025);
+    var moveSpeed=Math.hypot(shipVX,shipVY);
+    var speedTier=moveSpeed<0.4?0:(moveSpeed<1.3?1:(moveSpeed<2.6?2:3));
+    var idleBob = moveSpeed<0.4 ? Math.sin(el*2.2)*3 : 0; /* 정지 시에도 아주 작게 위아래로 부유 */
+    var shipTilt = Math.max(-0.32,Math.min(0.32, shipVX*0.018));
+    ctx.save();ctx.translate(px,shipY+idleBob);ctx.rotate(shipTilt);
     if(el<evoFlashUntil){var sc=1+Math.sin((evoFlashUntil-el)*30)*0.06;ctx.scale(sc,sc)}
     if(invuln && Math.floor(el*10)%2===0) ctx.globalAlpha=0.4;
-    /* 배 뒤쪽 wake */
-    ctx.globalAlpha*=0.8;
-    if(!drawImgFit(ASSETS.windTrail,0,70,26,90*speedFeel,0)){
+    /* 배 뒤쪽 V자 물살 + 선미 포말 — 속도 단계(0~3)에 따라 커지고 진해진다 */
+    ctx.globalAlpha*=(0.55+speedTier*0.15);
+    if(!drawImgFit(ASSETS.wakeV[speedTier],0,58+speedTier*4,30+speedTier*6,54+speedTier*16,0)){
       ctx.fillStyle='rgba(255,255,255,.18)';ctx.beginPath();ctx.ellipse(0,60,14,40*speedFeel,0,0,7);ctx.fill();
+    }
+    drawImgFit(ASSETS.foamStern[speedTier],0,86+speedTier*6,22+speedTier*4,34+speedTier*10,0);
+    /* 앞으로 빠르게 나아갈 때만 이물보라(선수 물보라) 표시 */
+    if(shipVY<-0.5){
+      var bowTier=Math.min(2,speedTier);
+      ctx.globalAlpha*=0.9;
+      drawImgFit(ASSETS.sprayBow[bowTier],0,-46-bowTier*6,24+bowTier*8,20+bowTier*7,0);
     }
     ctx.globalAlpha = invuln && Math.floor(el*10)%2===0 ? 0.4 : 1;
     drawShip(ctx,shipTier,pulse);
+    /* 급회전(좌우 방향 급반전) 시 반대쪽으로 튀는 물보라 */
+    if(el<turnSprayUntil){
+      var tsp=1-(turnSprayUntil-el)/0.32;
+      ctx.save();
+      ctx.globalAlpha=Math.max(0,1-tsp);
+      var tsx=turnSprayDir*38;
+      if(!drawImgFit(turnSprayDir>0?ASSETS.wakeTurnRight:ASSETS.wakeTurnLeft, tsx,20,30,30,0)){
+        ctx.fillStyle='rgba(255,255,255,.4)';ctx.beginPath();ctx.arc(tsx,20,10,0,7);ctx.fill();
+      }
+      ctx.restore();
+    }
     if(shieldCharge>0){
       ctx.globalAlpha=0.6+Math.sin(el*6)*0.15;
       ctx.strokeStyle='#4FC3A1';ctx.lineWidth=3;
@@ -1113,6 +1142,22 @@ function gSail(){
       ctx.globalAlpha=1;
     }
     ctx.restore();
+
+    /* 파괴 이펙트 — 배가 그려진 다음에 그려서(레이어 순서: 오브젝트→발사체→배→충돌이펙트)
+       파편이 배보다 위 레이어에 확실히 보이게 한다 */
+    flashes.forEach(function(fl){fl.t+=frameK;var p=Math.min(1,fl.t/14);var rad=fl.r0+(fl.r1-fl.r0)*p;
+      ctx.globalAlpha=1-p;
+      if(!drawImgFit(ASSETS.rockExplosion,fl.x,fl.y,rad*2.4,rad*2.4,0)){
+        var fg=ctx.createRadialGradient(fl.x,fl.y,0,fl.x,fl.y,rad);
+        fg.addColorStop(0,'rgba(220,250,255,.9)');fg.addColorStop(.5,'rgba(79,195,161,.5)');fg.addColorStop(1,'rgba(79,195,161,0)');
+        ctx.fillStyle=fg;ctx.beginPath();ctx.arc(fl.x,fl.y,rad,0,7);ctx.fill();
+      }
+      ctx.globalAlpha=1});
+    flashes=flashes.filter(function(fl){return fl.t/14<1});
+    if(fx.length>90) fx.splice(0,fx.length-90);
+    fx.forEach(function(p){p.x+=p.vx*2*frameK;p.y+=p.vy*2*frameK;p.vy+=.1*frameK;p.l-=.05*frameK;
+      ctx.globalAlpha=Math.max(0,p.l);ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,p.sz||5,0,7);ctx.fill();ctx.globalAlpha=1});
+    fx=fx.filter(function(p){return p.l>0});
 
     /* ---- HUD ---- */
     ctx.textAlign='left';ctx.font='800 15px SCDream, sans-serif';ctx.fillStyle='rgba(234,244,255,.7)';
