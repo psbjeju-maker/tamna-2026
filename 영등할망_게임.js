@@ -39,16 +39,20 @@ function drawImgFit(im, x, y, w, h, rot){
 }
 var ASSETS = {
   ship:      [loadAsset('ship1.png'), loadAsset('ship2.png'), loadAsset('ship3.png'), loadAsset('ship4.png')],
-  /* 뱀서라이크 스웜 — 바위(무생물) + 실제 바다 몬스터(09시트)를 섞은 풀에서
-     사방으로 몰려온다. 순수 바위만이 아니라 "몬스터"가 실제로 보이게 한다 */
-  rockPool:  [loadAsset('sheet/rock_volcanic_s.png'), loadAsset('sheet/rock_volcanic_m.png'), loadAsset('sheet/rock_crack_l.png'),
-              loadAsset('sheet/rock_spiky.png'), loadAsset('sheet/rock_round.png'), loadAsset('sheet/rock_long.png'), loadAsset('sheet/rock_broken.png'),
-              loadAsset('sheet/monster_hydra_fish.png'), loadAsset('sheet/monster_pufferfish.png'), loadAsset('sheet/monster_crab_blue.png'),
-              loadAsset('sheet/monster_jellyfish.png'), loadAsset('sheet/monster_eel_electric.png'), loadAsset('sheet/monster_squid.png'),
-              loadAsset('sheet/monster_octopus.png'), loadAsset('sheet/monster_turtle.png'), loadAsset('sheet/monster_flyingfish.png'),
-              loadAsset('sheet/monster_lionfish.png'), loadAsset('sheet/monster_lobster.png'), loadAsset('sheet/monster_seasnake.png'),
-              loadAsset('sheet/monster_starfish_eye.png'), loadAsset('sheet/monster_urchin.png'), loadAsset('sheet/monster_mantis_shrimp.png'),
-              loadAsset('sheet/monster_hammerhead.png')],
+  /* 뱀서라이크 스웜 — 바위(무생물, 항상 등장)와 실제 바다 몬스터(09시트, 4단계로
+     나뉨)를 섞어서 사방으로 몰려온다. rockPool은 하위호환용 별칭으로 남겨둔다 */
+  rockShapePool: [loadAsset('sheet/rock_volcanic_s.png'), loadAsset('sheet/rock_volcanic_m.png'), loadAsset('sheet/rock_crack_l.png'),
+              loadAsset('sheet/rock_spiky.png'), loadAsset('sheet/rock_round.png'), loadAsset('sheet/rock_long.png'), loadAsset('sheet/rock_broken.png')],
+  /* 몬스터 4단계 — 배 단계(조각배/풍선/범선/용선)에 맞춰 등장 풀이 바뀐다.
+     1단계만→1+2단계→1+2+3단계→2+3+4단계(1단계는 빠짐) 순으로 넓어졌다 좁아진다.
+     한 번에 여러 종류가 뒤섞이지 않도록, 활성 풀 안에서도 일정 시간은 한
+     종류만 계속 나오는 "웨이브"로 스폰한다(같은 몬스터가 몰려오는 느낌) */
+  monsterTiers: [
+    [loadAsset('sheet/monster_hydra_fish.png'), loadAsset('sheet/monster_pufferfish.png'), loadAsset('sheet/monster_crab_blue.png'), loadAsset('sheet/monster_jellyfish.png')],
+    [loadAsset('sheet/monster_eel_electric.png'), loadAsset('sheet/monster_squid.png'), loadAsset('sheet/monster_octopus.png'), loadAsset('sheet/monster_turtle.png')],
+    [loadAsset('sheet/monster_flyingfish.png'), loadAsset('sheet/monster_lionfish.png'), loadAsset('sheet/monster_lobster.png'), loadAsset('sheet/monster_seasnake.png')],
+    [loadAsset('sheet/monster_starfish_eye.png'), loadAsset('sheet/monster_urchin.png'), loadAsset('sheet/monster_mantis_shrimp.png'), loadAsset('sheet/monster_hammerhead.png')]
+  ],
   /* 해양쓰레기 몬스터(Lv21+) — 10_pollution_mutants 시트의 실제 오염 돌연변이 16종 */
   debrisPool:[loadAsset('sheet/mutant_bottle_crab.png'), loadAsset('sheet/mutant_bag_ghost.png'), loadAsset('sheet/mutant_barrel_pufferfish.png'),
               loadAsset('sheet/mutant_net_turtle.png'), loadAsset('sheet/mutant_net_ray.png'), loadAsset('sheet/mutant_trash_snake.png'),
@@ -181,6 +185,15 @@ function gSail(){
   var shipY=H*0.62, dragY=shipY;
   var spawn=900,foodSpawn=2600,debrisSpawn=6000,alive=true;
   var evoFlashUntil=0,haloSpin=0,fireTimer=0,kills=0,bossKillCount=0;
+  var waveType=null, waveTimer=0; /* 지금 웨이브에서 몰려오는 몬스터 종류(한동안 같은 종류만 나옴) */
+  /* 배 단계에 맞춰 등장 가능한 몬스터 풀이 바뀐다 — 1단계만→1+2→1+2+3→2+3+4(1단계 빠짐) */
+  function activeMonsterPool(){
+    var mt=ASSETS.monsterTiers;
+    if(shipTier===0) return mt[0];
+    if(shipTier===1) return mt[0].concat(mt[1]);
+    if(shipTier===2) return mt[0].concat(mt[1],mt[2]);
+    return mt[1].concat(mt[2],mt[3]);
+  }
   var fireRotation=-Math.PI/2; /* 포탄이 1발뿐일 때 쏠 때마다 30도씩 돌아가며 사방을 훑는다 */
   /* 항해감 — 실제 이동량(프레임 정규화 속도)으로 기울기·물살을 정한다 */
   var prevPx=px, prevShipY=shipY, shipVX=0, shipVY=0, turnSprayUntil=0, turnSprayDir=0;
@@ -322,7 +335,15 @@ function gSail(){
     if(newTier>shipTier){ evolveTo(newTier,el); }
     else if(lv===30 && finalBoss.state==='idle' && !transcended){ startFinalBoss(el); return; }
     else if(lv>30 && transcended && lv%10===0){ prestigeFlash(el); }
-    else { showBig('레벨업!','Lv.'+lv,700,'levelup'); sfx('bonus',0.5); }
+    else {
+      showBig('레벨업!','Lv.'+lv,700,'levelup'); sfx('bonus',0.5);
+      shake(5); zoomTo(1.08); setTimeout(function(){zoomTo(1)},220);
+      /* 텍스트만으로는 심심해서 배 주변에 반짝이는 파티클 링을 터뜨린다 */
+      for(var lui=0;lui<16;lui++){
+        var luAng=(lui/16)*Math.PI*2;
+        fx.push({x:px,y:shipY,vx:Math.cos(luAng)*4,vy:Math.sin(luAng)*4,l:1,c:lui%2?'#F5B331':'#F2F0EA',sz:4+Math.random()*3});
+      }
+    }
     openPick(el);
   }
   function prestigeFlash(el){
@@ -540,17 +561,23 @@ function gSail(){
          튜토리얼과 같은 배율을 유지하고, 시간/레벨에 따른 상승폭은 거의 없앤다 */
       var diffEase = lv<10 ? 0.1 : 1;
       var spawnRate = (tutorialDone && lv>=10) ? 1 : 0.45;
+      /* 지금 웨이브의 몬스터 종류 — 한동안은 같은 종류만 몰려오다가 주기적으로 바뀐다.
+         활성 풀은 배 단계에 맞춰 자동으로 넓어졌다 좁아진다(activeMonsterPool 참고) */
+      waveTimer-=sdt;
+      if(waveTimer<=0){ waveType=pickRandom(activeMonsterPool()); waveTimer=8000+Math.random()*6000; }
       spawn-=sdt;
       if(spawn<=0){
         /* "피하기 게임인데 못 피한다"는 피드백 반영 — 스폰 간격 최저치와 낙하속도 상한을
            크게 올려서 레벨/시간이 아무리 쌓여도 실제로 빠져나갈 틈이 남게 한다 */
         spawn=Math.max(420,(620-el*10*diffEase-lv*2*diffEase)/spawnRate);
-        var rk=Math.floor(Math.random()*ASSETS.rockPool.length);
         /* 뱀서라이크 스웜 느낌 — "지나가는" 바위가 아니라 사방(상하좌우) 화면 밖에서
-           나타나 배 쪽으로 아주 천천히 끌려오는 바위떼로 바꿨다. 일부만 지그재그가 섞인다 */
+           나타나 배 쪽으로 아주 천천히 끌려오는 몬스터떼로 바꿨다. 몬스터는 정말 작게,
+           바위(무생물)와 섞여서 나온다. 일부만 지그재그가 섞인다 */
+        var useMonster=Math.random()<0.6;
+        var spawnAsset=useMonster ? waveType : pickRandom(ASSETS.rockShapePool);
         var zz = Math.random()<0.3;
         var sp=spawnEdgePoint(60);
-        rocks.push({x:sp.x,y:sp.y,r:32+Math.random()*26,v:Math.min(lv<10?1.6:2.6, 1.2+el*0.01*diffEase+lv*0.02*diffEase),asset:ASSETS.rockPool[rk],passed:false,dead:false,zigzag:zz,zzPhase:Math.random()*Math.PI*2,homing:true,id:++rockIdCounter});
+        rocks.push({x:sp.x,y:sp.y,r:14+Math.random()*8,v:Math.min(lv<10?1.6:2.6, 1.2+el*0.01*diffEase+lv*0.02*diffEase),asset:spawnAsset,passed:false,dead:false,zigzag:zz,zzPhase:Math.random()*Math.PI*2,homing:true,id:++rockIdCounter});
       }
       foodSpawn-=sdt;
       if(foodSpawn<=0){
@@ -573,9 +600,9 @@ function gSail(){
         }
       }
 
-      /* 조각배(1단계)는 원래 포격이 없지만 Lv2부터는 자동으로 포탄 1개가 나가고,
+      /* 조각배(1단계)도 맨 처음부터 자동으로 포탄 1개가 나간다(예전엔 Lv2부터였음).
          다연장 확장 카드를 고르면 그 즉시 1개씩 더 늘어난다(1→2→3개) */
-      var baseShot = (shipTier===0 && lv>=2) ? 1 : 0;
+      var baseShot = (shipTier===0) ? 1 : 0;
       var mc=T.missiles+baseShot+upgLevel.spread;
       if(mc>0){
         fireTimer-=sdt;
@@ -716,8 +743,8 @@ function gSail(){
       spawn-=sdt;
       if(spawn<=0){
         spawn=170;
-        var rk2=Math.floor(Math.random()*ASSETS.rockPool.length);
-        rocks.push({x:60+Math.random()*(W-120),y:-60,r:28+Math.random()*22,v:6.2,asset:ASSETS.rockPool[rk2],passed:false,dead:false,noHit:true,id:++rockIdCounter});
+        var rk2=Math.floor(Math.random()*ASSETS.rockShapePool.length);
+        rocks.push({x:60+Math.random()*(W-120),y:-60,r:28+Math.random()*22,v:6.2,asset:ASSETS.rockShapePool[rk2],passed:false,dead:false,noHit:true,id:++rockIdCounter});
       }
     }
 
