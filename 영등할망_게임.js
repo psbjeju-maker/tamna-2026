@@ -68,26 +68,13 @@ var SHIP_TIERS=[
   {name:'용선(龍船)',need:3, fireEvery:0.22, missiles:3, spread:18,   aura:true }
 ];
 
-function drawShip(ctx,lvl,glowPulse,haloSpin,prestige){
+function drawShip(ctx,lvl,glowPulse){
   var T=SHIP_TIERS[lvl];
-  prestige=prestige||0;
   var hullW=40+lvl*10, hullH=14+lvl*2, mastH=54+lvl*14;
   if(T.aura){
     var ag=ctx.createRadialGradient(0,-mastH*0.3,4,0,-mastH*0.3,hullW*1.6);
     ag.addColorStop(0,'rgba(79,195,161,'+(0.28+glowPulse*0.14)+')');ag.addColorStop(1,'rgba(79,195,161,0)');
     ctx.fillStyle=ag;ctx.beginPath();ctx.arc(0,-mastH*0.25,hullW*1.6,0,7);ctx.fill();
-  }
-  if(lvl>=3 && imgOk(ASSETS.awakenHalo)){
-    /* 4단계(용선) 이후로는 새 그림 없이 아우라만 10레벨마다 한 단계씩 더 화려해진다("초월") */
-    ctx.save();ctx.rotate(haloSpin||0);
-    ctx.globalAlpha=Math.min(1,0.55+glowPulse*0.25+prestige*0.06);
-    var haloSize=hullW*(4.4+prestige*0.55);
-    drawImgFit(ASSETS.awakenHalo,0,-mastH*0.25,haloSize,haloSize,0);
-    if(prestige>0){
-      ctx.globalAlpha=Math.min(0.5,0.12+prestige*0.05);
-      drawImgFit(ASSETS.awakenHalo,0,-mastH*0.25,haloSize*0.7,haloSize*0.7,-haloSpin*1.6);
-    }
-    ctx.globalAlpha=1;ctx.restore();
   }
   var shipW=(hullW*2.3), shipH=(mastH+hullH+34);
   if(drawImgFit(ASSETS.ship[lvl],0,-shipH*0.32,shipW,shipH,0)) return;
@@ -639,7 +626,7 @@ function gSail(){
       ctx.fillStyle='rgba(255,255,255,.18)';ctx.beginPath();ctx.ellipse(0,60,14,40*speedFeel,0,0,7);ctx.fill();
     }
     ctx.globalAlpha = invuln && Math.floor(el*10)%2===0 ? 0.4 : 1;
-    drawShip(ctx,shipTier,pulse,haloSpin,prestige);
+    drawShip(ctx,shipTier,pulse);
     ctx.restore();
 
     /* ---- HUD ---- */
