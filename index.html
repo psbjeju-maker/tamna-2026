@@ -1883,7 +1883,7 @@ function gSail(){
         var zz = Math.random()<0.3;
         var sp=spawnEdgePoint(60);
         /* "정말정말 천천히" 반영 — 호밍 속도를 한 번 더 크게 낮췄다 */
-        rocks.push({x:sp.x,y:sp.y,r:14+Math.random()*8,v:Math.min(lv<10?0.7:1.2, 0.5+el*0.004*diffEase+lv*0.008*diffEase),asset:spawnAsset,passed:false,dead:false,zigzag:zz,zzPhase:Math.random()*Math.PI*2,homing:true,id:++rockIdCounter});
+        rocks.push({x:sp.x,y:sp.y,r:14+Math.random()*8,v:Math.min(lv<10?0.35:0.6, 0.25+el*0.002*diffEase+lv*0.004*diffEase),asset:spawnAsset,passed:false,dead:false,zigzag:zz,zzPhase:Math.random()*Math.PI*2,homing:true,id:++rockIdCounter});
       }
       foodSpawn-=sdt;
       if(foodSpawn<=0){
@@ -1902,7 +1902,7 @@ function gSail(){
           debrisSpawn=Math.max(3200,7000-lv*60);
           var dk=Math.floor(Math.random()*ASSETS.debrisPool.length);
           var dsp=spawnEdgePoint(70);
-          debris.push({x:dsp.x,y:dsp.y,r:36,v:1.6+Math.min(1.4,(lv-21)*0.05),swayPhase:Math.random()*Math.PI*2,asset:ASSETS.debrisPool[dk],hp:3,shotTimer:1800+Math.random()*800,dead:false});
+          debris.push({x:dsp.x,y:dsp.y,r:36,v:0.8+Math.min(0.7,(lv-21)*0.025),swayPhase:Math.random()*Math.PI*2,asset:ASSETS.debrisPool[dk],hp:3,shotTimer:1800+Math.random()*800,dead:false});
         }
       }
 
