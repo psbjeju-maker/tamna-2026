@@ -131,14 +131,11 @@ function makeCam(){ return { shake:0, zoom:1, zoomTo:1 }; }
 function gSail(){
   openStage('영등할망의 바람');
   sfxAmbient('ocean',0.22);
-  tiltX=0; tiltY=0; tiltBetaBase=null; /* 이번 판을 쥔 자세를 새 중립값으로 다시 잡는다 */
-  if(window.DeviceOrientationEvent&&DeviceOrientationEvent.requestPermission){
-    DeviceOrientationEvent.requestPermission().then(function(r){
-      if(r==='granted')window.addEventListener('deviceorientation',tiltH)}).catch(function(){});
-  } else window.addEventListener('deviceorientation',tiltH);
+  /* 자이로는 반응이 잘 안 되는 기기가 있어서 제거 — 손가락 드래그만으로
+     상하좌우를 전부 조작한다(권한 요청 팝업도 그래서 안 띄운다) */
 
   var W=cv.width,H=cv.height,px=W/2,rocks=[],foods=[],missiles=[],debris=[],enemyShots=[],t0=performance.now(),lastNow=t0;
-  /* 상하좌우 자유 이동(자이로+드래그) — 아래쪽 바닥에 붙어있지 않고 화면 중하단
+  /* 상하좌우 자유 이동(드래그) — 아래쪽 바닥에 붙어있지 않고 화면 중하단
      영역을 오가며 장애물을 직접 피해다닐 수 있게 세로 이동 범위를 둔다 */
   var shipYMin=H*0.38, shipYMax=H-140;
   var shipY=shipYMax, dragY=shipY;
@@ -175,20 +172,28 @@ function gSail(){
      "카드가 무한히 쌓여서 절대 안 죽는다"는 문제를 해결하기 위해 레벨마다
      상한(MAX)을 두고, MAX에 도달하면 카드 풀에서 빠진다. 특정 두 카드가
      둘 다 MAX면 더 강한 특수 무기로 합쳐진다(진화 조합). */
-  var upgLevel={fire:0,spread:0,heart:0,bok:0,speed:0,bomb:0,pierce:0,lightning:0,windpush:0,focus:0,shield:0};
-  var UPG_MAX ={fire:5,spread:4,heart:5,bok:5,speed:5,bomb:3,pierce:3,lightning:3,windpush:3,focus:3,shield:3};
+  var upgLevel={fire:0,spread:0,heart:0,bok:0,speed:0,bomb:0,pierce:0,lightning:0,windpush:0,focus:0,shield:0,
+                angle:0,rear:0,cdr:0,boomerang:0,homing:0,missile:0};
+  var UPG_MAX ={fire:5,spread:4,heart:5,bok:5,speed:5,bomb:3,pierce:3,lightning:3,windpush:3,focus:3,shield:3,
+                angle:4,rear:2,cdr:4,boomerang:3,homing:3,missile:3};
   var UPGRADES={
     fire:     {emoji:'💥', title:'포격 강화',   desc:'연사 속도가 빨라진다'},
     spread:   {emoji:'🎯', title:'다연장 확장', desc:'포탄이 더 나간다'},
     heart:    {emoji:'❤️', title:'바람의 가호', desc:'최대 체력이 늘고 즉시 회복'},
     bok:      {emoji:'🍊', title:'복바람',      desc:'복을 더 많이 받는다'},
     speed:    {emoji:'🌀', title:'급류 조타',   desc:'조작이 더 즉각적으로 반응한다'},
-    bomb:     {emoji:'💣', title:'폭발탄',      desc:'바위 파괴 시 주변에도 피해'},
+    bomb:     {emoji:'💣', title:'폭발탄',      desc:'주기적으로 폭발탄을 따로 쏴서 터뜨린다'},
     pierce:   {emoji:'🌊', title:'관통탄',      desc:'포탄이 바위를 뚫고 지나간다'},
-    lightning:{emoji:'⚡', title:'벼락',        desc:'주기적으로 바위를 자동 공격'},
-    windpush: {emoji:'🌪', title:'영등바람',    desc:'주기적으로 주변 바위를 밀어낸다'},
+    lightning:{emoji:'⚡', title:'벼락',        desc:'주기적으로 바위에 벼락을 내린다'},
+    windpush: {emoji:'🌪', title:'영등바람',    desc:'주기적으로 바람을 쏴 바위를 좌우로 밀어낸다'},
     focus:    {emoji:'🔥', title:'화력 집중',   desc:'큰 상대에게 강한 한 방'},
-    shield:   {emoji:'🛡', title:'바람막이',    desc:'가끔 피격을 한 번 막아준다'}
+    shield:   {emoji:'🛡', title:'바람막이',    desc:'가끔 피격을 한 번 막아준다'},
+    angle:    {emoji:'📐', title:'확산 사격',   desc:'포탄이 더 넓게 퍼진다'},
+    rear:     {emoji:'🔙', title:'후방 포격',   desc:'배 뒤쪽으로도 포탄을 쏜다'},
+    cdr:      {emoji:'⏱️', title:'재빠른 손놀림', desc:'모든 스킬 재사용 대기시간이 줄어든다'},
+    boomerang:{emoji:'🪃', title:'부메랑',      desc:'날아갔다 돌아오며 두 번 맞힌다'},
+    homing:   {emoji:'🧭', title:'유도탄',      desc:'주기적으로 가까운 바위를 스스로 쫓아간다'},
+    missile:  {emoji:'🚀', title:'미사일',      desc:'주기적으로 강력한 한 발을 날린다'}
   };
   var UPG_KEYS=Object.keys(UPGRADES);
   var RARITY=[
@@ -204,7 +209,11 @@ function gSail(){
   /* 두 카드가 모두 MAX면 특수 무기로 진화한다 */
   var FUSION=[
     {a:'fire',b:'spread',key:'typhoon',name:'태풍포',emoji:'🌀',desc:'포탄이 관통하며 터진다'},
-    {a:'bomb',b:'pierce',key:'tsunami',name:'해일포',emoji:'🌊',desc:'폭발 범위와 관통력이 크게 강화된다'}
+    {a:'bomb',b:'pierce',key:'tsunami',name:'해일포',emoji:'🌊',desc:'폭발탄의 범위와 위력이 크게 강화된다'},
+    {a:'windpush',b:'angle',key:'gale',name:'돌풍포',emoji:'🌬️',desc:'바람이 훨씬 넓고 강하게 퍼진다'},
+    {a:'boomerang',b:'rear',key:'windmill',name:'회전풍차',emoji:'♻️',desc:'부메랑이 앞뒤로 동시에 나간다'},
+    {a:'homing',b:'lightning',key:'stormguide',name:'낙뢰유도',emoji:'⚡',desc:'유도탄이 벼락을 몰고 다닌다'},
+    {a:'missile',b:'focus',key:'barrage',name:'필살포격',emoji:'💥',desc:'미사일 한 발의 위력이 훨씬 강력해진다'}
   ];
   var fusion={};
   function checkFusions(){
@@ -315,6 +324,10 @@ function gSail(){
   var finalBoss={state:'idle',announceUntil:0,stormUntil:0,breakUntil:0,assaultUntil:0,cycle:0,cycles:3,orbs:[],hp:0};
   var transcended=false;
   var lightningTimer=2000, windpushTimer=4000, shieldTimer=8000, shieldCharge=0;
+  var bombTimer=3200, boomerangTimer=3600, homingTimer=3000, missileTimer=4200;
+  var lightningBolts=[], bombShots=[], windGusts=[], boomerangs=[], homingMissiles=[], bigMissiles=[];
+  var rockIdCounter=0;
+  function cdrMul(){ return 1 - Math.min(0.55, upgLevel.cdr*0.12); } /* ⏱ 재빠른 손놀림 — 모든 스킬 쿨타임에 공통 적용 */
 
   function showCutin(text,dur,freeze){ cutin.text=text; cutin.from=performance.now(); cutin.until=cutin.from+dur; cutin.freeze=!!freeze; }
   function showBig(a,b,dur,kind){ bigText={a:a,b:b,from:performance.now(),until:performance.now()+dur,kind:kind}; }
@@ -398,18 +411,12 @@ function gSail(){
     var frozen = pick.open || boss.state==='announce' || (cutin.freeze && cutin.until>performance.now());
 
     /* ---- 조작 입력 ---- (얼어있는 동안엔 배가 움직이지 않는다)
-       배를 조심조심 몰아가는 느낌을 위해 반응 속도를 전체적으로 낮췄고,
+       배를 조심조심 몰아가는 느낌을 위해 반응 속도를 낮췄고, 손가락 드래그로
        좌우뿐 아니라 상하로도 움직여서 장애물을 직접 피해다닐 수 있다 */
-    if(!frozen){
-      if(dragging){
-        var followK=Math.min(1,(0.14+upgLevel.speed*0.025)*frameK);
-        px += (dragX-px)*followK;
-        shipY += (dragY-shipY)*followK;
-      } else {
-        var tiltPow=(5+upgLevel.speed*0.8)*frameK;
-        if(Math.abs(tiltX)>0.02) px += tiltX*tiltPow;
-        if(Math.abs(tiltY)>0.02) shipY -= tiltY*tiltPow;
-      }
+    if(!frozen && dragging){
+      var followK=Math.min(1,(0.14+upgLevel.speed*0.025)*frameK);
+      px += (dragX-px)*followK;
+      shipY += (dragY-shipY)*followK;
     }
     /* 배 이미지 폭이 진화할수록 커지므로(특히 용선) 화면 가장자리에서 잘리지 않게 여백도 같이 늘린다 */
     var shipMargin=Math.max(50,(40+shipTier*10)*1.15+8);
@@ -469,7 +476,7 @@ function gSail(){
         /* 호밍 바위 — Lv10부터 등장, 지그재그 바위와는 겹치지 않게 서로 배타적으로 뽑는다 */
         var homing = lv>=10 && Math.random()<0.3;
         var zz = !homing && lv>=10 && Math.random()<0.35;
-        rocks.push({x:60+Math.random()*(W-120),y:-60,r:32+Math.random()*26,v:Math.min(lv<10?4.2:7.5, 3.2+el*0.05*diffEase+lv*0.08*diffEase),asset:ASSETS.rockPool[rk],passed:false,dead:false,zigzag:zz,zzPhase:Math.random()*Math.PI*2,homing:homing});
+        rocks.push({x:60+Math.random()*(W-120),y:-60,r:32+Math.random()*26,v:Math.min(lv<10?4.2:7.5, 3.2+el*0.05*diffEase+lv*0.08*diffEase),asset:ASSETS.rockPool[rk],passed:false,dead:false,zigzag:zz,zzPhase:Math.random()*Math.PI*2,homing:homing,id:++rockIdCounter});
       }
       foodSpawn-=sdt;
       if(foodSpawn<=0){
@@ -505,48 +512,102 @@ function gSail(){
           fireTimer=baseFireEvery*1000*Math.pow(0.85,upgLevel.fire);
           beep(880,0.06,'sawtooth',0.09);
           var pierceHp=1+upgLevel.pierce+(fusion.typhoon?3:0)+(fusion.tsunami?3:0);
+          /* 포탄이 2발 이상인데 spread각이 0이면 전부 같은 궤적에 겹쳐 보여서
+             "늘어나도 안 늘어난 것처럼" 보이는 문제가 있었다 — 최소 각도를 보장하고,
+             📐 확산 사격 카드로 더 넓게 벌릴 수 있게 한다 */
+          var spreadDeg=Math.max(T.spread,10)+upgLevel.angle*10+(fusion.gale?20:0);
           for(var mi=0;mi<mc;mi++){
-            /* 포탄이 2발 이상인데 spread각이 0이면 전부 같은 궤적에 겹쳐 보여서
-               "늘어나도 안 늘어난 것처럼" 보이는 문제가 있었다 — 최소 각도를 보장 */
-            var ang=(mi-(mc-1)/2)*(Math.max(T.spread,10)*Math.PI/180);
+            var ang=(mi-(mc-1)/2)*(spreadDeg*Math.PI/180);
             missiles.push({x:px,y:shipY-30,vx:Math.sin(ang)*3,vy:-9-shipTier,hp:pierceHp});
+          }
+          /* 🔙 후방 포격 — 배 뒤쪽(아래)으로도 포탄을 쏜다 */
+          if(upgLevel.rear>0){
+            for(var ri=0;ri<upgLevel.rear;ri++){
+              var rang=(ri-(upgLevel.rear-1)/2)*(20*Math.PI/180);
+              missiles.push({x:px,y:shipY+30,vx:Math.sin(rang)*3,vy:9+shipTier,hp:pierceHp});
+            }
           }
         }
       }
 
-      /* ⚡ 벼락 — 조준 없이 주기적으로 화면의 바위 하나를 자동으로 파괴한다.
-         번쩍이는 연출은 캔버스에 직접 그리지 않고 캔버스 위 오버레이 div를
-         CSS 애니메이션으로 잠깐 켰다 끄는 방식으로 가볍게 처리한다 */
+      /* ⚡ 벼락 — 조준 없이 주기적으로 바위 하나에 벼락을 내린다. 타겟 위치까지
+         지그재그 번개 볼트가 실제로 그려지고, 화면 전체는 CSS 플래시로 번쩍인다 */
       if(upgLevel.lightning>0){
         lightningTimer-=sdt;
         if(lightningTimer<=0){
-          lightningTimer=Math.max(800,3000-upgLevel.lightning*700);
+          lightningTimer=Math.max(700,3000-upgLevel.lightning*700)*cdrMul();
           var aliveRocks=rocks.filter(function(r){return !r.dead;});
           if(aliveRocks.length>0){
             var target=pickRandom(aliveRocks);
-            target.dead=true; explodeRock(target.x,target.y,target.r);
-            sfx('pop',0.4); kills++; gainXp(ROCK_XP,el);
+            var boltHits=[target];
+            /* ⚡ 낙뢰유도 융합 — 유도탄+벼락 MAX 시 주변 바위로 번개가 옮겨붙는다 */
+            if(fusion.stormguide){
+              aliveRocks.filter(function(r){return r!==target && Math.hypot(r.x-target.x,r.y-target.y)<160;})
+                .slice(0,2).forEach(function(r){ boltHits.push(r); });
+            }
+            boltHits.forEach(function(t){
+              t.dead=true; explodeRock(t.x,t.y,t.r);
+              kills++; gainXp(ROCK_XP,el);
+              lightningBolts.push({x:t.x,y:t.y,until:el+0.24});
+            });
+            sfx('pop',0.4);
             flashLightning();
           }
         }
       }
-      /* 🌪 영등바람 — 주기적으로 배 주변 바위를 한번에 밀어낸다(파괴) */
+      /* 🌪 영등바람 — 배에서 바람을 일자로 쏘아 올려 지나가는 길의 바위를 좌우로
+         밀어낸다(파괴가 아니라 밀어내기 — 순간적으로 지나갈 통로를 뚫어준다) */
       if(upgLevel.windpush>0){
         windpushTimer-=sdt;
         if(windpushTimer<=0){
-          windpushTimer=Math.max(2500,6000-upgLevel.windpush*1200);
-          var radius=80+upgLevel.windpush*40, pushed=0;
-          rocks.forEach(function(r){
-            if(!r.dead && Math.hypot(r.x-px,r.y-shipY)<radius){ r.dead=true; explodeRock(r.x,r.y,r.r); pushed++; }
-          });
-          if(pushed>0){ kills+=pushed; gainXp(pushed*ROCK_XP,el); sfx('evolve',0.3); shake(3); toast('🌪 영등바람이 불었다!'); }
+          windpushTimer=Math.max(1800,4200-upgLevel.windpush*900)*cdrMul();
+          var gw=(70+upgLevel.windpush*26)*(fusion.gale?1.6:1);
+          windGusts.push({x:px,y:shipY-20,w:gw,vy:-7,until:el+1.6});
+          sfx('evolve',0.35);
+        }
+      }
+      /* 💣 폭발탄 — 전용 투사체를 주기적으로 쏘아 명중 지점에서 실제로 폭발한다 */
+      if(upgLevel.bomb>0){
+        bombTimer-=sdt;
+        if(bombTimer<=0){
+          bombTimer=Math.max(1800,3600-upgLevel.bomb*700)*cdrMul();
+          bombShots.push({x:px,y:shipY-30,vy:-4.2});
+        }
+      }
+      /* 🪃 부메랑 — 날아갔다가 배 쪽으로 되돌아오며 왕복 두 번 판정한다 */
+      if(upgLevel.boomerang>0){
+        boomerangTimer-=sdt;
+        if(boomerangTimer<=0){
+          boomerangTimer=Math.max(2400,4800-upgLevel.boomerang*700)*cdrMul();
+          var bmMax=220+upgLevel.boomerang*40;
+          boomerangs.push({x:px,y:shipY-30,vy:-7,phase:'out',dist:0,maxDist:bmMax,hitIds:{}});
+          /* ♻️ 회전풍차 융합 — 부메랑+후방포격 MAX 시 앞뒤로 동시에 나간다 */
+          if(fusion.windmill){
+            boomerangs.push({x:px,y:shipY+30,vy:7,phase:'out',dist:0,maxDist:bmMax,hitIds:{},rear:true});
+          }
+        }
+      }
+      /* 🧭 유도탄 — 가장 가까운 바위를 스스로 추적한다 */
+      if(upgLevel.homing>0){
+        homingTimer-=sdt;
+        if(homingTimer<=0){
+          homingTimer=Math.max(2200,4200-upgLevel.homing*600)*cdrMul();
+          homingMissiles.push({x:px,y:shipY-30,vx:0,vy:-6,life:3000});
+        }
+      }
+      /* 🚀 미사일 — 주기적으로 강력한 한 발을 날린다 */
+      if(upgLevel.missile>0){
+        missileTimer-=sdt;
+        if(missileTimer<=0){
+          missileTimer=Math.max(2800,5200-upgLevel.missile*700)*cdrMul();
+          bigMissiles.push({x:px,y:shipY-30,vy:-5.6,hp:(fusion.barrage?3:1)});
         }
       }
       /* 🛡 바람막이 — 주기적으로 보호막 1회분을 충전한다 */
       if(upgLevel.shield>0 && shieldCharge<1){
         shieldTimer-=sdt;
         if(shieldTimer<=0){
-          shieldTimer=Math.max(10000,25000-upgLevel.shield*5000);
+          shieldTimer=Math.max(9000,25000-upgLevel.shield*5000)*cdrMul();
           shieldCharge=1;
           toast('🛡 바람막이 준비됨');
         }
@@ -569,7 +630,7 @@ function gSail(){
       if(spawn<=0){
         spawn=170;
         var rk2=Math.floor(Math.random()*ASSETS.rockPool.length);
-        rocks.push({x:60+Math.random()*(W-120),y:-60,r:28+Math.random()*22,v:6.2,asset:ASSETS.rockPool[rk2],passed:false,dead:false,noHit:true});
+        rocks.push({x:60+Math.random()*(W-120),y:-60,r:28+Math.random()*22,v:6.2,asset:ASSETS.rockPool[rk2],passed:false,dead:false,noHit:true,id:++rockIdCounter});
       }
     }
 
@@ -656,6 +717,142 @@ function gSail(){
         if(boss.y>H+160){ boss.state='idle'; boss.nextAt=el+Math.max(20,45-lv*0.6); }
       }
     }
+
+    /* ---- ⚡ 번개 볼트(시각 전용) — 타겟까지 지그재그로 그려졌다 사라진다 ---- */
+    lightningBolts=lightningBolts.filter(function(b){ return b.until>el; });
+    lightningBolts.forEach(function(b){
+      ctx.save();
+      ctx.strokeStyle='rgba(220,235,255,.95)'; ctx.lineWidth=3;
+      ctx.shadowColor='#9fd8ff'; ctx.shadowBlur=14;
+      ctx.beginPath(); ctx.moveTo(b.x,0);
+      var segs=6;
+      for(var lbi=1;lbi<segs;lbi++){ ctx.lineTo(b.x+(Math.random()-0.5)*36, b.y*(lbi/segs)); }
+      ctx.lineTo(b.x,b.y);
+      ctx.stroke();
+      ctx.restore();
+    });
+
+    /* ---- 🌪 바람 가스트 — 파괴가 아니라 지나가는 길의 바위를 좌우로 밀어낸다 ---- */
+    windGusts.forEach(function(g2){
+      if(!frozen){
+        g2.y+=g2.vy*frameK*2.6;
+        rocks.forEach(function(r){
+          if(!r.dead && Math.abs(r.x-g2.x)<g2.w/2 && Math.abs(r.y-g2.y)<70){
+            var dir=(r.x-g2.x)>=0?1:-1;
+            r.x=r.x+dir*9*frameK;
+          }
+        });
+      }
+      ctx.save(); ctx.globalAlpha=0.5;
+      var gg=ctx.createLinearGradient(g2.x-g2.w/2,0,g2.x+g2.w/2,0);
+      gg.addColorStop(0,'rgba(191,238,220,0)'); gg.addColorStop(0.5,'rgba(191,238,220,.55)'); gg.addColorStop(1,'rgba(191,238,220,0)');
+      ctx.fillStyle=gg; ctx.fillRect(g2.x-g2.w/2, g2.y-60, g2.w, 90);
+      ctx.restore();
+    });
+    windGusts=windGusts.filter(function(g2){ return el<g2.until && g2.y>-120; });
+
+    /* ---- 💣 폭발탄(전용 투사체) — 바위에 닿거나 화면 위쪽에 닿으면 실제로 폭발한다 ---- */
+    bombShots.forEach(function(b){
+      if(b.dead) return;
+      if(!frozen) b.y+=b.vy*frameK*2.6;
+      if(!drawImgFit(ASSETS.rockExplosion,b.x,b.y,30,30,0)){
+        ctx.fillStyle='#F5B331'; ctx.beginPath(); ctx.arc(b.x,b.y,10,0,7); ctx.fill();
+      }
+      if(!frozen){
+        var hitRock=null;
+        rocks.forEach(function(r){ if(!hitRock && !r.dead && Math.hypot(r.x-b.x,r.y-b.y)<r.r+14) hitRock=r; });
+        if(hitRock || b.y<40){
+          b.dead=true;
+          var ex=hitRock?hitRock.x:b.x, ey=hitRock?hitRock.y:b.y;
+          var radius=(70+upgLevel.bomb*36)*(fusion.tsunami?1.8:1);
+          explodeRock(ex,ey,radius*0.5,true);
+          sfx('boom',0.55); shake(fusion.tsunami?8:5);
+          var bombHitN=0;
+          rocks.forEach(function(r){
+            if(!r.dead && Math.hypot(r.x-ex,r.y-ey)<radius){ r.dead=true; bombHitN++; }
+          });
+          if(bombHitN>0){ kills+=bombHitN; gainXp(bombHitN*ROCK_XP,el); }
+        }
+      }
+    });
+    bombShots=bombShots.filter(function(b){ return !b.dead && b.y>-120; });
+
+    /* ---- 🪃 부메랑 — 나갔다가 배 쪽으로 되돌아오며 왕복 두 번 판정한다 ---- */
+    boomerangs.forEach(function(bm){
+      if(bm.dead) return;
+      if(!frozen){
+        if(bm.phase==='out'){
+          var stepY=bm.vy*frameK*2.6;
+          bm.y+=stepY; bm.dist+=Math.abs(stepY);
+          if(bm.dist>=bm.maxDist) bm.phase='back';
+        } else {
+          var tx=px, ty=bm.rear?shipY+20:shipY-20;
+          var bang=Math.atan2(ty-bm.y, tx-bm.x), bsp=7*2.6;
+          bm.x+=Math.cos(bang)*bsp*frameK; bm.y+=Math.sin(bang)*bsp*frameK;
+          if(Math.hypot(bm.x-tx,bm.y-ty)<26) bm.dead=true;
+        }
+        rocks.forEach(function(r){
+          if(!r.dead && !bm.hitIds[r.id] && Math.hypot(r.x-bm.x,r.y-bm.y)<r.r+12){
+            bm.hitIds[r.id]=true;
+            r.dead=true; explodeRock(r.x,r.y,r.r); kills++; gainXp(ROCK_XP,el); sfx('pop',0.35);
+          }
+        });
+      }
+      var brot=el*10;
+      if(!drawImgFit(ASSETS.cannonShot,bm.x,bm.y,26,26,brot)){
+        ctx.save(); ctx.translate(bm.x,bm.y); ctx.rotate(brot);
+        ctx.strokeStyle='#F5B331'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(0,0,10,0.3,4.5); ctx.stroke();
+        ctx.restore();
+      }
+    });
+    boomerangs=boomerangs.filter(function(bm){ return !bm.dead; });
+
+    /* ---- 🧭 유도탄 — 가장 가까운 바위를 스스로 추적한다 ---- */
+    homingMissiles.forEach(function(hm){
+      if(hm.dead) return;
+      if(!frozen){
+        hm.life-=sdt;
+        var nearest=null, nd=Infinity;
+        rocks.forEach(function(r){ if(!r.dead){ var hd=Math.hypot(r.x-hm.x,r.y-hm.y); if(hd<nd){nd=hd;nearest=r;} } });
+        if(nearest){
+          var hang=Math.atan2(nearest.y-hm.y, nearest.x-hm.x);
+          hm.vx+=Math.cos(hang)*0.9*frameK; hm.vy+=Math.sin(hang)*0.9*frameK;
+          var hsp=Math.hypot(hm.vx,hm.vy), hmax=7;
+          if(hsp>hmax){ hm.vx=hm.vx/hsp*hmax; hm.vy=hm.vy/hsp*hmax; }
+        }
+        hm.x+=hm.vx*frameK*2.6; hm.y+=hm.vy*frameK*2.6;
+        rocks.forEach(function(r){
+          if(!hm.dead && !r.dead && Math.hypot(r.x-hm.x,r.y-hm.y)<r.r+10){
+            hm.dead=true; r.dead=true; explodeRock(r.x,r.y,r.r); kills++; gainXp(ROCK_XP,el); sfx('pop',0.4);
+            if(fusion.stormguide){ lightningBolts.push({x:r.x,y:r.y,until:el+0.2}); flashLightning(); }
+          }
+        });
+        if(hm.life<=0) hm.dead=true;
+      }
+      if(!drawImgFit(ASSETS.cannonShot,hm.x,hm.y,22,22,Math.atan2(hm.vy,hm.vx))){
+        ctx.fillStyle='#9fd8ff'; ctx.beginPath(); ctx.arc(hm.x,hm.y,7,0,7); ctx.fill();
+      }
+    });
+    homingMissiles=homingMissiles.filter(function(hm){ return !hm.dead; });
+
+    /* ---- 🚀 미사일 — 주기적으로 강력한 한 발을 날린다 ---- */
+    bigMissiles.forEach(function(bg){
+      if(bg.dead) return;
+      if(!frozen) bg.y+=bg.vy*frameK*2.6;
+      if(!drawImgFit(ASSETS.cannonShot,bg.x,bg.y,46,26,-Math.PI/2)){
+        ctx.fillStyle='#F0605A'; ctx.beginPath(); ctx.arc(bg.x,bg.y,14,0,7); ctx.fill();
+      }
+      if(!frozen){
+        rocks.forEach(function(r){
+          if(!bg.dead && !r.dead && Math.hypot(r.x-bg.x,r.y-bg.y)<r.r+16){
+            bg.hp--; r.dead=true; explodeRock(r.x,r.y,r.r*1.4,true); kills++; gainXp(ROCK_XP*2,el); sfx('boom',0.4); shake(3);
+            if(bg.hp<=0) bg.dead=true;
+          }
+        });
+        if(bg.y<-60) bg.dead=true;
+      }
+    });
+    bigMissiles=bigMissiles.filter(function(bg){ return !bg.dead; });
 
     /* ---- 최종 시련 (Lv30) — 폭풍 회피 → 바람구슬 파괴 → 약점 노출 → 총공격,
        이 네 단계를 finalBoss.cycles번 반복하면 완주. 적이 아니라 마지막으로
@@ -790,7 +987,7 @@ function gSail(){
     if(!suspendSpawn){
       /* 미사일 이동 + 명중 판정 */
       missiles.forEach(function(m){m.x+=m.vx*frameK;m.y+=m.vy*frameK*2.6});
-      missiles=missiles.filter(function(m){return m.y>-40});
+      missiles=missiles.filter(function(m){return m.y>-40 && m.y<H+40;}); /* 🔙 후방 포격 탄은 아래로 내려가므로 하단 경계도 필요 */
       rocks.forEach(function(r){
         r.y+=r.v*frameK*2.6;
         if(r.zigzag) r.x+=Math.sin(el*3+r.zzPhase)*1.4*frameK;
@@ -803,11 +1000,11 @@ function gSail(){
             m.hp--; if(m.hp<=0) missiles.splice(mi2,1); /* 🌊 관통탄 — hp가 남아있으면 계속 날아간다 */
             explodeRock(r.x,r.y,r.r,inFinale);sfx('pop',0.45);kills++;
             gainXp(ROCK_XP,el);
-            /* 💣 폭발탄 — 주변 바위도 같이 파괴 */
-            var bombRadius=(upgLevel.bomb>0?40+upgLevel.bomb*30:0)+(fusion.typhoon?50:0)+(fusion.tsunami?80:0);
-            if(bombRadius>0){
+            /* 🌀 태풍포 융합(포격강화+다연장 MAX) — 일반 포탄에도 작은 폭발이 붙는다.
+               폭발탄 자체는 이제 별도 투사체(bombShots)로 분리됐다 */
+            if(fusion.typhoon){
               rocks.forEach(function(r2){
-                if(r2!==r && !r2.dead && Math.hypot(r2.x-r.x,r2.y-r.y)<bombRadius){
+                if(r2!==r && !r2.dead && Math.hypot(r2.x-r.x,r2.y-r.y)<55){
                   r2.dead=true; explodeRock(r2.x,r2.y,r2.r); kills++; gainXp(ROCK_XP,el);
                 }
               });
@@ -835,7 +1032,7 @@ function gSail(){
         var dx=Math.abs(r.x-px), dy=Math.abs(r.y-shipY);
         if(dx<r.r+30 && dy<r.r+34){ if(!r.noHit) hit=true; }
         if(!r.passed && r.y>shipY+40){ r.passed=true; }
-        return r.y<H+90;
+        return r.y<H+90 && r.x>-160 && r.x<W+160; /* 바람가스트에 밀려 화면 밖으로 나간 바위 정리 */
       });
       missiles.forEach(function(m){
         var ang=Math.atan2(m.vy,m.vx);
