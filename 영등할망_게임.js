@@ -39,14 +39,32 @@ function drawImgFit(im, x, y, w, h, rot){
 }
 var ASSETS = {
   ship:      [loadAsset('ship1.png'), loadAsset('ship2.png'), loadAsset('ship3.png'), loadAsset('ship4.png')],
-  /* 바위 종류 — 04_rocks_trash_monsters 시트로 교체(화산암/균열암/가시/둥근/긴/부서진) */
+  /* 뱀서라이크 스웜 — 바위(무생물) + 실제 바다 몬스터(09시트)를 섞은 풀에서
+     사방으로 몰려온다. 순수 바위만이 아니라 "몬스터"가 실제로 보이게 한다 */
   rockPool:  [loadAsset('sheet/rock_volcanic_s.png'), loadAsset('sheet/rock_volcanic_m.png'), loadAsset('sheet/rock_crack_l.png'),
-              loadAsset('sheet/rock_spiky.png'), loadAsset('sheet/rock_round.png'), loadAsset('sheet/rock_long.png'), loadAsset('sheet/rock_broken.png')],
-  /* 해양쓰레기 몬스터 — 같은 시트의 실제 몬스터 그림(페트병 게/비닐 해파리/깡통 복어/엘리트 게) */
-  debrisPool:[loadAsset('sheet/monster_crab_petbottle.png'), loadAsset('sheet/monster_jelly_vinyl.png'),
-              loadAsset('sheet/monster_pufferfish_can.png'), loadAsset('sheet/monster_crab_elite.png')],
-  windOrb:     loadAsset('windOrb.png'),     /* 최종 시련(Lv30) 바람구슬·약점 코어 전용 */
-  bossVortex:  loadAsset('bossVortex.png'),  /* 미니보스 전용 */
+              loadAsset('sheet/rock_spiky.png'), loadAsset('sheet/rock_round.png'), loadAsset('sheet/rock_long.png'), loadAsset('sheet/rock_broken.png'),
+              loadAsset('sheet/monster_hydra_fish.png'), loadAsset('sheet/monster_pufferfish.png'), loadAsset('sheet/monster_crab_blue.png'),
+              loadAsset('sheet/monster_jellyfish.png'), loadAsset('sheet/monster_eel_electric.png'), loadAsset('sheet/monster_squid.png'),
+              loadAsset('sheet/monster_octopus.png'), loadAsset('sheet/monster_turtle.png'), loadAsset('sheet/monster_flyingfish.png'),
+              loadAsset('sheet/monster_lionfish.png'), loadAsset('sheet/monster_lobster.png'), loadAsset('sheet/monster_seasnake.png'),
+              loadAsset('sheet/monster_starfish_eye.png'), loadAsset('sheet/monster_urchin.png'), loadAsset('sheet/monster_mantis_shrimp.png'),
+              loadAsset('sheet/monster_hammerhead.png')],
+  /* 해양쓰레기 몬스터(Lv21+) — 10_pollution_mutants 시트의 실제 오염 돌연변이 16종 */
+  debrisPool:[loadAsset('sheet/mutant_bottle_crab.png'), loadAsset('sheet/mutant_bag_ghost.png'), loadAsset('sheet/mutant_barrel_pufferfish.png'),
+              loadAsset('sheet/mutant_net_turtle.png'), loadAsset('sheet/mutant_net_ray.png'), loadAsset('sheet/mutant_trash_snake.png'),
+              loadAsset('sheet/mutant_wing_dragon.png'), loadAsset('sheet/mutant_foam_spider.png'), loadAsset('sheet/mutant_tire_octopus.png'),
+              loadAsset('sheet/mutant_can_crab.png'), loadAsset('sheet/mutant_pipe_eel.png'), loadAsset('sheet/mutant_battery_clam.png'),
+              loadAsset('sheet/mutant_oil_ray.png'), loadAsset('sheet/mutant_rust_shark.png'), loadAsset('sheet/mutant_bubble_blob.png'),
+              loadAsset('sheet/mutant_anglerfish.png')],
+  /* 엘리트 보스급(11시트) — 미니보스/최종보스 전용, 매번 랜덤하게 하나 골라 쓴다 */
+  elitePool: [loadAsset('sheet/elite_crab_titan.png'), loadAsset('sheet/elite_manta_electric.png'), loadAsset('sheet/elite_turtle_coral.png'),
+              loadAsset('sheet/elite_jellyfish_crown.png'), loadAsset('sheet/elite_dragonfish.png'), loadAsset('sheet/elite_serpent_lightning.png'),
+              loadAsset('sheet/elite_octopus_crest.png'), loadAsset('sheet/elite_lobster_crystal.png'), loadAsset('sheet/elite_ray_spike.png'),
+              loadAsset('sheet/elite_whaleshark.png'), loadAsset('sheet/elite_anglerfish_deep.png'), loadAsset('sheet/elite_dragoneel_twin.png'),
+              loadAsset('sheet/elite_golem_coral.png'), loadAsset('sheet/elite_kraken.png'), loadAsset('sheet/elite_orca_electric.png'),
+              loadAsset('sheet/elite_serpent_lava.png')],
+  windOrb:     loadAsset('windOrb.png'),     /* 최종 시련(Lv30) 바람구슬 전용 */
+  bossVortex:  loadAsset('bossVortex.png'),  /* 미니보스 등장 연출용(폴백) */
   enemyShot:   loadAsset('enemyShot.png'),   /* 해양쓰레기 몬스터가 쏘는 파편 전용 */
   foodRice:      loadAsset('sheet/food_ricecake.png'),
   foodTangerine: loadAsset('sheet/food_tangerine.png'),
@@ -157,12 +175,13 @@ function gSail(){
      상하좌우를 전부 조작한다(권한 요청 팝업도 그래서 안 띄운다) */
 
   var W=cv.width,H=cv.height,px=W/2,rocks=[],foods=[],missiles=[],debris=[],enemyShots=[],t0=performance.now(),lastNow=t0;
-  /* 상하좌우 자유 이동(드래그) — 아래쪽 바닥에 붙어있지 않고 화면 중하단
-     영역을 오가며 장애물을 직접 피해다닐 수 있게 세로 이동 범위를 둔다 */
-  var shipYMin=H*0.38, shipYMax=H-140;
-  var shipY=shipYMax, dragY=shipY;
+  /* 상하좌우 자유 이동(드래그) — 뱀서라이크답게 화면 전체를 자유롭게 오갈 수 있다
+     (예전엔 화면 중하단으로만 묶여있었음). 위/아래는 HUD·바닥에 살짝만 여백을 둔다 */
+  var shipYMin=170, shipYMax=H-70;
+  var shipY=H*0.62, dragY=shipY;
   var spawn=900,foodSpawn=2600,debrisSpawn=6000,alive=true;
   var evoFlashUntil=0,haloSpin=0,fireTimer=0,kills=0,bossKillCount=0;
+  var fireRotation=-Math.PI/2; /* 포탄이 1발뿐일 때 쏠 때마다 30도씩 돌아가며 사방을 훑는다 */
   /* 항해감 — 실제 이동량(프레임 정규화 속도)으로 기울기·물살을 정한다 */
   var prevPx=px, prevShipY=shipY, shipVX=0, shipVY=0, turnSprayUntil=0, turnSprayDir=0;
   var flashes=[],fx=[],bgParticles=[];
@@ -175,6 +194,15 @@ function gSail(){
   var slowmoUntil=0,pauseUntil=0;
 
   function pickRandom(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  /* 뱀서라이크 스웜 — 위에서만 나오지 않고 사방(상하좌우) 화면 밖에서 나타나
+     배 쪽으로 천천히 몰려온다. 어느 변에서 나올지 매번 무작위로 고른다 */
+  function spawnEdgePoint(margin){
+    var side=Math.floor(Math.random()*4);
+    if(side===0) return {x:60+Math.random()*(W-120), y:-margin};           /* 위 */
+    if(side===1) return {x:60+Math.random()*(W-120), y:H+margin};         /* 아래 */
+    if(side===2) return {x:-margin, y:H*0.15+Math.random()*(H*0.7)};      /* 왼쪽 */
+    return {x:W+margin, y:H*0.15+Math.random()*(H*0.7)};                  /* 오른쪽 */
+  }
   var HIT_LINES=['아이고게, 정신 촐리라게!','아이고 놀란 것 좀 보라!'];
   var LV10_LINE='이제 보롬 쎄게 불거난 정신 촐리라이~';
   var END_LINES=['제라하게 보름 탈 줄 알암쪄이','오늘은 여기까지 하게마씨'];
@@ -487,7 +515,7 @@ function gSail(){
       boss.state='alive'; boss.maxHp=14+Math.floor(lv*0.8); boss.hp=boss.maxHp;
       boss.x=Math.max(shipMargin,Math.min(W-shipMargin,W/2)); boss.y=-160; boss.r=130;
       boss.v=1.0+Math.min(1.2,lv*0.03);
-      boss.asset=ASSETS.bossVortex;
+      boss.asset=pickRandom(ASSETS.elitePool);
       toast('👹 강력한 존재 출현! 대포로 부숴라');
       sfx('boom',0.5);
     }
@@ -518,10 +546,11 @@ function gSail(){
            크게 올려서 레벨/시간이 아무리 쌓여도 실제로 빠져나갈 틈이 남게 한다 */
         spawn=Math.max(420,(620-el*10*diffEase-lv*2*diffEase)/spawnRate);
         var rk=Math.floor(Math.random()*ASSETS.rockPool.length);
-        /* 뱀서라이크 스웜 느낌 — "지나가는" 바위가 아니라 배 쪽으로 아주 천천히
-           끌려오는 바위떼로 바꿨다. 전부 기본으로 살짝 유도되고, 일부만 지그재그가 섞인다 */
+        /* 뱀서라이크 스웜 느낌 — "지나가는" 바위가 아니라 사방(상하좌우) 화면 밖에서
+           나타나 배 쪽으로 아주 천천히 끌려오는 바위떼로 바꿨다. 일부만 지그재그가 섞인다 */
         var zz = Math.random()<0.3;
-        rocks.push({x:60+Math.random()*(W-120),y:-60,r:32+Math.random()*26,v:Math.min(lv<10?1.6:2.6, 1.2+el*0.01*diffEase+lv*0.02*diffEase),asset:ASSETS.rockPool[rk],passed:false,dead:false,zigzag:zz,zzPhase:Math.random()*Math.PI*2,homing:true,id:++rockIdCounter});
+        var sp=spawnEdgePoint(60);
+        rocks.push({x:sp.x,y:sp.y,r:32+Math.random()*26,v:Math.min(lv<10?1.6:2.6, 1.2+el*0.01*diffEase+lv*0.02*diffEase),asset:ASSETS.rockPool[rk],passed:false,dead:false,zigzag:zz,zzPhase:Math.random()*Math.PI*2,homing:true,id:++rockIdCounter});
       }
       foodSpawn-=sdt;
       if(foodSpawn<=0){
@@ -539,7 +568,8 @@ function gSail(){
         if(debrisSpawn<=0){
           debrisSpawn=Math.max(3200,7000-lv*60);
           var dk=Math.floor(Math.random()*ASSETS.debrisPool.length);
-          debris.push({x:60+Math.random()*(W-120),y:-70,r:36,v:1.6+Math.min(1.4,(lv-21)*0.05),swayPhase:Math.random()*Math.PI*2,asset:ASSETS.debrisPool[dk],hp:3,shotTimer:1800+Math.random()*800,dead:false});
+          var dsp=spawnEdgePoint(70);
+          debris.push({x:dsp.x,y:dsp.y,r:36,v:1.6+Math.min(1.4,(lv-21)*0.05),swayPhase:Math.random()*Math.PI*2,asset:ASSETS.debrisPool[dk],hp:3,shotTimer:1800+Math.random()*800,dead:false});
         }
       }
 
@@ -555,13 +585,27 @@ function gSail(){
           beep(880,0.06,'sawtooth',0.09);
           muzzleFlashes.push({x:px,y:shipY-30,until:el+0.12,big:mc>=3});
           var pierceHp=1+upgLevel.pierce+(fusion.typhoon?3:0)+(fusion.tsunami?3:0);
+          var baseAng, fireSpeed=9+shipTier;
+          if(mc===1){
+            /* 포탄이 1발뿐일 때(조각배 초반)는 조준할 게 없으니 쏠 때마다 30도씩
+               돌아가며 사방을 훑는다 — 타겟팅 로직 없이도 전방위 커버가 된다 */
+            baseAng=fireRotation;
+            fireRotation+=Math.PI/6;
+          } else {
+            /* 몬스터가 사방에서 몰려오므로 포격도 위쪽 고정이 아니라 가장 가까운
+               위협을 자동 조준해서 그쪽으로 나간다(뱀서라이크 오토에임) */
+            baseAng=-Math.PI/2;
+            var nearestD=Infinity;
+            rocks.forEach(function(rr){ if(!rr.dead){ var d0=Math.hypot(rr.x-px,rr.y-shipY); if(d0<nearestD){nearestD=d0; baseAng=Math.atan2(rr.y-shipY,rr.x-px);} } });
+            debris.forEach(function(dd){ if(!dd.dead){ var d0=Math.hypot(dd.x-px,dd.y-shipY); if(d0<nearestD){nearestD=d0; baseAng=Math.atan2(dd.y-shipY,dd.x-px);} } });
+          }
           /* 포탄이 2발 이상인데 spread각이 0이면 전부 같은 궤적에 겹쳐 보여서
              "늘어나도 안 늘어난 것처럼" 보이는 문제가 있었다 — 최소 각도를 보장하고,
              📐 확산 사격 카드로 더 넓게 벌릴 수 있게 한다 */
           var spreadDeg=Math.max(T.spread,10)+upgLevel.angle*10+(fusion.gale?20:0);
           for(var mi=0;mi<mc;mi++){
-            var ang=(mi-(mc-1)/2)*(spreadDeg*Math.PI/180);
-            missiles.push({x:px,y:shipY-30,vx:Math.sin(ang)*3,vy:-9-shipTier,hp:pierceHp});
+            var ang=baseAng+(mi-(mc-1)/2)*(spreadDeg*Math.PI/180);
+            missiles.push({x:px,y:shipY-30,vx:Math.cos(ang)*fireSpeed,vy:Math.sin(ang)*fireSpeed,hp:pierceHp});
           }
           /* 🔙 후방 포격 — 배 뒤쪽(아래)으로도 포탄을 쏜다 */
           if(upgLevel.rear>0){
@@ -910,6 +954,7 @@ function gSail(){
       finalBoss.state='alive';
       finalBoss.maxHp=90; finalBoss.hp=90;
       finalBoss.x=W/2; finalBoss.y=-180; finalBoss.restY=H*0.22; finalBoss.shotTimer=1400;
+      finalBoss.asset=pickRandom(ASSETS.elitePool);
       toast('영등할망의 마지막 시련 — 강력한 존재가 나타났다!');
       sfx('boom',0.6);
     }
@@ -918,7 +963,7 @@ function gSail(){
         if(finalBoss.y<finalBoss.restY) finalBoss.y+=1.6*frameK*2.6;
         else finalBoss.x=W/2+Math.sin(el*0.6)*(W*0.22);
       }
-      if(!drawImgFit(ASSETS.windOrb,finalBoss.x,finalBoss.y,finalBoss.r*2.1,finalBoss.r*2.1,el*0.6)){
+      if(!drawImgFit(finalBoss.asset,finalBoss.x,finalBoss.y,finalBoss.r*2.1,finalBoss.r*2.1,0)){
         ctx.fillStyle='rgba(150,90,220,.9)';ctx.beginPath();ctx.arc(finalBoss.x,finalBoss.y,finalBoss.r,0,7);ctx.fill();
       }
       var fbw=200;
@@ -956,8 +1001,11 @@ function gSail(){
     /* ---- 해양쓰레기 몬스터 (Lv21+) ---- */
     debris.forEach(function(dm){
       if(!frozen){
-        dm.y+=dm.v*frameK*2.6;
-        dm.x=Math.max(50,Math.min(W-50, dm.x+Math.sin(el*2+dm.swayPhase)*1.1*frameK));
+        /* 사방에서 나타나 배 쪽으로 천천히 몰려온다(뱀서라이크 스웜) + 살짝 흔들리는 웨이브 */
+        var ddx=px-dm.x, ddy=shipY-dm.y, dd=Math.hypot(ddx,ddy)||1;
+        dm.x+=(ddx/dd)*dm.v*frameK*2.6;
+        dm.y+=(ddy/dd)*dm.v*frameK*2.6;
+        dm.x+=Math.sin(el*2+dm.swayPhase)*1.1*frameK;
       }
       if(!drawImgFit(dm.asset,dm.x,dm.y,dm.r*2.2,dm.r*2.2,0)){
         ctx.fillStyle='#5A4A32';ctx.beginPath();ctx.arc(dm.x,dm.y,dm.r,0,7);ctx.fill();
@@ -973,7 +1021,7 @@ function gSail(){
             if(dm.hp<=0){
               dm.dead=true;
               explodeRock(dm.x,dm.y,dm.r,false); sfx('boom',0.45);
-              kills++; gainXp(ROCK_XP*2,el); giveBok(3);
+              kills++; dropXpPouch(dm.x,dm.y,ROCK_XP*2,el); giveBok(3);
               break;
             }
           }
@@ -991,7 +1039,7 @@ function gSail(){
         if(ddx<dm.r+30 && ddy<dm.r+34){ hit=true; }
       }
     });
-    debris=debris.filter(function(dm){ return !dm.dead && dm.y<H+100; });
+    debris=debris.filter(function(dm){ return !dm.dead && dm.y<H+100 && dm.x>-160 && dm.x<W+160; });
 
     /* 해양쓰레기가 쏘는 파편 — 배의 청록색 포탄과 구분되도록 보라색 계열로 그린다 */
     enemyShots.forEach(function(es){
