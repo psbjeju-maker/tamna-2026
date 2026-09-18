@@ -1316,17 +1316,30 @@ function drawImgFit(im, x, y, w, h, rot){
 }
 var ASSETS = {
   ship:      [loadAsset('ship1.png'), loadAsset('ship2.png'), loadAsset('ship3.png'), loadAsset('ship4.png')],
-  rockPool:  [loadAsset('rock1.png'), loadAsset('rock2.png'), loadAsset('rock3.png'), loadAsset('rock4.png'),
-              loadAsset('rock5.png'), loadAsset('rock6.png'), loadAsset('rock7.png'), loadAsset('rock8.png')],
-  debrisPool:[loadAsset('barrel.png'), loadAsset('crate.png'), loadAsset('branch.png')],
+  /* 바위 종류 — 04_rocks_trash_monsters 시트로 교체(화산암/균열암/가시/둥근/긴/부서진) */
+  rockPool:  [loadAsset('sheet/rock_volcanic_s.png'), loadAsset('sheet/rock_volcanic_m.png'), loadAsset('sheet/rock_crack_l.png'),
+              loadAsset('sheet/rock_spiky.png'), loadAsset('sheet/rock_round.png'), loadAsset('sheet/rock_long.png'), loadAsset('sheet/rock_broken.png')],
+  /* 해양쓰레기 몬스터 — 같은 시트의 실제 몬스터 그림(페트병 게/비닐 해파리/깡통 복어/엘리트 게) */
+  debrisPool:[loadAsset('sheet/monster_crab_petbottle.png'), loadAsset('sheet/monster_jelly_vinyl.png'),
+              loadAsset('sheet/monster_pufferfish_can.png'), loadAsset('sheet/monster_crab_elite.png')],
   windOrb:     loadAsset('windOrb.png'),     /* 최종 시련(Lv30) 바람구슬·약점 코어 전용 */
   bossVortex:  loadAsset('bossVortex.png'),  /* 미니보스 전용 */
   enemyShot:   loadAsset('enemyShot.png'),   /* 해양쓰레기 몬스터가 쏘는 파편 전용 */
-  foodRice:      loadAsset('bokRiceCake.png'),
-  foodTangerine: loadAsset('tangerine.png'),
-  foodBag:       loadAsset('bokBag.png'),
-  cannonShot:    loadAsset('cannonShot.png'),
-  rockExplosion: loadAsset('rockExplosion.png'),
+  foodRice:      loadAsset('sheet/food_ricecake.png'),
+  foodTangerine: loadAsset('sheet/food_tangerine.png'),
+  foodBag:       loadAsset('sheet/food_bag.png'),
+  foodGold:      loadAsset('sheet/food_goldtangerine.png'), /* 아주 낮은 확률로 나오는 희귀 보상 먹거리 */
+  cannonShot:    loadAsset('sheet/shot_small.png'),   /* 아군 기본 포탄 */
+  shotLarge:     loadAsset('sheet/shot_large.png'),   /* 🚀 미사일 카드 전용 */
+  missileHoming: loadAsset('sheet/missile_homing.png'), /* 🧭 유도탄 카드 전용 */
+  pierceRing:    loadAsset('sheet/pierce_ring.png'),  /* 🪃 부메랑 전용(회전하는 고리) */
+  muzzleFlash: [loadAsset('sheet/muzzle_small.png'), loadAsset('sheet/muzzle_medium.png')],
+  hitFlash:    [loadAsset('sheet/hit_flash_small.png'), loadAsset('sheet/hit_flash_large.png')],
+  splashPool:  [loadAsset('sheet/splash_small.png'), loadAsset('sheet/splash_medium.png'), loadAsset('sheet/splash_large.png')],
+  explosionFrames: [loadAsset('sheet/explosion_1.png'), loadAsset('sheet/explosion_2.png'), loadAsset('sheet/explosion_3.png'), loadAsset('sheet/explosion_4_smoke.png')],
+  windpushPool: [loadAsset('sheet/windpush_s.png'), loadAsset('sheet/windpush_m.png'), loadAsset('sheet/windpush_l.png'), loadAsset('sheet/windpush_max.png')],
+  lightningPool: [loadAsset('sheet/lightning_1.png'), loadAsset('sheet/lightning_2.png'), loadAsset('sheet/lightning_chain.png')],
+  rockExplosion: loadAsset('sheet/explosion_1.png'),
   justBurst:     loadAsset('justBurst.png'),
   evoBurst:      loadAsset('evoBurst.png'),
   evoBanner:     [null, loadAsset('evoBanner2.png'), loadAsset('evoBanner3.png'), loadAsset('evoBanner4.png')],
@@ -1614,6 +1627,7 @@ function gSail(){
   var lightningTimer=2000, windpushTimer=4000, shieldTimer=8000, shieldCharge=0;
   var bombTimer=3200, boomerangTimer=3600, homingTimer=3000, missileTimer=4200;
   var lightningBolts=[], bombShots=[], windGusts=[], boomerangs=[], homingMissiles=[], bigMissiles=[];
+  var muzzleFlashes=[], hitFlashes=[], splashes=[];
   var rockIdCounter=0;
   function cdrMul(){ return 1 - Math.min(0.55, upgLevel.cdr*0.12); } /* ⏱ 재빠른 손놀림 — 모든 스킬 쿨타임에 공통 적용 */
 
@@ -1641,7 +1655,7 @@ function gSail(){
     lightningFlashEl.classList.add('on');
   }
   function explodeRock(x,y,r,big){
-    flashes.push({x:x,y:y,t:0,r0:r*0.3,r1:r*(big?2.3:1.8)});
+    flashes.push({x:x,y:y,t:0,r0:r*0.3,r1:r*(big?2.3:1.8),frame:Math.floor(Math.random()*ASSETS.explosionFrames.length)});
     var n=big?18:12;
     for(var i=0;i<n;i++){var a=Math.random()*Math.PI*2,sp=2+Math.random()*5;
       fx.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,l:1,c:i%2?'#4FC3A1':'#F2F0EA',sz:3+Math.random()*3});}
@@ -1779,8 +1793,9 @@ function gSail(){
       if(foodSpawn<=0){
         foodSpawn=(el<12?3200:4800)+Math.random()*2200;
         var roll=Math.random(),kind='rice',asset=ASSETS.foodRice;
-        if(roll<0.12){kind='bag';asset=ASSETS.foodBag;}
-        else if(roll<0.42){kind='tangerine';asset=ASSETS.foodTangerine;}
+        if(roll<0.02){kind='gold';asset=ASSETS.foodGold;} /* 아주 드물게 나오는 황금귤 — 보상이 훨씬 크다 */
+        else if(roll<0.14){kind='bag';asset=ASSETS.foodBag;}
+        else if(roll<0.44){kind='tangerine';asset=ASSETS.foodTangerine;}
         foods.push({x:60+Math.random()*(W-120),y:-40,r:26,v:2.4+el*0.04,kind:kind,asset:asset});
       }
       /* 생존 시간에 따른 아주 조금씩의 경험치 — 드래곤플라이트처럼 가만히 있어도 조금은 큰다 */
@@ -1808,6 +1823,7 @@ function gSail(){
           var baseFireEvery = T.fireEvery>0 ? T.fireEvery : 1.4;
           fireTimer=baseFireEvery*1000*Math.pow(0.85,upgLevel.fire);
           beep(880,0.06,'sawtooth',0.09);
+          muzzleFlashes.push({x:px,y:shipY-30,until:el+0.12,big:mc>=3});
           var pierceHp=1+upgLevel.pierce+(fusion.typhoon?3:0)+(fusion.tsunami?3:0);
           /* 포탄이 2발 이상인데 spread각이 0이면 전부 같은 궤적에 겹쳐 보여서
              "늘어나도 안 늘어난 것처럼" 보이는 문제가 있었다 — 최소 각도를 보장하고,
@@ -2015,21 +2031,25 @@ function gSail(){
       }
     }
 
-    /* ---- ⚡ 번개 볼트(시각 전용) — 타겟까지 지그재그로 그려졌다 사라진다 ---- */
+    /* ---- ⚡ 번개 볼트 — 타겟까지 실제 번개 그림이 위에서부터 내리꽂힌다(그림 없으면 지그재그 선) ---- */
     lightningBolts=lightningBolts.filter(function(b){ return b.until>el; });
     lightningBolts.forEach(function(b){
-      ctx.save();
-      ctx.strokeStyle='rgba(220,235,255,.95)'; ctx.lineWidth=3;
-      ctx.shadowColor='#9fd8ff'; ctx.shadowBlur=14;
-      ctx.beginPath(); ctx.moveTo(b.x,0);
-      var segs=6;
-      for(var lbi=1;lbi<segs;lbi++){ ctx.lineTo(b.x+(Math.random()-0.5)*36, b.y*(lbi/segs)); }
-      ctx.lineTo(b.x,b.y);
-      ctx.stroke();
-      ctx.restore();
+      var boltImg=ASSETS.lightningPool[Math.floor(Math.random()*ASSETS.lightningPool.length)];
+      if(!drawImgFit(boltImg,b.x,b.y/2,46,b.y,0)){
+        ctx.save();
+        ctx.strokeStyle='rgba(220,235,255,.95)'; ctx.lineWidth=3;
+        ctx.shadowColor='#9fd8ff'; ctx.shadowBlur=14;
+        ctx.beginPath(); ctx.moveTo(b.x,0);
+        var segs=6;
+        for(var lbi=1;lbi<segs;lbi++){ ctx.lineTo(b.x+(Math.random()-0.5)*36, b.y*(lbi/segs)); }
+        ctx.lineTo(b.x,b.y);
+        ctx.stroke();
+        ctx.restore();
+      }
     });
 
-    /* ---- 🌪 바람 가스트 — 파괴가 아니라 지나가는 길의 바위를 좌우로 밀어낸다 ---- */
+    /* ---- 🌪 바람 가스트 — 파괴가 아니라 지나가는 길의 바위를 좌우로 밀어낸다.
+       세기(upgLevel.windpush)에 맞는 회오리 그림을 가스트 진행 방향으로 흘려보낸다 ---- */
     windGusts.forEach(function(g2){
       if(!frozen){
         g2.y+=g2.vy*frameK*2.6;
@@ -2044,6 +2064,8 @@ function gSail(){
       var gg=ctx.createLinearGradient(g2.x-g2.w/2,0,g2.x+g2.w/2,0);
       gg.addColorStop(0,'rgba(191,238,220,0)'); gg.addColorStop(0.5,'rgba(191,238,220,.55)'); gg.addColorStop(1,'rgba(191,238,220,0)');
       ctx.fillStyle=gg; ctx.fillRect(g2.x-g2.w/2, g2.y-60, g2.w, 90);
+      var gustTier=Math.min(3,Math.round(g2.w/40)-1);
+      drawImgFit(ASSETS.windpushPool[Math.max(0,gustTier)], g2.x, g2.y, g2.w*0.9, g2.w*0.9, el*2);
       ctx.restore();
     });
     windGusts=windGusts.filter(function(g2){ return el<g2.until && g2.y>-120; });
@@ -2052,7 +2074,7 @@ function gSail(){
     bombShots.forEach(function(b){
       if(b.dead) return;
       if(!frozen) b.y+=b.vy*frameK*2.6;
-      if(!drawImgFit(ASSETS.rockExplosion,b.x,b.y,30,30,0)){
+      if(!drawImgFit(ASSETS.shotLarge,b.x,b.y,30,30,0)){
         ctx.fillStyle='#F5B331'; ctx.beginPath(); ctx.arc(b.x,b.y,10,0,7); ctx.fill();
       }
       if(!frozen){
@@ -2096,7 +2118,7 @@ function gSail(){
         });
       }
       var brot=el*10;
-      if(!drawImgFit(ASSETS.cannonShot,bm.x,bm.y,26,26,brot)){
+      if(!drawImgFit(ASSETS.pierceRing,bm.x,bm.y,30,30,brot)){
         ctx.save(); ctx.translate(bm.x,bm.y); ctx.rotate(brot);
         ctx.strokeStyle='#F5B331'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(0,0,10,0.3,4.5); ctx.stroke();
         ctx.restore();
@@ -2126,7 +2148,7 @@ function gSail(){
         });
         if(hm.life<=0) hm.dead=true;
       }
-      if(!drawImgFit(ASSETS.cannonShot,hm.x,hm.y,22,22,Math.atan2(hm.vy,hm.vx))){
+      if(!drawImgFit(ASSETS.missileHoming,hm.x,hm.y,30,20,Math.atan2(hm.vy,hm.vx))){
         ctx.fillStyle='#9fd8ff'; ctx.beginPath(); ctx.arc(hm.x,hm.y,7,0,7); ctx.fill();
       }
     });
@@ -2136,7 +2158,7 @@ function gSail(){
     bigMissiles.forEach(function(bg){
       if(bg.dead) return;
       if(!frozen) bg.y+=bg.vy*frameK*2.6;
-      if(!drawImgFit(ASSETS.cannonShot,bg.x,bg.y,46,26,-Math.PI/2)){
+      if(!drawImgFit(ASSETS.missileHoming,bg.x,bg.y,46,30,-Math.PI/2)){
         ctx.fillStyle='#F0605A'; ctx.beginPath(); ctx.arc(bg.x,bg.y,14,0,7); ctx.fill();
       }
       if(!frozen){
@@ -2295,6 +2317,8 @@ function gSail(){
           if(!r.dead&&Math.hypot(m.x-r.x,m.y-r.y)<r.r+10){
             r.dead=true;
             m.hp--; if(m.hp<=0) missiles.splice(mi2,1); /* 🌊 관통탄 — hp가 남아있으면 계속 날아간다 */
+            hitFlashes.push({x:r.x,y:r.y,until:el+0.1,big:r.r>44});
+            splashes.push({x:r.x,y:r.y,until:el+0.22,tier:r.r>50?2:(r.r>36?1:0)});
             explodeRock(r.x,r.y,r.r,inFinale);sfx('pop',0.45);kills++;
             gainXp(ROCK_XP,el);
             /* 🌀 태풍포 융합(포격강화+다연장 MAX) — 일반 포탄에도 작은 폭발이 붙는다.
@@ -2363,8 +2387,8 @@ function gSail(){
       var dx=Math.abs(f.x-px), dy=Math.abs(f.y-shipY);
       if(!frozen && !f.eaten && dx<f.r+30 && dy<f.r+34){
         f.eaten=true;
-        var val = f.kind==='bag'?5:(f.kind==='tangerine'?2:1);
-        var xpVal = f.kind==='bag'?10:(f.kind==='tangerine'?5:3);
+        var val = f.kind==='gold'?20:(f.kind==='bag'?5:(f.kind==='tangerine'?2:1));
+        var xpVal = f.kind==='gold'?30:(f.kind==='bag'?10:(f.kind==='tangerine'?5:3));
         giveBok(val);
         gainXp(xpVal,el);
         sfx('bonus',0.5); shake(1.2);
@@ -2424,7 +2448,7 @@ function gSail(){
        파편이 배보다 위 레이어에 확실히 보이게 한다 */
     flashes.forEach(function(fl){fl.t+=frameK;var p=Math.min(1,fl.t/14);var rad=fl.r0+(fl.r1-fl.r0)*p;
       ctx.globalAlpha=1-p;
-      if(!drawImgFit(ASSETS.rockExplosion,fl.x,fl.y,rad*2.4,rad*2.4,0)){
+      if(!drawImgFit(ASSETS.explosionFrames[fl.frame||0],fl.x,fl.y,rad*2.4,rad*2.4,0)){
         var fg=ctx.createRadialGradient(fl.x,fl.y,0,fl.x,fl.y,rad);
         fg.addColorStop(0,'rgba(220,250,255,.9)');fg.addColorStop(.5,'rgba(79,195,161,.5)');fg.addColorStop(1,'rgba(79,195,161,0)');
         ctx.fillStyle=fg;ctx.beginPath();ctx.arc(fl.x,fl.y,rad,0,7);ctx.fill();
@@ -2435,6 +2459,32 @@ function gSail(){
     fx.forEach(function(p){p.x+=p.vx*2*frameK;p.y+=p.vy*2*frameK;p.vy+=.1*frameK;p.l-=.05*frameK;
       ctx.globalAlpha=Math.max(0,p.l);ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,p.sz||5,0,7);ctx.fill();ctx.globalAlpha=1});
     fx=fx.filter(function(p){return p.l>0});
+
+    /* 포구 섬광 — 포탄이 나가는 순간 배 쪽에 짧게 번쩍 */
+    muzzleFlashes.forEach(function(mf){
+      var mp=Math.max(0,1-(mf.until-el)/0.12);
+      ctx.globalAlpha=1-mp;
+      drawImgFit(ASSETS.muzzleFlash[mf.big?1:0],mf.x,mf.y,mf.big?34:22,mf.big?34:22,0);
+      ctx.globalAlpha=1;
+    });
+    muzzleFlashes=muzzleFlashes.filter(function(mf){return mf.until>el;});
+
+    /* 명중 섬광 + 수면 타격 — 바위가 맞는 순간의 짧은 임팩트감 */
+    hitFlashes.forEach(function(hf){
+      var hp=Math.max(0,1-(hf.until-el)/0.1);
+      ctx.globalAlpha=1-hp;
+      drawImgFit(ASSETS.hitFlash[hf.big?1:0],hf.x,hf.y,hf.big?60:36,hf.big?60:36,0);
+      ctx.globalAlpha=1;
+    });
+    hitFlashes=hitFlashes.filter(function(hf){return hf.until>el;});
+    splashes.forEach(function(sp){
+      var spp=Math.max(0,1-(sp.until-el)/0.22);
+      ctx.globalAlpha=(1-spp)*0.85;
+      var ssz=26+sp.tier*16;
+      drawImgFit(ASSETS.splashPool[sp.tier],sp.x,sp.y,ssz,ssz,0);
+      ctx.globalAlpha=1;
+    });
+    splashes=splashes.filter(function(sp){return sp.until>el;});
 
     /* ---- HUD ---- */
     ctx.textAlign='left';ctx.font='800 15px SCDream, sans-serif';ctx.fillStyle='rgba(234,244,255,.7)';
