@@ -67,6 +67,7 @@ var ASSETS = {
               loadAsset('sheet/elite_whaleshark.png'), loadAsset('sheet/elite_anglerfish_deep.png'), loadAsset('sheet/elite_dragoneel_twin.png'),
               loadAsset('sheet/elite_golem_coral.png'), loadAsset('sheet/elite_kraken.png'), loadAsset('sheet/elite_orca_electric.png'),
               loadAsset('sheet/elite_serpent_lava.png')],
+  krakenBoss:  loadAsset('sheet/elite_kraken.png'), /* Lv30 최종보스 전용 — 대사에서 "크라켄"으로 특정됨 */
   windOrb:     loadAsset('windOrb.png'),     /* 최종 시련(Lv30) 바람구슬 전용 */
   bossVortex:  loadAsset('bossVortex.png'),  /* 미니보스 등장 연출용(폴백) */
   enemyShot:   loadAsset('enemyShot.png'),   /* 해양쓰레기 몬스터가 쏘는 파편 전용 */
@@ -175,8 +176,7 @@ function makeCam(){ return { shake:0, zoom:1, zoomTo:1 }; }
 function gSail(){
   openStage('영등할망의 바람');
   sfxAmbient('ocean',0.22);
-  /* 자이로는 반응이 잘 안 되는 기기가 있어서 제거 — 손가락 드래그만으로
-     상하좌우를 전부 조작한다(권한 요청 팝업도 그래서 안 띄운다) */
+  /* 자이로는 기기마다 편차가 커서 다시 손을 뗐다 — 드래그 전용으로 유지 */
 
   var W=cv.width,H=cv.height,px=W/2,rocks=[],foods=[],missiles=[],debris=[],enemyShots=[],t0=performance.now(),lastNow=t0;
   /* 상하좌우 자유 이동(드래그) — 뱀서라이크답게 화면 전체를 자유롭게 오갈 수 있다
@@ -216,12 +216,21 @@ function gSail(){
     if(side===2) return {x:-margin, y:H*0.15+Math.random()*(H*0.7)};      /* 왼쪽 */
     return {x:W+margin, y:H*0.15+Math.random()*(H*0.7)};                  /* 오른쪽 */
   }
-  var HIT_LINES=['아이고게, 정신 촐리라게!','아이고 놀란 것 좀 보라!'];
-  var LV10_LINE='이제 보롬 쎄게 불거난 정신 촐리라이~';
-  var END_LINES=['제라하게 보름 탈 줄 알암쪄이','오늘은 여기까지 하게마씨'];
-  var BOSS_LINES=['큰 게 온다, 정신 차리라이!','저건 요망진 놈이여!'];
-  var FINALBOSS_LINES=['이제 마지막 시련이여, 날 도와 이겨내라!','이 폭풍만 넘기면 진짜배기여'];
-  var WIN_LINES=['허허, 여기까지 왔구나','제법이여, 잘 버텼저'];
+  /* 사장님이 전달한 대사집(2026-09-18) 그대로 반영 — 상황별 1줄, 감정 태그는
+     주석으로만 남겨둔다(전용 초상화는 아직 없어서 기존 yeongdeung.png 그대로 씀) */
+  var OPEN_LINE='여기저기 잘 피행다니라이';                    /* 1. 게임 시작 · 기본 */
+  var FIRST_PICK_LINE='신중이 생각행 고르라이';                 /* 2. 첫 레벨업 선택 · 미소 */
+  var LV10_LINE='몬스터덜이 막몰려 올거난! 조심허라이~';         /* 3. 첫 대규모 몬스터 웨이브 · 엄격 */
+  var FIRST_BOSS_LINE='잘도 큰아이 왔저. 조심허라이';            /* 4. 첫 엘리트 몬스터 출현 · 놀람 */
+  var LOW_HP_LINE='혼저 빠져나오라!';                          /* 5. 체력 30% 이하 · 걱정 */
+  var FIRST_FUSION_LINE='다 쓸어불라!';                        /* 6. 첫 무기 융합 완성 · 미소 */
+  var BOSS_LINES=['정신 바짝 차려불라!'];                       /* 7. 중간보스 출현(2회차부터) · 엄격 */
+  var AWAKEN_LINE='보롬 쎄게 불엄신게 기회라 기회!';             /* 8. 용선 각성·피버타임 · 전투지시 */
+  var FINALBOSS_LINES=['오징어 촉수에 잽히지 말앙 피허라이!'];   /* 9. 크라켄 최종보스 등장 · 엄격 */
+  var WIN_LINES=['잘도 요망진 아이구나이'];                     /* 10-A. 크라켄 처치·승리 · 완주미소 */
+  var END_LINES=['아이고 폭삭 속아신게'];                       /* 10-B. 체력 0·실패 · 걱정 */
+  var HIT_LINES=['아이고게, 정신 촐리라게!','아이고 놀란 것 좀 보라!']; /* 피격 시(대사집 외 기존 유지) */
+  var firstPickShown=false, firstBossShown=false, firstFusionShown=false, lowHpShown=false;
 
   /* ================= Lv/EXP 시스템 ================= *
      레벨이 항상 눈에 보이고, 레벨업마다(뱀서라이크처럼) 업그레이드 카드
@@ -289,6 +298,8 @@ function gSail(){
         showBig('무기 진화!', f.emoji+' '+f.name+' 완성!', 1800,'fusion');
         toast('💫 '+f.name+' 완성! '+f.desc);
         sfx('fanfare',0.8);
+        /* 6. 첫 무기 융합 완성 — 처음 한 번만 전용 대사 */
+        if(!firstFusionShown){ firstFusionShown=true; showCutin(FIRST_FUSION_LINE,1500); }
       }
     });
   }
@@ -314,6 +325,7 @@ function gSail(){
     pick.options=keys.map(function(k){ return {key:k, rarity:rollRarity()}; });
     pick.open=true; pick.until=el+8;
     pickTitle=pickRandom(PICK_TITLES);
+    if(!firstPickShown){ firstPickShown=true; showCutin(FIRST_PICK_LINE,1800); }
   }
   function closePick(opt,el){
     pick.open=false;
@@ -468,6 +480,7 @@ function gSail(){
       awakened=true;
       pauseUntil=el+0.5; zoomTo(1.3); shake(14);
       sfx('fanfare',0.85);
+      showCutin(AWAKEN_LINE,1900,true); /* 8. 용선 각성·피버타임 */
       showBig('영등의 바람이 깃들었다','용선(龍船) 각성',2200,'awaken');
       toast('🐉 Lv.'+lv+' — 용선 각성! 무쌍이 시작됩니다');
       finaleUntil=el+0.5+5.0; inFinale=true;
@@ -476,7 +489,7 @@ function gSail(){
   }
 
   /* 시작하자마자 영등할망이 큰 글씨로 한 마디 — 이 동안은 게임이 완전히 멈춰 있다 */
-  showCutin('이레 저레 움직영 보름 타보라이!',2200,true);
+  showCutin(OPEN_LINE,2200,true);
 
   var wave=0;
   function loop(now){
@@ -494,9 +507,7 @@ function gSail(){
        요청 반영 — 배 이동부터 바위·먹거리·포격까지 전부 이 플래그로 묶는다 */
     var frozen = pick.open || boss.state==='announce' || (cutin.freeze && cutin.until>performance.now());
 
-    /* ---- 조작 입력 ---- (얼어있는 동안엔 배가 움직이지 않는다)
-       배를 조심조심 몰아가는 느낌을 위해 반응 속도를 낮췄고, 손가락 드래그로
-       좌우뿐 아니라 상하로도 움직여서 장애물을 직접 피해다닐 수 있다 */
+    /* ---- 조작 입력 ---- (얼어있는 동안엔 배가 움직이지 않는다, 드래그 전용) */
     if(!frozen && dragging){
       var followK=Math.min(1,(0.14+upgLevel.speed*0.025)*frameK);
       px += (dragX-px)*followK;
@@ -529,7 +540,9 @@ function gSail(){
     /* 미니보스 — 알림 문구가 뜨는 동안 완전히 멈춘 뒤 등장한다. 레벨이 오를수록 더 자주 나온다 */
     if(boss.state==='idle' && el>=boss.nextAt && !frozen && lv>=10 && finalBoss.state==='idle'){
       boss.state='announce'; boss.announceUntil=el+1.5;
-      showCutin(pickRandom(BOSS_LINES),1500,true);
+      /* 4. 첫 엘리트 몬스터(미니보스) 출현은 전용 대사, 그 다음부터는 BOSS_LINES */
+      if(!firstBossShown){ firstBossShown=true; showCutin(FIRST_BOSS_LINE,1500,true); }
+      else showCutin(pickRandom(BOSS_LINES),1500,true);
     }
     if(boss.state==='announce' && el>=boss.announceUntil){
       /* "보스는 정말 강력하게" — 체력을 레벨에 비례해서 계속 키운다(고정 5는 너무 약했음) */
@@ -577,7 +590,8 @@ function gSail(){
         var spawnAsset=useMonster ? waveType : pickRandom(ASSETS.rockShapePool);
         var zz = Math.random()<0.3;
         var sp=spawnEdgePoint(60);
-        rocks.push({x:sp.x,y:sp.y,r:14+Math.random()*8,v:Math.min(lv<10?1.6:2.6, 1.2+el*0.01*diffEase+lv*0.02*diffEase),asset:spawnAsset,passed:false,dead:false,zigzag:zz,zzPhase:Math.random()*Math.PI*2,homing:true,id:++rockIdCounter});
+        /* "정말정말 천천히" 반영 — 호밍 속도를 한 번 더 크게 낮췄다 */
+        rocks.push({x:sp.x,y:sp.y,r:14+Math.random()*8,v:Math.min(lv<10?0.7:1.2, 0.5+el*0.004*diffEase+lv*0.008*diffEase),asset:spawnAsset,passed:false,dead:false,zigzag:zz,zzPhase:Math.random()*Math.PI*2,homing:true,id:++rockIdCounter});
       }
       foodSpawn-=sdt;
       if(foodSpawn<=0){
@@ -981,7 +995,7 @@ function gSail(){
       finalBoss.state='alive';
       finalBoss.maxHp=90; finalBoss.hp=90;
       finalBoss.x=W/2; finalBoss.y=-180; finalBoss.restY=H*0.22; finalBoss.shotTimer=1400;
-      finalBoss.asset=pickRandom(ASSETS.elitePool);
+      finalBoss.asset=ASSETS.krakenBoss; /* 대사집에서 "크라켄"으로 특정된 최종보스 */
       toast('영등할망의 마지막 시련 — 강력한 존재가 나타났다!');
       sfx('boom',0.6);
     }
@@ -1490,7 +1504,9 @@ function gSail(){
         invulnUntil=el+1.5; shake(9);
         sfx('boom',0.6); beep(120,0.3,'square',0.2);
         if(hearts>0){
-          showCutin(pickRandom(HIT_LINES),1500);
+          /* 5. 체력 30% 이하 — 처음 그 문턱을 넘는 순간에만 전용 대사 */
+          if(!lowHpShown && hearts/maxHearts<=0.3){ lowHpShown=true; showCutin(LOW_HP_LINE,1500); }
+          else showCutin(pickRandom(HIT_LINES),1500);
           toast('쾅! 정신 차리고 다시!');
         } else {
           triggerEnding(el);
