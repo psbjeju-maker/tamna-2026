@@ -1415,6 +1415,8 @@ function gSail(){
   var END_LINES=['제라하게 보름 탈 줄 알암쪄이','오늘은 여기까지 하게마씨'];
   var RUSH_LINES=['바당에서 복이 쏟아진다!'];
   var BOSS_LINES=['큰 게 온다, 정신 차리라이!','저건 요망진 놈이여!'];
+  var FINALBOSS_LINES=['이제 마지막 시련이여, 날 도와 이겨내라!','이 폭풍만 넘기면 진짜배기여'];
+  var WIN_LINES=['허허, 여기까지 왔구나','제법이여, 잘 버텼저'];
 
   /* ================= Lv/EXP 시스템 ================= *
      드래곤플라이트처럼 레벨이 항상 눈에 보이고, 레벨업마다(뱀서라이크처럼)
@@ -1513,7 +1515,8 @@ function gSail(){
   function onLevelUp(el){
     var newTier=tierForLevel(lv);
     if(newTier>shipTier){ evolveTo(newTier,el); }
-    else if(lv>=30 && lv%10===0){ prestigeFlash(el); }
+    else if(lv===30 && finalBoss.state==='idle' && !transcended){ startFinalBoss(el); return; }
+    else if(lv>30 && transcended && lv%10===0){ prestigeFlash(el); }
     openPick(el);
   }
   function prestigeFlash(el){
@@ -1527,8 +1530,27 @@ function gSail(){
      단, 선택 카드가 떠 있을 때는 탭 좌표로 카드를 고르는 용도로 쓴다. */
   var dragging=false, dragX=px;
   function evX(e){ var r=cv.getBoundingClientRect(); return (e.clientX-r.left)*(W/r.width); }
+  function evY(e){ var r=cv.getBoundingClientRect(); return (e.clientY-r.top)*(H/r.height); }
   cv.onpointerdown=function(e){
     var x=evX(e);
+    if(ending && endingWon){
+      var elNow=(performance.now()-t0)/1000;
+      if(elNow-endingT0>1.5){
+        var y=evY(e);
+        var ebY=H*0.28+48+5*36+30, ebW=W*0.42, ebH=52, ebGap=14;
+        var eb1X=W/2-ebW-ebGap/2, eb2X=W/2+ebGap/2;
+        if(y>=ebY && y<=ebY+ebH){
+          if(x>=eb1X && x<=eb1X+ebW){ alive=false; finishSail(elNow,kills); return; }
+          if(x>=eb2X && x<=eb2X+ebW){
+            transcended=true; ending=false; finalBoss.state='idle'; finalBoss.cycle=0;
+            hearts=Math.max(hearts,1); invulnUntil=elNow+1.2;
+            toast('🌊 초월 항해 시작 — 기록에 도전하라!'); sfx('fanfare',0.7);
+            return;
+          }
+        }
+      }
+      return; /* 승리 결과 화면이 떠 있는 동안엔 탭해도 배가 움직이지 않는다 */
+    }
     if(pick.open){
       var cwp=W/pick.options.length;
       var idx=Math.min(pick.options.length-1,Math.max(0,Math.floor(x/cwp)));
@@ -1547,17 +1569,25 @@ function gSail(){
   var boss={state:'idle',announceUntil:0,hp:0,maxHp:5,x:0,y:0,r:92,v:1.15,asset:null,nextAt:34,flashUntil:0};
   var finaleUntil=0,inFinale=false,finaleKills=0;
   var awakened=false;
-  var ending=false,endingT0=0;
+  var ending=false,endingT0=0,endingWon=false;
+  var finalBoss={state:'idle',announceUntil:0,stormUntil:0,breakUntil:0,assaultUntil:0,cycle:0,cycles:3,orbs:[],hp:0};
+  var transcended=false;
   var lightningTimer=2000, windpushTimer=4000, shieldTimer=8000, shieldCharge=0;
 
   function showCutin(text,dur,freeze){ cutin.text=text; cutin.from=performance.now(); cutin.until=cutin.from+dur; cutin.freeze=!!freeze; }
   function showBig(a,b,dur,kind){ bigText={a:a,b:b,from:performance.now(),until:performance.now()+dur,kind:kind}; }
   function shake(v){ cam.shake=Math.max(cam.shake,v); }
   function zoomTo(v){ cam.zoomTo=v; }
-  function triggerEnding(el){
+  function triggerEnding(el,won){
     if(ending) return;
-    ending=true; endingT0=el;
-    showCutin(pickRandom(END_LINES),2000);
+    ending=true; endingT0=el; endingWon=!!won;
+    showCutin(pickRandom(won?WIN_LINES:END_LINES),2000);
+  }
+  function startFinalBoss(el){
+    /* Lv30 — 영등할망이 내는 마지막 시련. 적대적인 존재가 아니라 통과해야 할
+       거대한 폭풍이라는 설정이라, 이겨내면 영등할망이 인정해주는 흐름으로 이어진다 */
+    finalBoss.state='announce'; finalBoss.announceUntil=el+2.2; finalBoss.cycle=0;
+    showCutin(pickRandom(FINALBOSS_LINES),2200,true);
   }
 
   function explodeRock(x,y,r,big){
@@ -1638,7 +1668,7 @@ function gSail(){
     }
 
     /* 골든 러시 — 알림 문구가 뜨는 동안은 완전히 멈추고, 문구가 끝나야 실제로 시작된다 */
-    if(rush.state==='idle' && el>=rush.nextAt && !frozen && boss.state==='idle'){
+    if(rush.state==='idle' && el>=rush.nextAt && !frozen && boss.state==='idle' && finalBoss.state==='idle'){
       rush.state='announce'; rush.announceUntil=el+1.4;
       showCutin(pickRandom(RUSH_LINES),1400,true);
     }
@@ -1652,7 +1682,7 @@ function gSail(){
     }
 
     /* 미니보스 — 알림 문구가 뜨는 동안 완전히 멈춘 뒤 등장한다. 레벨이 오를수록 더 자주 나온다 */
-    if(boss.state==='idle' && el>=boss.nextAt && !frozen && rush.state==='idle' && lv>=10){
+    if(boss.state==='idle' && el>=boss.nextAt && !frozen && rush.state==='idle' && lv>=10 && finalBoss.state==='idle'){
       boss.state='announce'; boss.announceUntil=el+1.5;
       showCutin(pickRandom(BOSS_LINES),1500,true);
     }
@@ -1668,8 +1698,13 @@ function gSail(){
     /* 각성 무쌍 구간이 끝나면 게임을 끝내지 않고 그대로 용선으로 계속 진행한다 */
     if(inFinale && el>=finaleUntil){ inFinale=false; }
 
-    /* 죽어야만 끝난다 — 시간 강제종료 안전장치 없음(개인용 앱이라 대기열 문제 없음) */
-    if(ending && el-endingT0>3.6 && alive){
+    /* 죽어야만 끝난다 — 시간 강제종료 안전장치 없음(개인용 앱이라 대기열 문제 없음).
+       단, 완주(승리) 시에는 "항해 완료" 또는 "초월 항해"를 직접 탭해서 골라야 하므로
+       자동 종료하지 않고, 방치될 때만을 위한 넉넉한 대기열 타임아웃만 둔다 */
+    if(ending && !endingWon && el-endingT0>3.6 && alive){
+      alive=false; finishSail(el,kills); return;
+    }
+    if(ending && endingWon && el-endingT0>20 && alive){
       alive=false; finishSail(el,kills); return;
     }
 
@@ -1877,6 +1912,79 @@ function gSail(){
         var bdx=Math.abs(boss.x-px), bdy=Math.abs(boss.y-shipY);
         if(bdx<boss.r+30 && bdy<boss.r+34){ hit=true; }
         if(boss.y>H+160){ boss.state='idle'; boss.nextAt=el+Math.max(20,45-lv*0.6); }
+      }
+    }
+
+    /* ---- 최종 시련 (Lv30) — 폭풍 회피 → 바람구슬 파괴 → 약점 노출 → 총공격,
+       이 네 단계를 finalBoss.cycles번 반복하면 완주. 적이 아니라 마지막으로
+       통과해야 할 거대한 시련이라는 설정이라 이겨내면 영등할망이 인정해준다 */
+    if(finalBoss.state==='announce' && el>=finalBoss.announceUntil){
+      finalBoss.state='storm'; finalBoss.stormUntil=el+(finalBoss.cycle===0?15:11);
+      toast('폭풍 속을 버텨내라!');
+    }
+    if(finalBoss.state==='storm' && el>=finalBoss.stormUntil){
+      finalBoss.state='orbs';
+      var ow=W*0.24;
+      finalBoss.orbs=[
+        {x:Math.max(shipMargin,W*0.5-ow),y:170,r:44,hp:4,maxHp:4,dead:false},
+        {x:W*0.5,                         y:130,r:44,hp:4,maxHp:4,dead:false},
+        {x:Math.min(W-shipMargin,W*0.5+ow),y:170,r:44,hp:4,maxHp:4,dead:false}
+      ];
+      showBig('바람구슬을 전부 파괴하라!','',1400,'break');
+      sfx('boom',0.5); shake(6);
+    }
+    if(finalBoss.state==='orbs'){
+      finalBoss.orbs.forEach(function(o){
+        if(o.dead) return;
+        if(!drawImgFit(ASSETS.rockPool[ASSETS.rockPool.length-1],o.x,o.y,o.r*2.1,o.r*2.1,el*1.4)){
+          ctx.fillStyle='rgba(150,210,255,.9)';ctx.beginPath();ctx.arc(o.x,o.y,o.r,0,7);ctx.fill();
+        }
+        var obw=o.r*1.6;
+        ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(o.x-obw/2,o.y-o.r-18,obw,7);
+        ctx.fillStyle='#4FC3A1';ctx.fillRect(o.x-obw/2+2,o.y-o.r-16,(obw-4)*Math.max(0,o.hp/o.maxHp),3);
+        for(var omi=missiles.length-1;omi>=0;omi--){
+          var om=missiles[omi];
+          if(Math.hypot(om.x-o.x,om.y-o.y)<o.r+8){
+            o.hp-=(1+upgLevel.focus); missiles.splice(omi,1); sfx('pop',0.4); shake(2);
+            if(o.hp<=0){ o.dead=true; explodeRock(o.x,o.y,o.r,true); sfx('boom',0.5); kills++; gainXp(ROCK_XP*3,el); }
+            break;
+          }
+        }
+        var oddx=Math.abs(o.x-px), oddy=Math.abs(o.y-shipY);
+        if(oddx<o.r+30 && oddy<o.r+34){ hit=true; }
+      });
+      if(finalBoss.orbs.every(function(o){return o.dead;})){
+        finalBoss.state='break'; finalBoss.breakUntil=el+1.0;
+        showBig('약점 노출!','',1000,'break'); shake(8); sfx('evolve',0.4);
+      }
+    }
+    if(finalBoss.state==='break' && el>=finalBoss.breakUntil){
+      finalBoss.state='assault'; finalBoss.assaultUntil=el+3.0; finalBoss.hp=6;
+      toast('지금이다! 총공격!'); sfx('fanfare',0.5);
+    }
+    if(finalBoss.state==='assault'){
+      var coreY=150;
+      if(!drawImgFit(ASSETS.rockPool[ASSETS.rockPool.length-1],W/2,coreY,150,150,el*2)){
+        ctx.fillStyle='rgba(255,140,135,.9)';ctx.beginPath();ctx.arc(W/2,coreY,74,0,7);ctx.fill();
+      }
+      for(var fmi=missiles.length-1;fmi>=0;fmi--){
+        var fm=missiles[fmi];
+        if(Math.hypot(fm.x-W/2,fm.y-coreY)<82){
+          finalBoss.hp-=(1+upgLevel.focus); missiles.splice(fmi,1); sfx('pop',0.4); shake(3);
+        }
+      }
+      var cddx=Math.abs(W/2-px), cddy=Math.abs(coreY-shipY);
+      if(cddx<100 && cddy<80){ hit=true; }
+      if(el>=finalBoss.assaultUntil){
+        finalBoss.cycle++;
+        if(finalBoss.cycle>=finalBoss.cycles){
+          finalBoss.state='idle';
+          explodeRock(W/2,coreY,120,true); sfx('boom',0.8); shake(16);
+          triggerEnding(el,true);
+        } else {
+          finalBoss.state='storm'; finalBoss.stormUntil=el+11;
+          toast('다시 폭풍이 온다!');
+        }
       }
     }
 
@@ -2205,13 +2313,13 @@ function gSail(){
       });
     }
 
-    /* ---- 엔딩: 결과 요약(2~3초 안에 파악 가능하게) ---- */
+    /* ---- 엔딩: 결과 요약(2~3초 안에 파악 가능하게) — 사망과 완주(승리)를 다르게 취급한다 */
     if(ending && el-endingT0>1.5){
       var pnAlpha=Math.min(1,(el-endingT0-1.5)/0.3);
       ctx.globalAlpha=pnAlpha;
       ctx.fillStyle='rgba(6,10,20,.72)';ctx.fillRect(0,0,W,H);
-      ctx.textAlign='center';ctx.font='800 24px SCDream, sans-serif';ctx.fillStyle='#F5B331';
-      ctx.fillText('영등할망의 바람을 이겨냈다!',W/2,H*0.28);
+      ctx.textAlign='center';ctx.font='800 24px SCDream, sans-serif';ctx.fillStyle=endingWon?'#F5B331':'#BFC6D8';
+      ctx.fillText(endingWon?'항해 성공! 마지막 시련을 이겨냈다':'항해 종료',W/2,H*0.28);
       var upgLine=UPG_KEYS.filter(function(k){return upgHistory[k]}).map(function(k){return UPGRADES[k].emoji+'×'+upgHistory[k];}).join('  ') || '-';
       var resultRows=[['도달 레벨','Lv.'+lv],['생존 시간',Math.floor(el)+'초'],['파괴한 바위',kills+'개'],['획득한 복',bokEarned+'복'],['획득 카드',upgLine]];
       ctx.font='700 17px SCDream, sans-serif';
@@ -2221,6 +2329,20 @@ function gSail(){
         ctx.textAlign='right';ctx.font='700 '+(row[0]==='획득 카드'?14:17)+'px SCDream, sans-serif';ctx.fillStyle='#F2F0EA';ctx.fillText(row[1],W*0.76,ry);
         ctx.font='700 17px SCDream, sans-serif';
       });
+      if(endingWon){
+        /* 완주 후에는 자동 종료 대신 "항해 완료"/"초월 항해"를 직접 탭해서 고르게 한다 */
+        var ebY=H*0.28+48+resultRows.length*36+30, ebW=W*0.42, ebH=52, ebGap=14;
+        var eb1X=W/2-ebW-ebGap/2, eb2X=W/2+ebGap/2;
+        ctx.textAlign='center';ctx.font='700 13px SCDream, sans-serif';ctx.fillStyle='rgba(242,240,234,.6)';
+        ctx.fillText('탭해서 선택',W/2,ebY-14);
+        [['항해 완료',eb1X,'#4FC3A1'],['초월 항해',eb2X,'#F5B331']].forEach(function(b){
+          ctx.fillStyle=b[2];
+          if(ctx.roundRect){ ctx.beginPath();ctx.roundRect(b[1],ebY,ebW,ebH,14);ctx.fill(); }
+          else ctx.fillRect(b[1],ebY,ebW,ebH);
+          ctx.textAlign='center';ctx.font='800 16px SCDream, sans-serif';ctx.fillStyle='#0B1220';
+          ctx.fillText(b[0],b[1]+ebW/2,ebY+ebH/2+6);
+        });
+      }
       ctx.globalAlpha=1;
     }
 
@@ -2262,8 +2384,12 @@ function gSail(){
     var isBest=s>(S.best.sail||0);
     if(isBest)S.best.sail=s;
     sfx(isBest?'fanfare':'bonus',0.7);
-    var bonus=(kills||0)*3+bossKillCount*15+bokEarned+lv*5;
-    reward(s*2+bonus,'영등할망의 바람 · '+s+'초 생존 · Lv.'+lv+(bonus?' · 보너스 +'+bonus:''));
+    var winBonus=endingWon?100:0;
+    var bonus=(kills||0)*3+bossKillCount*15+bokEarned+lv*5+winBonus;
+    var label=endingWon
+      ? '항해 성공 · 영등할망의 마지막 시련 완료 · Lv.'+lv+(bonus?' · 완주 보너스 포함 +'+bonus:'')
+      : '영등할망의 바람 · '+s+'초 생존 · Lv.'+lv+(bonus?' · 보너스 +'+bonus:'');
+    reward(s*2+bonus,label);
   }
 }
 
