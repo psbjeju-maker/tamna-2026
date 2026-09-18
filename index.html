@@ -117,11 +117,10 @@
         <h2 class="section__title">여섯 신께 인사</h2>
         <span class="section__meta"><span id="progN">0</span> / 6</span>
       </div>
-      <p class="section__lead" id="heroSub">행사장 곳곳에 강림해 계십니다. 만나 인사드리면 도장 QR과 복을 받아요.</p>
+      <p class="section__lead" id="heroSub">행사장 곳곳에 강림해 계십니다. 가까이 가면 자동으로 인사가 이루어지고 복을 받아요.</p>
       <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" id="progWrap" style="margin-top:12px">
         <div class="progress__bar"><i class="progress__fill" id="progFill"></i></div>
       </div>
-      <button class="btn btn--primary btn--block" id="btnScan" style="margin-top:14px"><svg class="icon"><use href="#i-qr"/></svg>도장 QR 찍기</button>
       <div class="gods" id="crewGrid"></div>
     </div>
 
@@ -287,7 +286,7 @@
     <div id="trackDist">-</div>
     <p class="caption" id="trackNote"></p>
   </div>
-  <button class="btn btn--primary btn--block" id="trackScanBtn"><svg class="icon"><use href="#i-qr"/></svg>찾았다! 도장 찍기</button>
+  <button class="btn btn--primary btn--block" id="trackScanBtn"><svg class="icon"><use href="#i-check"/></svg>인사하기</button>
 </div>
 
 <!-- 대화(시네마) — 화면 아무 곳이나 탭하면 다음 대사로 -->
@@ -686,7 +685,8 @@ $('#crewGrid').addEventListener('click',function(e){
   var h=liveHints[c.id];
   var stale=h&&h.updatedAt&&h.updatedAt.toMillis&&(Date.now()-h.updatedAt.toMillis()>(C.liveLocation.staleMs||90000));
   var isLive=h&&h.active&&h.lat!=null&&!stale;
-  isLive?openTracker(c):openScan();
+  if(isLive)openTracker(c);
+  else toast('아직 위치 신호가 없어요. 잠시 후 다시 확인해 주세요');
 });
 function jejuCard(c){
   if(!c.jeju)return '';
@@ -771,19 +771,20 @@ $('#btnBuy').onclick=function(){
     '<button class="btn btn--primary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">알겠어!</button>');
 };
 
-/* ---------------- 코드 스캔 ---------------- */
+/* ---------------- 코드 스캔(스태프 인증 전용) ----------------
+   여섯 신께 인사하는 흐름은 QR/코드를 쓰지 않는다 — 근처 자동 발견(GPS)이나
+   나침반 화면의 "인사하기" 버튼(greetGod)으로 바로 처리된다.
+   여기 남은 코드 입력은 SNS 인증/구매 인증/사전예매 같은 부스 스태프
+   확인용으로만 쓰인다. */
 function openScan(kind){
-  var label = kind? '스태프 확인 코드' : '도장 QR 코드';
   var demo='';
   if(C.demoMode){
-    var btns = kind
-      ? '<button data-code="'+C.staffCodes[kind]+'">'+C.staffCodes[kind]+'</button>'
-      : C.crew.map(function(c){return '<button data-code="'+c.code+'">'+c.code+'</button>'}).join('');
+    var btns='<button data-code="'+C.staffCodes[kind]+'">'+C.staffCodes[kind]+'</button>';
     demo='<div class="demo"><p class="caption">프로토타입 모드 — 실제 행사에서는 QR 카메라가 열립니다. 아래는 테스트용 버튼.</p>'+
       '<div class="demo__btns">'+btns+'</div></div>';
   }
-  sheet('<h3>'+label+' 입력</h3>'+
-    '<p>'+(kind?'부스 스태프가 보여주는 코드를 입력하세요.':'신을 뵈면 스태프가 보여주는 도장 코드를 입력하세요.')+'</p>'+
+  sheet('<h3>스태프 확인 코드 입력</h3>'+
+    '<p>부스 스태프가 보여주는 코드를 입력하세요.</p>'+
     '<div class="field" style="margin-top:16px"><input id="codeIn" placeholder="코드 입력" autocapitalize="characters" aria-label="코드"></div>'+
     '<button class="btn btn--primary btn--block" id="codeGo" style="margin-top:8px">확인</button>'+demo);
   $('#codeGo').onclick=function(){redeem($('#codeIn').value.trim(),kind)};
@@ -792,25 +793,18 @@ function openScan(kind){
 function redeem(code,kind){
   code=(code||'').toUpperCase().replace(/\s/g,'');
   if(!code){toast('코드를 입력해 주세요');return}
-  if(kind){
-    if(code!==C.staffCodes[kind].toUpperCase()){toast('코드가 맞지 않습니다');return}
-    var got=0;
-    if(kind==='sns'){ if(d().sns){toast('오늘은 이미 인증했습니다');return} d().sns=1;got=C.gold.sns;addGold(got,'SNS 인증'); }
-    if(kind==='purchase'){ if(d().buy){toast('오늘은 이미 인증했습니다');return} d().buy=1;got=C.gold.purchase;addGold(got,'구매 인증'); }
-    if(kind==='preorder'){ if(S.flags.pre){toast('이미 인증했습니다');return} S.flags.pre=1;got=C.gold.preorder;addGold(got,'사전예매'); }
-    closeModal();
-    var left=C.ticket.cost-(S.gold%C.ticket.cost);
-    setTimeout(function(){dokPop('오~ 잘했는데? 복 +'+got+'!\n'+(S.gold>=C.ticket.cost?'응모권 받을 수 있어. 보물창고로 가봐!':'응모권까지 '+left+'복 남았어!'),'laugh')},500);
-    return;
-  }
-  var hit=null;
-  C.crew.forEach(function(c){if(c.code.toUpperCase()===code)hit=c});
-  if(!hit){toast('그런 신은 안 계십니다');return}
-  if(S.crew[hit.id]){toast('이미 인사드린 신입니다');return}
-  grantCrew(hit);
+  if(code!==C.staffCodes[kind].toUpperCase()){toast('코드가 맞지 않습니다');return}
+  var got=0;
+  if(kind==='sns'){ if(d().sns){toast('오늘은 이미 인증했습니다');return} d().sns=1;got=C.gold.sns;addGold(got,'SNS 인증'); }
+  if(kind==='purchase'){ if(d().buy){toast('오늘은 이미 인증했습니다');return} d().buy=1;got=C.gold.purchase;addGold(got,'구매 인증'); }
+  if(kind==='preorder'){ if(S.flags.pre){toast('이미 인증했습니다');return} S.flags.pre=1;got=C.gold.preorder;addGold(got,'사전예매'); }
+  closeModal();
+  var left=C.ticket.cost-(S.gold%C.ticket.cost);
+  setTimeout(function(){dokPop('오~ 잘했는데? 복 +'+got+'!\n'+(S.gold>=C.ticket.cost?'응모권 받을 수 있어. 보물창고로 가봐!':'응모권까지 '+left+'복 남았어!'),'laugh')},500);
 }
-/* 신을 처음 만났을 때의 보상·연출 — 코드 입력(수동)과 근처 자동 발견(GPS) 둘 다 여기로 온다.
-   이미 인사드린 신은 여기까지 오지 않는다(재방문 인사는 onNearGod에서 복 재지급 없이 따로 처리). */
+/* 신을 처음 만났을 때의 보상·연출 — 근처 자동 발견(GPS)과 나침반 화면의
+   "인사하기" 버튼(greetGod) 둘 다 여기로 온다.
+   이미 인사드린 신은 여기까지 오지 않는다(재방문 인사는 onNearGod/greetGod에서 복 재지급 없이 따로 처리). */
 function grantCrew(hit){
   var mult = (todayCrew()===hit.id)?C.gold.todayMultiplier:1;
   var g=(hit.bounty||C.gold.crew)*mult;
@@ -832,10 +826,17 @@ function grantCrew(hit){
   if(hit.id==='GOD2'){ playCinema(hit.name,DOKEBI_LINES,showCaptureSheet); }
   else { showCaptureSheet(); }
 }
-$('#btnScan').onclick=function(){openScan()};
 $('#trackClose').onclick=closeTracker;
-$('#trackScanBtn').onclick=function(){closeTracker();openScan()};
+$('#trackScanBtn').onclick=greetGod;
 $('#btnSns').onclick=function(){openScan('sns')};
+/* 나침반 화면의 "인사하기" — QR/코드 없이 바로 인사 처리 */
+function greetGod(){
+  var hit=trackGod;
+  if(!hit)return;
+  closeTracker();
+  if(S.crew[hit.id]){dokPop(hit.name+'다! 또 만났네, 반가워서 인사하러 왔어 — 사진 한 장 더 찍어봐!','laugh',5200);return}
+  grantCrew(hit);
+}
 
 /* ---------------- 모달 ---------------- */
 function sheet(html){$('#sheet').innerHTML=html;$('#modal').classList.add('on')}
@@ -930,7 +931,7 @@ function maybeDokPop(){
 /* ---- 도채비 화면 ---- */
 var DOK_ASK={
   treasure:{t:'10월 31일 과수원피스에서 뽑는 200,000원 상당 보물! 뭔지는… 비밀이야.',f:'wink'},
-  luck:{t:'여섯 신께 인사(도장 QR), 4컷 만들어 SNS 올리기, 부스 인증, 놀이터 게임! 200복이면 응모권 한 장.',f:'smile'},
+  luck:{t:'여섯 신께 인사, 4컷 만들어 SNS 올리기, 부스 인증, 놀이터 게임! 200복이면 응모권 한 장.',f:'smile'},
   where:{t:'제주 금능석물원! 10월 31일 10시부터 4시까지. 입장은 무료, 항해 패스는 6,000원.',f:'excited'},
   who:{t:'뿔 달리고 이빨 뾰족한 거 상상했지? 그건 오니야. 난 도깨비라고. 사람이랑 똑같이 생겼어.',f:'pout'}
 };
