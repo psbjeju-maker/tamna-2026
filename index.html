@@ -1460,12 +1460,13 @@ function gSail(){
   var WIN_LINES=['허허, 여기까지 왔구나','제법이여, 잘 버텼저'];
 
   /* ================= Lv/EXP 시스템 ================= *
-     드래곤플라이트처럼 레벨이 항상 눈에 보이고, 레벨업마다(뱀서라이크처럼)
-     업그레이드 카드 3장이 뜬다. 복(보상 재화)과는 완전히 분리된 경험치다.
-     초반 레벨업이 너무 느리다는 피드백으로 요구량을 한 번 더 낮췄다
-     (목표: Lv10까지 대략 30초~1분). */
+     레벨이 항상 눈에 보이고, 레벨업마다(뱀서라이크처럼) 업그레이드 카드
+     3장이 뜬다. 복(보상 재화)과는 완전히 분리된 경험치다.
+     가만히 있어도 시간이 지나면 자동으로 차오르던 것(드래곤플라이트식
+     경험치 자동획득)은 "레벨업이 왜 자동으로 되냐"는 피드백으로 없앴다 —
+     이제 경험치는 바위를 부술 때 떨어지는 복주머니(xpPouches)를
+     직접 날아가서 먹어야만 들어온다. */
   var lv=1, xp=0, xpNeed=4+lv*2;
-  var xpTrickle=0;
   var shipTier=0, prestige=0;
   function tierForLevel(l){ if(l>=20) return 3; if(l>=10) return 2; if(l>=5) return 1; return 0; }
 
@@ -1570,6 +1571,7 @@ function gSail(){
     if(newTier>shipTier){ evolveTo(newTier,el); }
     else if(lv===30 && finalBoss.state==='idle' && !transcended){ startFinalBoss(el); return; }
     else if(lv>30 && transcended && lv%10===0){ prestigeFlash(el); }
+    else { showBig('레벨업!','Lv.'+lv,700,'levelup'); sfx('bonus',0.5); }
     openPick(el);
   }
   function prestigeFlash(el){
@@ -1595,7 +1597,7 @@ function gSail(){
         if(y>=ebY && y<=ebY+ebH){
           if(x>=eb1X && x<=eb1X+ebW){ alive=false; finishSail(elNow,kills); return; }
           if(x>=eb2X && x<=eb2X+ebW){
-            transcended=true; ending=false; finalBoss.state='idle'; finalBoss.cycle=0;
+            transcended=true; ending=false; finalBoss.state='idle';
             hearts=Math.max(hearts,1); invulnUntil=elNow+1.2;
             toast('🌊 초월 항해 시작 — 기록에 도전하라!'); sfx('fanfare',0.7);
             return;
@@ -1622,12 +1624,15 @@ function gSail(){
   var finaleUntil=0,inFinale=false,finaleKills=0;
   var awakened=false;
   var ending=false,endingT0=0,endingWon=false;
-  var finalBoss={state:'idle',announceUntil:0,stormUntil:0,breakUntil:0,assaultUntil:0,cycle:0,cycles:3,orbs:[],hp:0};
+  /* Lv30 최종 보스 — 별도 단계 연출 없이 평소 스웜 속에서 아주 강한 적 하나를
+     잡는 "기본 뱀서류" 느낌으로 간다(예전의 폭풍/바람구슬/약점노출 단계극 폐기) */
+  var finalBoss={state:'idle',announceUntil:0,hp:0,maxHp:0,x:0,y:0,r:170,restY:0,shotTimer:0,flashUntil:0};
   var transcended=false;
   var lightningTimer=2000, windpushTimer=4000, shieldTimer=8000, shieldCharge=0;
   var bombTimer=3200, boomerangTimer=3600, homingTimer=3000, missileTimer=4200;
   var lightningBolts=[], bombShots=[], windGusts=[], boomerangs=[], homingMissiles=[], bigMissiles=[];
   var muzzleFlashes=[], hitFlashes=[], splashes=[];
+  var xpPouches=[]; /* 바위를 부수면 떨어지는 경험치 복주머니 — 직접 날아가서 먹어야 경험치가 들어온다 */
   var rockIdCounter=0;
   function cdrMul(){ return 1 - Math.min(0.55, upgLevel.cdr*0.12); } /* ⏱ 재빠른 손놀림 — 모든 스킬 쿨타임에 공통 적용 */
 
@@ -1643,7 +1648,7 @@ function gSail(){
   function startFinalBoss(el){
     /* Lv30 — 영등할망이 내는 마지막 시련. 적대적인 존재가 아니라 통과해야 할
        거대한 폭풍이라는 설정이라, 이겨내면 영등할망이 인정해주는 흐름으로 이어진다 */
-    finalBoss.state='announce'; finalBoss.announceUntil=el+2.2; finalBoss.cycle=0;
+    finalBoss.state='announce'; finalBoss.announceUntil=el+2.2;
     showCutin(pickRandom(FINALBOSS_LINES),2200,true);
   }
 
@@ -1659,6 +1664,11 @@ function gSail(){
     var n=big?18:12;
     for(var i=0;i<n;i++){var a=Math.random()*Math.PI*2,sp=2+Math.random()*5;
       fx.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,l:1,c:i%2?'#4FC3A1':'#F2F0EA',sz:3+Math.random()*3});}
+  }
+  /* 경험치는 즉시 들어오지 않고, 바위가 있던 자리에 복주머니가 떨어진다 —
+     플레이어가 직접 날아가서 먹어야만 gainXp가 호출된다(뱀서라이크 코어 루프) */
+  function dropXpPouch(x,y,amount,el){
+    xpPouches.push({x:x,y:y,vy:0.6+Math.random()*0.4,amount:amount,until:el+5.5});
   }
 
   function playEvoBanner(el){
@@ -1750,11 +1760,12 @@ function gSail(){
       showCutin(pickRandom(BOSS_LINES),1500,true);
     }
     if(boss.state==='announce' && el>=boss.announceUntil){
-      boss.state='alive'; boss.hp=5; boss.maxHp=5;
-      boss.x=Math.max(shipMargin,Math.min(W-shipMargin,W/2)); boss.y=-140; boss.r=92;
+      /* "보스는 정말 강력하게" — 체력을 레벨에 비례해서 계속 키운다(고정 5는 너무 약했음) */
+      boss.state='alive'; boss.maxHp=14+Math.floor(lv*0.8); boss.hp=boss.maxHp;
+      boss.x=Math.max(shipMargin,Math.min(W-shipMargin,W/2)); boss.y=-160; boss.r=130;
       boss.v=1.0+Math.min(1.2,lv*0.03);
       boss.asset=ASSETS.bossVortex;
-      toast('👹 거대 바위 출현! 대포로 부숴라');
+      toast('👹 강력한 존재 출현! 대포로 부숴라');
       sfx('boom',0.5);
     }
 
@@ -1784,10 +1795,10 @@ function gSail(){
            크게 올려서 레벨/시간이 아무리 쌓여도 실제로 빠져나갈 틈이 남게 한다 */
         spawn=Math.max(420,(620-el*10*diffEase-lv*2*diffEase)/spawnRate);
         var rk=Math.floor(Math.random()*ASSETS.rockPool.length);
-        /* 호밍 바위 — Lv10부터 등장, 지그재그 바위와는 겹치지 않게 서로 배타적으로 뽑는다 */
-        var homing = lv>=10 && Math.random()<0.3;
-        var zz = !homing && lv>=10 && Math.random()<0.35;
-        rocks.push({x:60+Math.random()*(W-120),y:-60,r:32+Math.random()*26,v:Math.min(lv<10?4.2:7.5, 3.2+el*0.05*diffEase+lv*0.08*diffEase),asset:ASSETS.rockPool[rk],passed:false,dead:false,zigzag:zz,zzPhase:Math.random()*Math.PI*2,homing:homing,id:++rockIdCounter});
+        /* 뱀서라이크 스웜 느낌 — "지나가는" 바위가 아니라 배 쪽으로 아주 천천히
+           끌려오는 바위떼로 바꿨다. 전부 기본으로 살짝 유도되고, 일부만 지그재그가 섞인다 */
+        var zz = Math.random()<0.3;
+        rocks.push({x:60+Math.random()*(W-120),y:-60,r:32+Math.random()*26,v:Math.min(lv<10?1.6:2.6, 1.2+el*0.01*diffEase+lv*0.02*diffEase),asset:ASSETS.rockPool[rk],passed:false,dead:false,zigzag:zz,zzPhase:Math.random()*Math.PI*2,homing:true,id:++rockIdCounter});
       }
       foodSpawn-=sdt;
       if(foodSpawn<=0){
@@ -1798,10 +1809,6 @@ function gSail(){
         else if(roll<0.44){kind='tangerine';asset=ASSETS.foodTangerine;}
         foods.push({x:60+Math.random()*(W-120),y:-40,r:26,v:2.4+el*0.04,kind:kind,asset:asset});
       }
-      /* 생존 시간에 따른 아주 조금씩의 경험치 — 드래곤플라이트처럼 가만히 있어도 조금은 큰다 */
-      xpTrickle+=sdt;
-      if(xpTrickle>=650){ xpTrickle-=650; gainXp(1,el); }
-
       /* 🗑 해양쓰레기 몬스터 — Lv21부터 등장하는 첫 공격형 몬스터. 좌우로 흔들리며
          내려오다 주기적으로 배를 향해 파편을 쏜다 */
       if(lv>=21){
@@ -2148,7 +2155,7 @@ function gSail(){
         });
         if(hm.life<=0) hm.dead=true;
       }
-      if(!drawImgFit(ASSETS.missileHoming,hm.x,hm.y,30,20,Math.atan2(hm.vy,hm.vx))){
+      if(!drawImgFit(ASSETS.missileHoming,hm.x,hm.y,72,48,Math.atan2(hm.vy,hm.vx))){
         ctx.fillStyle='#9fd8ff'; ctx.beginPath(); ctx.arc(hm.x,hm.y,7,0,7); ctx.fill();
       }
     });
@@ -2158,12 +2165,12 @@ function gSail(){
     bigMissiles.forEach(function(bg){
       if(bg.dead) return;
       if(!frozen) bg.y+=bg.vy*frameK*2.6;
-      if(!drawImgFit(ASSETS.missileHoming,bg.x,bg.y,46,30,-Math.PI/2)){
+      if(!drawImgFit(ASSETS.missileHoming,bg.x,bg.y,150,100,-Math.PI/2)){
         ctx.fillStyle='#F0605A'; ctx.beginPath(); ctx.arc(bg.x,bg.y,14,0,7); ctx.fill();
       }
       if(!frozen){
         rocks.forEach(function(r){
-          if(!bg.dead && !r.dead && Math.hypot(r.x-bg.x,r.y-bg.y)<r.r+16){
+          if(!bg.dead && !r.dead && Math.hypot(r.x-bg.x,r.y-bg.y)<r.r+46){
             bg.hp--; r.dead=true; explodeRock(r.x,r.y,r.r*1.4,true); kills++; gainXp(ROCK_XP*2,el); sfx('boom',0.4); shake(3);
             if(bg.hp<=0) bg.dead=true;
           }
@@ -2173,76 +2180,53 @@ function gSail(){
     });
     bigMissiles=bigMissiles.filter(function(bg){ return !bg.dead; });
 
-    /* ---- 최종 시련 (Lv30) — 폭풍 회피 → 바람구슬 파괴 → 약점 노출 → 총공격,
-       이 네 단계를 finalBoss.cycles번 반복하면 완주. 적이 아니라 마지막으로
-       통과해야 할 거대한 시련이라는 설정이라 이겨내면 영등할망이 인정해준다 */
+    /* ---- 최종 보스 (Lv30) — 단계 연출극 없이 "기본 뱀서류" 느낌 그대로,
+       평소 스웜(바위·해양쓰레기) 속에서 훨씬 강한 적 한 마리를 잡는다.
+       화면에 내려와 자리잡고 버티면서 파편을 쏘고, 체력을 다 깎으면 승리 */
     if(finalBoss.state==='announce' && el>=finalBoss.announceUntil){
-      finalBoss.state='storm'; finalBoss.stormUntil=el+(finalBoss.cycle===0?15:11);
-      toast('폭풍 속을 버텨내라!');
+      finalBoss.state='alive';
+      finalBoss.maxHp=90; finalBoss.hp=90;
+      finalBoss.x=W/2; finalBoss.y=-180; finalBoss.restY=H*0.22; finalBoss.shotTimer=1400;
+      toast('영등할망의 마지막 시련 — 강력한 존재가 나타났다!');
+      sfx('boom',0.6);
     }
-    if(finalBoss.state==='storm' && el>=finalBoss.stormUntil){
-      finalBoss.state='orbs';
-      var ow=W*0.24;
-      finalBoss.orbs=[
-        {x:Math.max(shipMargin,W*0.5-ow),y:170,r:44,hp:4,maxHp:4,dead:false},
-        {x:W*0.5,                         y:130,r:44,hp:4,maxHp:4,dead:false},
-        {x:Math.min(W-shipMargin,W*0.5+ow),y:170,r:44,hp:4,maxHp:4,dead:false}
-      ];
-      showBig('바람구슬을 전부 파괴하라!','',1400,'break');
-      sfx('boom',0.5); shake(6);
-    }
-    if(finalBoss.state==='orbs'){
-      finalBoss.orbs.forEach(function(o){
-        if(o.dead) return;
-        if(!drawImgFit(ASSETS.windOrb,o.x,o.y,o.r*2.1,o.r*2.1,el*1.4)){
-          ctx.fillStyle='rgba(150,210,255,.9)';ctx.beginPath();ctx.arc(o.x,o.y,o.r,0,7);ctx.fill();
-        }
-        var obw=o.r*1.6;
-        ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(o.x-obw/2,o.y-o.r-18,obw,7);
-        ctx.fillStyle='#4FC3A1';ctx.fillRect(o.x-obw/2+2,o.y-o.r-16,(obw-4)*Math.max(0,o.hp/o.maxHp),3);
-        for(var omi=missiles.length-1;omi>=0;omi--){
-          var om=missiles[omi];
-          if(Math.hypot(om.x-o.x,om.y-o.y)<o.r+8){
-            o.hp-=(1+upgLevel.focus); missiles.splice(omi,1); sfx('pop',0.4); shake(2);
-            if(o.hp<=0){ o.dead=true; explodeRock(o.x,o.y,o.r,true); sfx('boom',0.5); kills++; gainXp(ROCK_XP*3,el); }
+    if(finalBoss.state==='alive'){
+      if(!frozen){
+        if(finalBoss.y<finalBoss.restY) finalBoss.y+=1.6*frameK*2.6;
+        else finalBoss.x=W/2+Math.sin(el*0.6)*(W*0.22);
+      }
+      if(!drawImgFit(ASSETS.windOrb,finalBoss.x,finalBoss.y,finalBoss.r*2.1,finalBoss.r*2.1,el*0.6)){
+        ctx.fillStyle='rgba(150,90,220,.9)';ctx.beginPath();ctx.arc(finalBoss.x,finalBoss.y,finalBoss.r,0,7);ctx.fill();
+      }
+      var fbw=200;
+      ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(finalBoss.x-fbw/2,finalBoss.y-finalBoss.r-30,fbw,12);
+      ctx.fillStyle='#C77DFF';ctx.fillRect(finalBoss.x-fbw/2+2,finalBoss.y-finalBoss.r-28,(fbw-4)*Math.max(0,finalBoss.hp/finalBoss.maxHp),8);
+      if(el<finalBoss.flashUntil){ ctx.globalAlpha=0.5; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(finalBoss.x,finalBoss.y,finalBoss.r*1.05,0,7); ctx.fill(); ctx.globalAlpha=1; }
+      for(var fbi=missiles.length-1;fbi>=0;fbi--){
+        var fbm=missiles[fbi];
+        if(Math.hypot(fbm.x-finalBoss.x,fbm.y-finalBoss.y)<finalBoss.r+10){
+          finalBoss.hp-=(1+upgLevel.focus); missiles.splice(fbi,1); finalBoss.flashUntil=el+0.08; shake(2);
+          sfx('pop',0.4);
+          if(finalBoss.hp<=0){
+            finalBoss.state='idle';
+            explodeRock(finalBoss.x,finalBoss.y,finalBoss.r,true); sfx('boom',0.85); shake(18);
+            triggerEnding(el,true);
             break;
           }
         }
-        var oddx=Math.abs(o.x-px), oddy=Math.abs(o.y-shipY);
-        if(oddx<o.r+30 && oddy<o.r+34){ hit=true; }
-      });
-      if(finalBoss.orbs.every(function(o){return o.dead;})){
-        finalBoss.state='break'; finalBoss.breakUntil=el+1.0;
-        showBig('약점 노출!','',1000,'break'); shake(8); sfx('evolve',0.4);
       }
-    }
-    if(finalBoss.state==='break' && el>=finalBoss.breakUntil){
-      finalBoss.state='assault'; finalBoss.assaultUntil=el+3.0; finalBoss.hp=6;
-      toast('지금이다! 총공격!'); sfx('fanfare',0.5);
-    }
-    if(finalBoss.state==='assault'){
-      var coreY=150;
-      if(!drawImgFit(ASSETS.windOrb,W/2,coreY,150,150,el*2)){
-        ctx.fillStyle='rgba(255,140,135,.9)';ctx.beginPath();ctx.arc(W/2,coreY,74,0,7);ctx.fill();
-      }
-      for(var fmi=missiles.length-1;fmi>=0;fmi--){
-        var fm=missiles[fmi];
-        if(Math.hypot(fm.x-W/2,fm.y-coreY)<82){
-          finalBoss.hp-=(1+upgLevel.focus); missiles.splice(fmi,1); sfx('pop',0.4); shake(3);
+      if(finalBoss.state==='alive' && !frozen && finalBoss.y>=finalBoss.restY){
+        finalBoss.shotTimer-=sdt;
+        if(finalBoss.shotTimer<=0){
+          finalBoss.shotTimer=1400+Math.random()*600;
+          var fang=Math.atan2(shipY-finalBoss.y,px-finalBoss.x);
+          enemyShots.push({x:finalBoss.x,y:finalBoss.y,vx:Math.cos(fang)*3.6,vy:Math.sin(fang)*3.6,dead:false});
+          sfx('pop',0.3);
         }
       }
-      var cddx=Math.abs(W/2-px), cddy=Math.abs(coreY-shipY);
-      if(cddx<100 && cddy<80){ hit=true; }
-      if(el>=finalBoss.assaultUntil){
-        finalBoss.cycle++;
-        if(finalBoss.cycle>=finalBoss.cycles){
-          finalBoss.state='idle';
-          explodeRock(W/2,coreY,120,true); sfx('boom',0.8); shake(16);
-          triggerEnding(el,true);
-        } else {
-          finalBoss.state='storm'; finalBoss.stormUntil=el+11;
-          toast('다시 폭풍이 온다!');
-        }
+      if(finalBoss.state==='alive'){
+        var fbdx=Math.abs(finalBoss.x-px), fbdy=Math.abs(finalBoss.y-shipY);
+        if(fbdx<finalBoss.r+30 && fbdy<finalBoss.r+34){ hit=true; }
       }
     }
 
@@ -2308,10 +2292,16 @@ function gSail(){
       missiles.forEach(function(m){m.x+=m.vx*frameK;m.y+=m.vy*frameK*2.6});
       missiles=missiles.filter(function(m){return m.y>-40 && m.y<H+40;}); /* 🔙 후방 포격 탄은 아래로 내려가므로 하단 경계도 필요 */
       rocks.forEach(function(r){
-        r.y+=r.v*frameK*2.6;
+        if(r.homing){
+          /* 뱀서라이크 스웜 — 바위가 배 쪽으로 아주 천천히 끌려온다(지나가는 장애물이 아니라
+             서서히 조여오는 적떼 느낌). x/y 둘 다 배 쪽으로 유도한다 */
+          var hdx=px-r.x, hdy=shipY-r.y, hd=Math.hypot(hdx,hdy)||1;
+          r.x+=(hdx/hd)*r.v*frameK*2.6;
+          r.y+=(hdy/hd)*r.v*frameK*2.6;
+        } else {
+          r.y+=r.v*frameK*2.6;
+        }
         if(r.zigzag) r.x+=Math.sin(el*3+r.zzPhase)*1.4*frameK;
-        /* 호밍 바위 — 별도 투사체 없이 기존 바위 이동에 배 쪽으로 살짝 쏠리는 유도만 더한다 */
-        if(r.homing) r.x=Math.max(30,Math.min(W-30, r.x+(px-r.x)*0.018*frameK));
         for(var mi2=missiles.length-1;mi2>=0;mi2--){
           var m=missiles[mi2];
           if(!r.dead&&Math.hypot(m.x-r.x,m.y-r.y)<r.r+10){
@@ -2320,13 +2310,16 @@ function gSail(){
             hitFlashes.push({x:r.x,y:r.y,until:el+0.1,big:r.r>44});
             splashes.push({x:r.x,y:r.y,until:el+0.22,tier:r.r>50?2:(r.r>36?1:0)});
             explodeRock(r.x,r.y,r.r,inFinale);sfx('pop',0.45);kills++;
-            gainXp(ROCK_XP,el);
+            /* 경험치는 즉시 들어오지 않고 복주머니로 떨어진다 — 직접 먹어야 레벨업.
+               단, 무쌍(각성) 구간은 원래도 짧은 축제 타임이라 예외로 즉시 지급한다 */
+            if(inFinale) gainXp(ROCK_XP,el); else dropXpPouch(r.x,r.y,ROCK_XP,el);
             /* 🌀 태풍포 융합(포격강화+다연장 MAX) — 일반 포탄에도 작은 폭발이 붙는다.
                폭발탄 자체는 이제 별도 투사체(bombShots)로 분리됐다 */
             if(fusion.typhoon){
               rocks.forEach(function(r2){
                 if(r2!==r && !r2.dead && Math.hypot(r2.x-r.x,r2.y-r.y)<55){
-                  r2.dead=true; explodeRock(r2.x,r2.y,r2.r); kills++; gainXp(ROCK_XP,el);
+                  r2.dead=true; explodeRock(r2.x,r2.y,r2.r); kills++;
+                  if(inFinale) gainXp(ROCK_XP,el); else dropXpPouch(r2.x,r2.y,ROCK_XP,el);
                 }
               });
             }
@@ -2397,6 +2390,27 @@ function gSail(){
       }
     });
     foods=foods.filter(function(f){return f.y<H+80&&!f.eaten});
+
+    /* 경험치 복주머니 — 바위를 부수면 여기 떨어진다. 자동으로 안 들어오고
+       직접 날아가서 먹어야 경험치가 들어온다(가까이 가면 살짝 끌려온다) */
+    xpPouches.forEach(function(xp){
+      if(!frozen){
+        var pdx=px-xp.x, pdy=shipY-xp.y, pd=Math.hypot(pdx,pdy)||1;
+        if(pd<140){ xp.x+=(pdx/pd)*4*frameK; xp.y+=(pdy/pd)*4*frameK; }
+        else xp.y+=xp.vy*frameK;
+      }
+      var pulse2=(Math.sin(el*6)+1)/2;
+      if(!drawImgFit(ASSETS.foodBag,xp.x,xp.y,20+pulse2*4,20+pulse2*4,0)){
+        ctx.fillStyle='rgba(160,255,190,.9)';ctx.beginPath();ctx.arc(xp.x,xp.y,10,0,7);ctx.fill();
+      }
+      var xdx=Math.abs(xp.x-px), xdy=Math.abs(xp.y-shipY);
+      if(!frozen && !xp.collected && xdx<30 && xdy<34){
+        xp.collected=true;
+        gainXp(xp.amount,el);
+        sfx('bonus',0.4);
+      }
+    });
+    xpPouches=xpPouches.filter(function(xp){ return !xp.collected && el<xp.until; });
 
     /* 배 그리기 — 실제 이동 속도 기반 항해감(기울기·물살·이물보라·급회전 물보라).
        예전엔 자이로 각도(tiltX)로 기울였는데 자이로를 없애면서 죽은 코드였다 —
@@ -2585,6 +2599,11 @@ function gSail(){
       } else if(bigText.kind==='bok'){
         ctx.textAlign='center';ctx.font='800 18px SCDream, sans-serif';ctx.fillStyle='#F5B331';
         ctx.fillText(bigText.a, px, shipY-56);
+      } else if(bigText.kind==='levelup'){
+        ctx.textAlign='center';ctx.font='800 30px SCDream, sans-serif';ctx.fillStyle='#F5B331';
+        ctx.fillText(bigText.a, W/2, H*0.24);
+        ctx.font='800 20px SCDream, sans-serif';ctx.fillStyle='#F2F0EA';
+        ctx.fillText(bigText.b, W/2, H*0.24+34);
       }
       ctx.globalAlpha=1;
     } else if(bigText){ bigText=null; }
