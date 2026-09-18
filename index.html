@@ -1668,15 +1668,16 @@ function gSail(){
       xpTrickle+=sdt;
       if(xpTrickle>=800){ xpTrickle-=800; gainXp(1,el); }
 
-      /* 조각배(1단계)는 원래 포격이 없지만, 다연장 확장을 하나라도 골랐다면
-         그때부터는 쏠 수 있어야 초반 카드 선택이 헛되지 않는다 */
-      if(T.missiles>0 || upg.spread>0){
+      /* 조각배(1단계)는 원래 포격이 없지만 Lv2부터는 자동으로 포탄 1개가 나가고,
+         다연장 확장 카드를 고르면 그 즉시 1개씩 더 늘어난다(1→2→3개) */
+      var baseShot = (shipTier===0 && lv>=2) ? 1 : 0;
+      var mc=T.missiles+baseShot+upg.spread;
+      if(mc>0){
         fireTimer-=sdt;
         if(fireTimer<=0){
           var baseFireEvery = T.fireEvery>0 ? T.fireEvery : 1.4;
           fireTimer=baseFireEvery*1000*Math.pow(0.85,upg.fire);
           beep(880,0.06,'sawtooth',0.09);
-          var mc=T.missiles+upg.spread;
           for(var mi=0;mi<mc;mi++){
             var ang=(mi-(mc-1)/2)*(T.spread*Math.PI/180);
             missiles.push({x:px,y:shipY-30,vx:Math.sin(ang)*3,vy:-9-shipTier});
