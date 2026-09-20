@@ -76,8 +76,9 @@ var ASSETS = {
   foodBag:       loadAsset('sheet/food_bag.png'),
   foodGold:      loadAsset('sheet/food_goldtangerine.png'), /* 아주 낮은 확률로 나오는 희귀 보상 먹거리 */
   cannonShot:    loadAsset('sheet/shot_small.png'),   /* 아군 기본 포탄 */
-  shotLarge:     loadAsset('sheet/shot_large.png'),   /* 🚀 미사일 카드 전용 */
-  missileHoming: loadAsset('sheet/missile_homing.png'), /* 🧭 유도탄 카드 전용 */
+  shotLarge:     loadAsset('sheet/shot_large.png'),   /* 제주 감귤탄의 이동 중 발사체 */
+  stormHarpoon:  loadAsset('skills/storm_harpoon_projectile.png'), /* 360도 자동조준 폭풍 작살 */
+  windFish:      loadAsset('skills/wind_fish_projectile.png'), /* 궤도를 도는 미사일 대신 쓰는 바람 물고기 */
   pierceRing:    loadAsset('sheet/pierce_ring.png'),  /* 🪃 부메랑 전용(회전하는 고리) */
   muzzleFlash: [loadAsset('sheet/muzzle_small.png'), loadAsset('sheet/muzzle_medium.png')],
   hitFlash:    [loadAsset('sheet/hit_flash_small.png'), loadAsset('sheet/hit_flash_large.png')],
@@ -112,11 +113,10 @@ var ASSETS = {
    GIF는 검수용이고 게임에서는 아래 PNG 시트만 사용한다. */
 var SKILL_FRAME=444, SKILL_COLS=4, SKILL_FRAMES=8;
 var SKILL_SHEETS={
-  cannon:      loadAsset('skills/base_01_cannon_barrage_4x2.png'),
   tidal:       loadAsset('skills/base_02_tidal_wave_4x2.png'),
   wind:        loadAsset('skills/base_03_yeongdeung_wind_4x2.png'),
   lightning:   loadAsset('skills/base_04_chain_lightning_4x2.png'),
-  boomerang:   loadAsset('skills/base_05_wind_boomerang_4x2.png'),
+  harpoon:     loadAsset('skills/base_05_storm_harpoon_4x2.png'),
   fish:        loadAsset('skills/base_06_homing_wind_fish_4x2.png'),
   tangerine:   loadAsset('skills/base_07_tangerine_bomb_4x2.png'),
   shield:      loadAsset('skills/base_08_wave_shield_4x2.png'),
@@ -124,7 +124,7 @@ var SKILL_SHEETS={
   tsunami:     loadAsset('skills/evolved_02_great_tsunami_4x2.png'),
   gale:        loadAsset('skills/evolved_03_great_yeongdeung_gale_4x2.png'),
   thunderstorm:loadAsset('skills/evolved_04_thunderstorm_4x2.png'),
-  windmill:    loadAsset('skills/evolved_05_rotating_windmill_4x2.png'),
+  harpoonstorm:loadAsset('skills/evolved_05_whirlpool_harpoon_array_4x2.png'),
   dragonfish:  loadAsset('skills/evolved_06_dragonrise_fish_school_4x2.png'),
   goldstorm:   loadAsset('skills/evolved_07_golden_tangerine_storm_4x2.png'),
   seabarrier:  loadAsset('skills/evolved_08_seagod_barrier_4x2.png')
@@ -158,7 +158,7 @@ function tiltH(e){
 }
 
 /* 배 진화 4단계 — need는 "그 단계까지 오는데 필요한 진화 게이지" 증분값.
-   2단계부터 자동으로 미사일을 쏴서 앞을 가로막는 바위를 직접 파괴할 수 있다. */
+   2단계부터 자동 함포 수가 늘어나 사방의 몬스터를 직접 공격한다. */
 /* 단계마다 포탄 수·발사속도·각도가 눈에 띄게 달라져야 "진화했다"는 느낌이 나므로
    이전엔 조각배→풍선 전환이 사실상 총알 1개 그대로라 체감이 없었던 것을 고쳤다 */
 var SHIP_TIERS=[
@@ -291,28 +291,27 @@ function gSail(){
      "카드가 무한히 쌓여서 절대 안 죽는다"는 문제를 해결하기 위해 레벨마다
      상한(MAX)을 두고, MAX에 도달하면 카드 풀에서 빠진다. 특정 두 카드가
      둘 다 MAX면 더 강한 특수 무기로 합쳐진다(진화 조합). */
-  var upgLevel={fire:0,spread:0,heart:0,bok:0,speed:0,bomb:0,pierce:0,lightning:0,windpush:0,focus:0,shield:0,
-                angle:0,rear:0,cdr:0,boomerang:0,homing:0,missile:0};
-  var UPG_MAX ={fire:5,spread:4,heart:5,bok:5,speed:5,bomb:3,pierce:3,lightning:3,windpush:3,focus:3,shield:3,
-                angle:4,rear:2,cdr:4,boomerang:3,homing:3,missile:3};
+  var upgLevel={fire:0,pierce:0,windpush:0,lightning:0,missile:0,homing:0,bomb:0,shield:0,
+                spread:0,focus:0,angle:0,cdr:0,rear:0,speed:0,bok:0,heart:0};
+  var UPG_MAX ={fire:5,pierce:5,windpush:5,lightning:5,missile:5,homing:5,bomb:5,shield:5,
+                spread:3,focus:3,angle:3,cdr:3,rear:3,speed:3,bok:3,heart:3};
   var UPGRADES={
-    fire:     {emoji:'💥', title:'포격 강화',   desc:'연사 속도가 빨라진다'},
-    spread:   {emoji:'🎯', title:'다연장 확장', desc:'포탄이 더 나간다'},
-    heart:    {emoji:'❤️', title:'바람의 가호', desc:'최대 체력이 늘고 즉시 회복'},
-    bok:      {emoji:'🍊', title:'복바람',      desc:'복을 더 많이 받는다'},
-    speed:    {emoji:'🌀', title:'급류 조타',   desc:'조작이 더 즉각적으로 반응한다'},
-    bomb:     {emoji:'💣', title:'폭발탄',      desc:'주기적으로 폭발탄을 따로 쏴서 터뜨린다'},
-    pierce:   {emoji:'🌊', title:'관통탄',      desc:'포탄이 바위를 뚫고 지나간다'},
-    lightning:{emoji:'⚡', title:'벼락',        desc:'주기적으로 바위에 벼락을 내린다'},
-    windpush: {emoji:'🌪', title:'영등바람',    desc:'주기적으로 바람을 쏴 바위를 좌우로 밀어낸다'},
-    focus:    {emoji:'🔥', title:'화력 집중',   desc:'큰 상대에게 강한 한 방'},
-    shield:   {emoji:'🛡', title:'바람막이',    desc:'가끔 피격을 한 번 막아준다'},
-    angle:    {emoji:'📐', title:'확산 사격',   desc:'포탄이 더 넓게 퍼진다'},
-    rear:     {emoji:'🔙', title:'후방 포격',   desc:'배 뒤쪽으로도 포탄을 쏜다'},
-    cdr:      {emoji:'⏱️', title:'재빠른 손놀림', desc:'모든 스킬 재사용 대기시간이 줄어든다'},
-    boomerang:{emoji:'🪃', title:'부메랑',      desc:'날아갔다 돌아오며 두 번 맞힌다'},
-    homing:   {emoji:'🧭', title:'유도탄',      desc:'주기적으로 가까운 바위를 스스로 쫓아간다'},
-    missile:  {emoji:'🚀', title:'미사일',      desc:'주기적으로 강력한 한 발을 날린다'}
+    fire:     {type:'weapon',emoji:'💥',title:'함포 연사',desc:'가장 가까운 적을 향해 자동 포격한다'},
+    pierce:   {type:'weapon',emoji:'🌊',title:'관통 해일',desc:'포탄이 적을 더 많이 관통한다'},
+    windpush: {type:'weapon',emoji:'🌪',title:'영등 바람',desc:'적이 몰린 방향으로 바람길을 뚫는다'},
+    lightning:{type:'weapon',emoji:'⚡',title:'연쇄 벼락',desc:'주기적으로 적에게 벼락을 내린다'},
+    missile:  {type:'weapon',emoji:'🔱',title:'폭풍 작살',desc:'가장 가까운 적에게 직선 작살을 발사한다'},
+    homing:   {type:'weapon',emoji:'🐟',title:'바람 물고기',desc:'적을 추적해 부딪히는 바람 물고기'},
+    bomb:     {type:'weapon',emoji:'🍊',title:'제주 감귤탄',desc:'적 방향으로 날아가 범위 폭발한다'},
+    shield:   {type:'weapon',emoji:'🛡',title:'파도 방패',desc:'일정 시간마다 공격을 한 번 막는다'},
+    spread:   {type:'passive',emoji:'🧨',title:'폭풍 화약통',desc:'함포 수와 포격 범위를 강화한다'},
+    focus:    {type:'passive',emoji:'💧',title:'조수의 돌',desc:'관통과 보스 피해를 강화한다'},
+    angle:    {type:'passive',emoji:'🎐',title:'영등 비단',desc:'바람 범위를 넓힌다'},
+    cdr:      {type:'passive',emoji:'🔮',title:'폭풍 구슬',desc:'모든 스킬 대기시간을 줄인다'},
+    rear:     {type:'passive',emoji:'🧭',title:'산호 나침반',desc:'작살의 수와 탐지 범위를 늘린다'},
+    speed:    {type:'passive',emoji:'🐉',title:'용왕의 비늘',desc:'이동과 바람 물고기 속도를 높인다'},
+    bok:      {type:'passive',emoji:'🧺',title:'해녀의 망사리',desc:'복과 감귤탄의 폭발 범위를 늘린다'},
+    heart:    {type:'passive',emoji:'🐚',title:'소라 부적',desc:'최대 체력을 늘리고 즉시 회복한다'}
   };
   var UPG_KEYS=Object.keys(UPGRADES);
   var RARITY=[
@@ -325,21 +324,21 @@ function gSail(){
     for(var i=0;i<RARITY.length;i++){ acc+=RARITY[i].p; if(r<acc) return RARITY[i]; }
     return RARITY[0];
   }
-  /* 두 카드가 모두 MAX면 특수 무기로 진화한다 */
+  /* 뱀서류 방식: 기본 무기 MAX + 대응 보조 아이템 1레벨 이상이면 진화한다. */
   var FUSION=[
     {a:'fire',b:'spread',key:'typhoon',name:'태풍 함포',emoji:'🌀',desc:'포탄이 관통하며 폭풍을 일으킨다'},
-    {a:'pierce',b:'bomb',key:'tsunami',name:'대해일',emoji:'🌊',desc:'관통 해일이 넓은 범위를 휩쓴다'},
-    {a:'windpush',b:'angle',key:'gale',name:'대영등 돌개바람',emoji:'🌬️',desc:'더 넓고 강한 영등바람이 몰아친다'},
+    {a:'pierce',b:'focus',key:'tsunami',name:'대해일',emoji:'🌊',desc:'관통 충격이 넓은 해일로 번진다'},
+    {a:'windpush',b:'angle',key:'gale',name:'대영등 돌개바람',emoji:'🌬️',desc:'적이 몰린 방향을 크게 휩쓴다'},
     {a:'lightning',b:'cdr',key:'thunderstorm',name:'뇌우',emoji:'⚡',desc:'더 빠른 연쇄 벼락이 여러 적을 덮친다'},
-    {a:'boomerang',b:'rear',key:'windmill',name:'회전 풍차',emoji:'♻️',desc:'네 갈래 바람날이 앞뒤를 쓸어낸다'},
-    {a:'homing',b:'focus',key:'dragonfish',name:'용오름 어군',emoji:'🐟',desc:'물고기 떼가 적을 추적하며 연속 공격한다'},
+    {a:'missile',b:'rear',key:'harpoonstorm',name:'소용돌이 작살진',emoji:'🔱',desc:'여러 적을 조준해 360도로 작살을 발사한다'},
+    {a:'homing',b:'speed',key:'dragonfish',name:'용오름 어군',emoji:'🐟',desc:'물고기 떼가 적을 빠르게 추적한다'},
     {a:'bomb',b:'bok',key:'goldstorm',name:'황금 귤폭풍',emoji:'🍊',desc:'황금 감귤탄이 연쇄 폭발한다'},
     {a:'shield',b:'heart',key:'seabarrier',name:'해신의 결계',emoji:'🛡️',desc:'결계가 세 번의 공격을 막아준다'}
   ];
   var fusion={};
   function checkFusions(){
     FUSION.forEach(function(f){
-      if(!fusion[f.key] && upgLevel[f.a]>=UPG_MAX[f.a] && upgLevel[f.b]>=UPG_MAX[f.b]){
+      if(!fusion[f.key] && upgLevel[f.a]>=UPG_MAX[f.a] && upgLevel[f.b]>=1){
         fusion[f.key]=true;
         showBig('무기 진화!', f.emoji+' '+f.name+' 완성!', 1800,'fusion');
         toast('💫 '+f.name+' 완성! '+f.desc);
@@ -450,21 +449,34 @@ function gSail(){
 
   /* ---- 페이즈 트리거 ---- */
   var tutorialDone=false;
-  var boss={state:'idle',announceUntil:0,hp:0,maxHp:5,x:0,y:0,r:92,v:1.15,asset:null,nextAt:34,flashUntil:0,shotTimer:0,phase:0,phaseUntil:0};
+  var boss={state:'idle',announceUntil:0,hp:0,maxHp:5,x:0,y:0,r:92,v:1.15,asset:null,nextAt:34,
+    flashUntil:0,shotTimer:0,patternStep:0,moveTimer:0,targetX:0,targetY:0,spiral:0};
   var awakened=false;
   var ending=false,endingT0=0,endingWon=false;
   /* Lv30 최종 보스 — 별도 단계 연출 없이 평소 스웜 속에서 아주 강한 적 하나를
      잡는 "기본 뱀서류" 느낌으로 간다(예전의 폭풍/바람구슬/약점노출 단계극 폐기) */
-  var finalBoss={state:'idle',announceUntil:0,hp:0,maxHp:0,x:0,y:0,r:170,restY:0,shotTimer:0,flashUntil:0};
+  var finalBoss={state:'idle',announceUntil:0,hp:0,maxHp:0,x:0,y:0,r:170,restY:0,shotTimer:0,flashUntil:0,
+    patternStep:0,moveTimer:0,targetX:0,targetY:0,spiral:0};
   var transcended=false;
   var lightningTimer=2000, windpushTimer=4000, shieldTimer=8000, shieldCharge=0;
-  var bombTimer=3200, boomerangTimer=3600, homingTimer=3000, missileTimer=4200;
-  var lightningBolts=[], bombShots=[], windGusts=[], boomerangs=[], homingMissiles=[], bigMissiles=[];
+  var bombTimer=3200, homingTimer=3000, missileTimer=4200;
+  var lightningBolts=[], bombShots=[], windGusts=[], windFishShots=[], stormHarpoons=[];
   var muzzleFlashes=[], hitFlashes=[], splashes=[];
   var skillFx=[]; /* 새 4x2 스킬 시트의 일회성 애니메이션 */
   var xpPouches=[]; /* 바위를 부수면 떨어지는 경험치 복주머니 — 직접 날아가서 먹어야 경험치가 들어온다 */
   var rockIdCounter=0;
   function cdrMul(){ return 1 - Math.min(0.55, upgLevel.cdr*0.12); } /* ⏱ 재빠른 손놀림 — 모든 스킬 쿨타임에 공통 적용 */
+
+  function nearestEnemy(x,y){
+    var best=null,bestD=Infinity;
+    rocks.forEach(function(r){if(!r.dead){var d0=Math.hypot(r.x-x,r.y-y);if(d0<bestD){bestD=d0;best=r;}}});
+    debris.forEach(function(r){if(!r.dead){var d0=Math.hypot(r.x-x,r.y-y);if(d0<bestD){bestD=d0;best=r;}}});
+    if(boss.state==='alive'){var bd=Math.hypot(boss.x-x,boss.y-y);if(bd<bestD){bestD=bd;best=boss;}}
+    if(finalBoss.state==='alive'){var fd=Math.hypot(finalBoss.x-x,finalBoss.y-y);if(fd<bestD){bestD=fd;best=finalBoss;}}
+    return best;
+  }
+  function aimAngle(x,y,fallback){var t=nearestEnemy(x,y);return t?Math.atan2(t.y-y,t.x-x):fallback;}
+  function angleDelta(a,b){var d=b-a;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;return d;}
 
   function addSkillFx(key,x,y,size,rot,anchor){
     skillFx.push({key:key,x:x,y:y,size:size||160,rot:rot||0,anchor:anchor||null,started:performance.now(),duration:720});
@@ -486,6 +498,25 @@ function gSail(){
     if(ending) return;
     ending=true; endingT0=el; endingWon=!!won;
     showCutin(pickRandom(won?WIN_LINES:END_LINES),2000);
+  }
+  function damageBossTarget(target,damage,el){
+    if(target===boss&&boss.state==='alive'){
+      boss.hp-=damage;boss.flashUntil=el+0.08;shake(2);
+      if(boss.hp<=0){
+        explodeRock(boss.x,boss.y,boss.r,true);sfx('boom',0.7);shake(12);kills+=3;bossKillCount++;
+        gainXp(30,el);giveBok(20);showBig('BREAK ×보스!','',1000,'break');toast('👹 엘리트 몬스터 격파!');
+        boss.state='idle';boss.nextAt=el+Math.max(20,45-lv*0.6);
+      }
+      return true;
+    }
+    if(target===finalBoss&&finalBoss.state==='alive'){
+      finalBoss.hp-=damage;finalBoss.flashUntil=el+0.08;shake(2);
+      if(finalBoss.hp<=0){
+        finalBoss.state='idle';explodeRock(finalBoss.x,finalBoss.y,finalBoss.r,true);sfx('boom',0.85);shake(18);triggerEnding(el,true);
+      }
+      return true;
+    }
+    return false;
   }
   function startFinalBoss(el){
     /* Lv30 — 영등할망이 내는 마지막 시련. 적대적인 존재가 아니라 통과해야 할
@@ -614,7 +645,7 @@ function gSail(){
       boss.state='alive'; boss.maxHp=14+Math.floor(lv*0.8); boss.hp=boss.maxHp;
       boss.x=Math.max(shipMargin,Math.min(W-shipMargin,W/2)); boss.y=-160; boss.r=130;
       boss.restY=H*0.26; boss.v=1.0+Math.min(1.2,lv*0.03);
-      boss.shotTimer=900; boss.patternStep=0;
+      boss.shotTimer=900;boss.patternStep=0;boss.moveTimer=900;boss.targetX=W/2;boss.targetY=boss.restY;
       boss.asset=pickRandom(ASSETS.elitePool);
       toast('👹 강력한 존재 출현! 대포로 부숴라');
       sfx('boom',0.5);
@@ -645,16 +676,24 @@ function gSail(){
       if(spawn<=0){
         /* "피하기 게임인데 못 피한다"는 피드백 반영 — 스폰 간격 최저치와 낙하속도 상한을
            크게 올려서 레벨/시간이 아무리 쌓여도 실제로 빠져나갈 틈이 남게 한다 */
-        spawn=Math.max(420,(620-el*10*diffEase-lv*2*diffEase)/spawnRate);
+        spawn=Math.max(620,(880-el*6*diffEase-lv*3*diffEase)/spawnRate);
         /* 뱀서라이크 스웜 느낌 — "지나가는" 바위가 아니라 사방(상하좌우) 화면 밖에서
            나타나 배 쪽으로 아주 천천히 끌려오는 몬스터떼로 바꿨다. 몬스터는 정말 작게,
            바위(무생물)와 섞여서 나온다. 일부만 지그재그가 섞인다 */
-        var useMonster=Math.random()<0.6;
-        var spawnAsset=useMonster ? waveType : pickRandom(ASSETS.rockShapePool);
-        var zz = Math.random()<0.3;
-        var sp=spawnEdgePoint(60);
-        /* "정말정말 천천히" 반영 — 호밍 속도를 한 번 더 크게 낮췄다 */
-        rocks.push({x:sp.x,y:sp.y,r:14+Math.random()*8,v:Math.min(lv<10?0.35:0.6, 0.25+el*0.002*diffEase+lv*0.004*diffEase),asset:spawnAsset,passed:false,dead:false,zigzag:zz,zzPhase:Math.random()*Math.PI*2,homing:true,id:++rockIdCounter});
+        var batchCount=lv<10?1:(lv<20?2:(lv<30?3:4));
+        for(var spi=0;spi<batchCount;spi++){
+          var useMonster=Math.random()<(lv<10?0.65:0.82);
+          var spawnAsset=useMonster ? waveType : pickRandom(ASSETS.rockShapePool);
+          var tier=Math.min(3,Math.floor(lv/10));
+          var zz=useMonster&&(tier>=1||Math.random()<0.25);
+          var sp=spawnEdgePoint(60+spi*12);
+          var ranged=useMonster&&lv>=12&&Math.random()<(tier===1?0.12:(tier===2?0.22:0.32));
+          rocks.push({x:sp.x,y:sp.y,r:14+tier*2+Math.random()*7,
+            v:0.26+tier*0.09+Math.random()*0.08,asset:spawnAsset,passed:false,dead:false,
+            zigzag:zz,zzPhase:Math.random()*Math.PI*2,homing:true,id:++rockIdCounter,
+            hp:useMonster?1+tier:1,maxHp:useMonster?1+tier:1,tier:tier,ranged:ranged,
+            shotTimer:900+Math.random()*1600,dashTimer:tier>=3?1800+Math.random()*1800:999999});
+        }
       }
       foodSpawn-=sdt;
       if(foodSpawn<=0){
@@ -665,15 +704,20 @@ function gSail(){
         else if(roll<0.44){kind='tangerine';asset=ASSETS.foodTangerine;}
         foods.push({x:60+Math.random()*(W-120),y:-40,r:26,v:2.4+el*0.04,kind:kind,asset:asset});
       }
-      /* 🗑 해양쓰레기 몬스터 — Lv21부터 등장하는 첫 공격형 몬스터. 좌우로 흔들리며
+      /* 🗑 해양쓰레기 원거리 몬스터 — Lv18부터 등장하고 후반에는 두 마리씩 나온다. 좌우로 흔들리며
          내려오다 주기적으로 배를 향해 파편을 쏜다 */
-      if(lv>=21){
+      if(lv>=18){
         debrisSpawn-=sdt;
         if(debrisSpawn<=0){
-          debrisSpawn=Math.max(3200,7000-lv*60);
-          var dk=Math.floor(Math.random()*ASSETS.debrisPool.length);
-          var dsp=spawnEdgePoint(70);
-          debris.push({x:dsp.x,y:dsp.y,r:36,v:0.8+Math.min(0.7,(lv-21)*0.025),swayPhase:Math.random()*Math.PI*2,asset:ASSETS.debrisPool[dk],hp:3,shotTimer:1800+Math.random()*800,dead:false});
+          debrisSpawn=Math.max(2100,5600-lv*70);
+          var debrisCount=lv>=28?2:1;
+          for(var dsi=0;dsi<debrisCount;dsi++){
+            var dk=Math.floor(Math.random()*ASSETS.debrisPool.length);
+            var dsp=spawnEdgePoint(70+dsi*20);
+            debris.push({x:dsp.x,y:dsp.y,r:32+Math.random()*6,v:0.72+Math.min(0.7,(lv-18)*0.025),
+              swayPhase:Math.random()*Math.PI*2,asset:ASSETS.debrisPool[dk],hp:3+Math.floor(lv/15),
+              shotTimer:1000+Math.random()*900,dead:false});
+          }
         }
       }
 
@@ -692,33 +736,17 @@ function gSail(){
           /* 몬스터가 사방에서 몰려오므로 포격도 위쪽 고정이 아니라 가장 가까운
              위협을 자동 조준해서 그쪽으로 나간다(뱀서라이크 오토에임).
              주변에 적이 하나도 없을 때만(초반 등) 사방을 훑는 스윕으로 대체 */
-          var baseAng, fireSpeed=9+shipTier;
-          baseAng=null;
-          var nearestD=Infinity;
-          rocks.forEach(function(rr){ if(!rr.dead){ var d0=Math.hypot(rr.x-px,rr.y-shipY); if(d0<nearestD){nearestD=d0; baseAng=Math.atan2(rr.y-shipY,rr.x-px);} } });
-          debris.forEach(function(dd){ if(!dd.dead){ var d0=Math.hypot(dd.x-px,dd.y-shipY); if(d0<nearestD){nearestD=d0; baseAng=Math.atan2(dd.y-shipY,dd.x-px);} } });
-          if(baseAng==null){
-            baseAng=fireRotation;
-            fireRotation+=Math.PI/6;
-          }
+          var fireSpeed=9+shipTier;
+          var targetNow=nearestEnemy(px,shipY);
+          var baseAng=targetNow?Math.atan2(targetNow.y-shipY,targetNow.x-px):fireRotation;
+          if(!targetNow)fireRotation+=Math.PI/6;
           /* 포탄이 2발 이상인데 spread각이 0이면 전부 같은 궤적에 겹쳐 보여서
              "늘어나도 안 늘어난 것처럼" 보이는 문제가 있었다 — 최소 각도를 보장하고,
              📐 확산 사격 카드로 더 넓게 벌릴 수 있게 한다 */
           var spreadDeg=Math.max(T.spread,10)+upgLevel.angle*10+(fusion.gale?20:0);
-          addSkillFx(fusion.typhoon?'typhoon':'cannon',px,shipY-36,fusion.typhoon?210:142,baseAng+Math.PI/2);
-          if(upgLevel.pierce>0){
-            addSkillFx(fusion.tsunami?'tsunami':'tidal',px,shipY-50,fusion.tsunami?250:176,baseAng+Math.PI/2);
-          }
           for(var mi=0;mi<mc;mi++){
             var ang=baseAng+(mi-(mc-1)/2)*(spreadDeg*Math.PI/180);
             missiles.push({x:px,y:shipY-30,vx:Math.cos(ang)*fireSpeed,vy:Math.sin(ang)*fireSpeed,hp:pierceHp});
-          }
-          /* 🔙 후방 포격 — 배 뒤쪽(아래)으로도 포탄을 쏜다 */
-          if(upgLevel.rear>0){
-            for(var ri=0;ri<upgLevel.rear;ri++){
-              var rang=(ri-(upgLevel.rear-1)/2)*(20*Math.PI/180);
-              missiles.push({x:px,y:shipY+30,vx:Math.sin(rang)*3,vy:9+shipTier,hp:pierceHp});
-            }
           }
         }
       }
@@ -756,8 +784,9 @@ function gSail(){
         if(windpushTimer<=0){
           windpushTimer=Math.max(1800,4200-upgLevel.windpush*900)*cdrMul();
           var gw=(70+upgLevel.windpush*26)*(fusion.gale?1.6:1);
-          windGusts.push({x:px,y:shipY-20,w:gw,vy:-7,until:el+1.6});
-          addSkillFx(fusion.gale?'gale':'wind',px,shipY-70,fusion.gale?250:170,0);
+          var gwa=aimAngle(px,shipY,fireRotation);
+          windGusts.push({x:px,y:shipY,w:gw,vx:Math.cos(gwa)*7,vy:Math.sin(gwa)*7,ang:gwa,until:el+1.6});
+          addSkillFx(fusion.gale?'gale':'wind',px+Math.cos(gwa)*55,shipY+Math.sin(gwa)*55,fusion.gale?250:170,gwa+Math.PI/2);
           sfx('evolve',0.35);
         }
       }
@@ -768,46 +797,42 @@ function gSail(){
           bombTimer=Math.max(1800,3600-upgLevel.bomb*700)*cdrMul();
           var bombCount=fusion.goldstorm?3:1;
           for(var bi=0;bi<bombCount;bi++){
-            bombShots.push({x:px+(bi-(bombCount-1)/2)*38,y:shipY-30,vy:-4.2-(bi%2)*0.3});
+            var ba=aimAngle(px,shipY,fireRotation)+(bi-(bombCount-1)/2)*0.18;
+            var bs=4.2+(bi%2)*0.3;
+            bombShots.push({x:px,y:shipY,vx:Math.cos(ba)*bs,vy:Math.sin(ba)*bs,life:2400});
           }
         }
       }
-      /* 🪃 부메랑 — 날아갔다가 배 쪽으로 되돌아오며 왕복 두 번 판정한다 */
-      if(upgLevel.boomerang>0){
-        boomerangTimer-=sdt;
-        if(boomerangTimer<=0){
-          boomerangTimer=Math.max(2400,4800-upgLevel.boomerang*700)*cdrMul();
-          var bmMax=220+upgLevel.boomerang*40;
-          var boom={x:px,y:shipY-30,vy:-7,phase:'out',dist:0,maxDist:bmMax,hitIds:{}};
-          boomerangs.push(boom);
-          addSkillFx(fusion.windmill?'windmill':'boomerang',boom.x,boom.y,fusion.windmill?178:112,0,boom);
-          /* ♻️ 회전풍차 융합 — 부메랑+후방포격 MAX 시 앞뒤로 동시에 나간다 */
-          if(fusion.windmill){
-            var rearBoom={x:px,y:shipY+30,vy:7,phase:'out',dist:0,maxDist:bmMax,hitIds:{},rear:true};
-            boomerangs.push(rearBoom);
-            addSkillFx('windmill',rearBoom.x,rearBoom.y,178,Math.PI,rearBoom);
-          }
-        }
-      }
-      /* 🧭 유도탄 — 가장 가까운 바위를 스스로 추적한다 */
+      /* 🐟 바람 물고기 — 가속 누적으로 적 주위를 도는 방식이 아니라 회전각을 제한해 직선에 가깝게 추적한다. */
       if(upgLevel.homing>0){
         homingTimer-=sdt;
         if(homingTimer<=0){
           homingTimer=Math.max(2200,4200-upgLevel.homing*600)*cdrMul();
           var fishCount=fusion.dragonfish?3:1;
           for(var fi=0;fi<fishCount;fi++){
-            var fish={x:px+(fi-(fishCount-1)/2)*24,y:shipY-30,vx:(fi-(fishCount-1)/2)*0.8,vy:-6,life:3000};
-            homingMissiles.push(fish);
+            var fa=aimAngle(px,shipY,fireRotation)+(fi-(fishCount-1)/2)*0.12;
+            var fish={x:px,y:shipY,ang:fa,vx:Math.cos(fa)*6.4,vy:Math.sin(fa)*6.4,life:2600,target:null,dead:false};
+            windFishShots.push(fish);
             addSkillFx(fusion.dragonfish?'dragonfish':'fish',fish.x,fish.y,fusion.dragonfish?176:104,0,fish);
           }
         }
       }
-      /* 🚀 미사일 — 주기적으로 강력한 한 발을 날린다 */
+      /* 🔱 폭풍 작살 — 주변 적을 실제로 조준한다. 진화하면 서로 다른 적에게 360도 동시 발사한다. */
       if(upgLevel.missile>0){
         missileTimer-=sdt;
         if(missileTimer<=0){
           missileTimer=Math.max(2800,5200-upgLevel.missile*700)*cdrMul();
-          bigMissiles.push({x:px,y:shipY-30,vy:-5.6,hp:1+Math.floor(upgLevel.focus/2)});
+          var targets=rocks.filter(function(r){return !r.dead;}).concat(debris.filter(function(r){return !r.dead;}));
+          if(boss.state==='alive')targets.push(boss);if(finalBoss.state==='alive')targets.push(finalBoss);
+          targets.sort(function(a,b){return Math.hypot(a.x-px,a.y-shipY)-Math.hypot(b.x-px,b.y-shipY);});
+          var hc=fusion.harpoonstorm?Math.min(8,Math.max(4,targets.length)):Math.min(1+Math.floor(upgLevel.rear/2),3);
+          if(fusion.harpoonstorm)addSkillFx('harpoonstorm',px,shipY,290,0);
+          for(var hsi=0;hsi<hc;hsi++){
+            var ht=targets.length?targets[hsi%targets.length]:null;
+            var ha=ht?Math.atan2(ht.y-shipY,ht.x-px):(fireRotation+(hsi/hc)*Math.PI*2);
+            stormHarpoons.push({x:px,y:shipY,vx:Math.cos(ha)*(7.6+upgLevel.missile*0.3),vy:Math.sin(ha)*(7.6+upgLevel.missile*0.3),
+              ang:ha,hp:fusion.harpoonstorm?2:1,life:2200,dead:false});
+          }
         }
       }
       /* 🛡 바람막이 — 주기적으로 보호막 1회분을 충전한다 */
@@ -872,7 +897,16 @@ function gSail(){
     if(boss.state==='alive'){
       if(!frozen){
         if(boss.y<boss.restY) boss.y+=boss.v*frameK*2.6;
-        else boss.x=Math.max(boss.r+10,Math.min(W-boss.r-10,W/2+Math.sin(el*0.5)*(W*0.28)));
+        else {
+          boss.moveTimer-=sdt;
+          if(boss.moveTimer<=0){
+            var bmoves=[
+              {x:W*0.2,y:H*0.22},{x:W*0.8,y:H*0.24},{x:W*0.3,y:H*0.48},{x:W*0.7,y:H*0.44},{x:W/2,y:H*0.18}
+            ];
+            var bmv=pickRandom(bmoves);boss.targetX=bmv.x;boss.targetY=bmv.y;boss.moveTimer=900+Math.random()*900;
+          }
+          boss.x+=(boss.targetX-boss.x)*0.025*frameK;boss.y+=(boss.targetY-boss.y)*0.025*frameK;
+        }
       }
       if(!drawImgFit(boss.asset,boss.x,boss.y,boss.r*2.3,boss.r*2.4,0)){
         ctx.fillStyle='#2A2F4A';ctx.beginPath();
@@ -904,25 +938,38 @@ function gSail(){
         var bdx=Math.abs(boss.x-px), bdy=Math.abs(boss.y-shipY);
         if(bdx<boss.r+30 && bdy<boss.r+34){ hit=true; }
       }
-      /* 패턴 공격 — 조준 3연발과 전방위 확산탄을 번갈아 쏜다(자리 잡은 뒤부터) */
+      /* 미니보스 패턴: 조준탄·원형탄·회전탄·지원 몬스터 소환을 순환한다. */
       if(boss.state==='alive' && !frozen && boss.y>=boss.restY){
         boss.shotTimer-=sdt;
         if(boss.shotTimer<=0){
-          boss.patternStep=(boss.patternStep+1)%3;
+          boss.patternStep=(boss.patternStep+1)%4;
+          var baang=Math.atan2(shipY-boss.y,px-boss.x);
           if(boss.patternStep===0){
-            /* 패턴 B: 전방위 확산탄 */
-            for(var bri=0;bri<10;bri++){
-              var brang=(bri/10)*Math.PI*2;
-              enemyShots.push({x:boss.x,y:boss.y,vx:Math.cos(brang)*3.0,vy:Math.sin(brang)*3.0,dead:false});
+            for(var bri=0;bri<12;bri++){
+              var brang=(bri/12)*Math.PI*2+boss.spiral;
+              enemyShots.push({x:boss.x,y:boss.y,vx:Math.cos(brang)*3.0,vy:Math.sin(brang)*3.0,kind:'orb',dead:false});
             }
-            boss.shotTimer=2600;
-          } else {
-            /* 패턴 A: 배를 노리는 3way 조준탄 */
-            var baang=Math.atan2(shipY-boss.y,px-boss.x);
+            boss.spiral+=0.22;boss.shotTimer=2100;
+          } else if(boss.patternStep===1){
             [-0.26,0,0.26].forEach(function(boff){
-              enemyShots.push({x:boss.x,y:boss.y,vx:Math.cos(baang+boff)*3.6,vy:Math.sin(baang+boff)*3.6,dead:false});
+              enemyShots.push({x:boss.x,y:boss.y,vx:Math.cos(baang+boff)*3.6,vy:Math.sin(baang+boff)*3.6,kind:'spike',dead:false});
             });
-            boss.shotTimer=1100;
+            boss.shotTimer=950;
+          } else if(boss.patternStep===2){
+            for(var bsi=0;bsi<8;bsi++){
+              var bsa=baang+bsi*0.42;
+              enemyShots.push({x:boss.x,y:boss.y,vx:Math.cos(bsa)*3.35,vy:Math.sin(bsa)*3.35,kind:'wave',dead:false});
+            }
+            boss.targetX=Math.max(boss.r,Math.min(W-boss.r,px+(Math.random()-.5)*180));
+            boss.targetY=Math.max(boss.r,Math.min(H*0.58,shipY-140));boss.moveTimer=520;boss.shotTimer=1500;
+          } else {
+            for(var bsm=0;bsm<4;bsm++){
+              var bsp=spawnEdgePoint(50+bsm*8);
+              rocks.push({x:bsp.x,y:bsp.y,r:20,v:0.55,asset:pickRandom(activeMonsterPool()),passed:false,dead:false,
+                zigzag:true,zzPhase:Math.random()*6.28,homing:true,id:++rockIdCounter,hp:2,maxHp:2,tier:2,
+                ranged:bsm%2===0,shotTimer:900+Math.random()*700,dashTimer:999999});
+            }
+            boss.shotTimer=2400;
           }
         }
       }
@@ -949,35 +996,32 @@ function gSail(){
        세기(upgLevel.windpush)에 맞는 회오리 그림을 가스트 진행 방향으로 흘려보낸다 ---- */
     windGusts.forEach(function(g2){
       if(!frozen){
-        g2.y+=g2.vy*frameK*2.6;
+        g2.x+=g2.vx*frameK*2.6;g2.y+=g2.vy*frameK*2.6;
         rocks.forEach(function(r){
-          if(!r.dead && Math.abs(r.x-g2.x)<g2.w/2 && Math.abs(r.y-g2.y)<70){
-            var dir=(r.x-g2.x)>=0?1:-1;
-            r.x=r.x+dir*9*frameK;
+          var gd=Math.hypot(r.x-g2.x,r.y-g2.y)||1;
+          if(!r.dead && gd<g2.w*0.58){
+            r.x+=(r.x-g2.x)/gd*9*frameK;r.y+=(r.y-g2.y)/gd*9*frameK;
           }
         });
       }
-      ctx.save(); ctx.globalAlpha=0.5;
-      var gg=ctx.createLinearGradient(g2.x-g2.w/2,0,g2.x+g2.w/2,0);
-      gg.addColorStop(0,'rgba(191,238,220,0)'); gg.addColorStop(0.5,'rgba(191,238,220,.55)'); gg.addColorStop(1,'rgba(191,238,220,0)');
-      ctx.fillStyle=gg; ctx.fillRect(g2.x-g2.w/2, g2.y-60, g2.w, 90);
+      ctx.save();ctx.globalAlpha=0.55;
       var gustTier=Math.min(3,Math.round(g2.w/40)-1);
-      drawImgFit(ASSETS.windpushPool[Math.max(0,gustTier)], g2.x, g2.y, g2.w*0.9, g2.w*0.9, el*2);
+      drawImgFit(ASSETS.windpushPool[Math.max(0,gustTier)],g2.x,g2.y,g2.w,g2.w,g2.ang+Math.PI/2);
       ctx.restore();
     });
-    windGusts=windGusts.filter(function(g2){ return el<g2.until && g2.y>-120; });
+    windGusts=windGusts.filter(function(g2){return el<g2.until&&g2.x>-180&&g2.x<W+180&&g2.y>-180&&g2.y<H+180;});
 
     /* ---- 💣 폭발탄(전용 투사체) — 바위에 닿거나 화면 위쪽에 닿으면 실제로 폭발한다 ---- */
     bombShots.forEach(function(b){
       if(b.dead) return;
-      if(!frozen) b.y+=b.vy*frameK*2.6;
-      if(!drawImgFit(ASSETS.shotLarge,b.x,b.y,30,30,0)){
+      if(!frozen){b.life-=sdt;b.x+=b.vx*frameK*2.6;b.y+=b.vy*frameK*2.6;}
+      if(!drawImgFit(ASSETS.shotLarge,b.x,b.y,30,30,Math.atan2(b.vy,b.vx)+Math.PI/2)){
         ctx.fillStyle='#F5B331'; ctx.beginPath(); ctx.arc(b.x,b.y,10,0,7); ctx.fill();
       }
       if(!frozen){
         var hitRock=null;
         rocks.forEach(function(r){ if(!hitRock && !r.dead && Math.hypot(r.x-b.x,r.y-b.y)<r.r+14) hitRock=r; });
-        if(hitRock || b.y<40){
+        if(hitRock || b.life<=0 || b.x<-40 || b.x>W+40 || b.y<-40 || b.y>H+40){
           b.dead=true;
           var ex=hitRock?hitRock.x:b.x, ey=hitRock?hitRock.y:b.y;
           var radius=(70+upgLevel.bomb*36)*(fusion.tsunami?1.8:1);
@@ -989,59 +1033,34 @@ function gSail(){
           rocks.forEach(function(r){
             if(!r.dead && Math.hypot(r.x-ex,r.y-ey)<radius){ r.dead=true; bombHitN++; }
           });
+          debris.forEach(function(dm){if(!dm.dead&&Math.hypot(dm.x-ex,dm.y-ey)<radius){dm.hp-=2+upgLevel.bomb;if(dm.hp<=0){dm.dead=true;bombHitN++;}}});
+          if(boss.state==='alive'&&Math.hypot(boss.x-ex,boss.y-ey)<radius+boss.r)damageBossTarget(boss,2+upgLevel.bomb,el);
+          if(finalBoss.state==='alive'&&Math.hypot(finalBoss.x-ex,finalBoss.y-ey)<radius+finalBoss.r)damageBossTarget(finalBoss,2+upgLevel.bomb,el);
           if(bombHitN>0){ kills+=bombHitN; gainXp(bombHitN*ROCK_XP,el); }
         }
       }
     });
-    bombShots=bombShots.filter(function(b){ return !b.dead && b.y>-120; });
+    bombShots=bombShots.filter(function(b){return !b.dead;});
 
-    /* ---- 🪃 부메랑 — 나갔다가 배 쪽으로 되돌아오며 왕복 두 번 판정한다 ---- */
-    boomerangs.forEach(function(bm){
-      if(bm.dead) return;
-      if(!frozen){
-        if(bm.phase==='out'){
-          var stepY=bm.vy*frameK*2.6;
-          bm.y+=stepY; bm.dist+=Math.abs(stepY);
-          if(bm.dist>=bm.maxDist) bm.phase='back';
-        } else {
-          var tx=px, ty=bm.rear?shipY+20:shipY-20;
-          var bang=Math.atan2(ty-bm.y, tx-bm.x), bsp=7*2.6;
-          bm.x+=Math.cos(bang)*bsp*frameK; bm.y+=Math.sin(bang)*bsp*frameK;
-          if(Math.hypot(bm.x-tx,bm.y-ty)<26) bm.dead=true;
-        }
-        rocks.forEach(function(r){
-          if(!r.dead && !bm.hitIds[r.id] && Math.hypot(r.x-bm.x,r.y-bm.y)<r.r+12){
-            bm.hitIds[r.id]=true;
-            r.dead=true; explodeRock(r.x,r.y,r.r); kills++; gainXp(ROCK_XP,el); sfx('pop',0.35);
-          }
-        });
-      }
-      var brot=el*10;
-      if(!drawImgFit(ASSETS.pierceRing,bm.x,bm.y,30,30,brot)){
-        ctx.save(); ctx.translate(bm.x,bm.y); ctx.rotate(brot);
-        ctx.strokeStyle='#F5B331'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(0,0,10,0.3,4.5); ctx.stroke();
-        ctx.restore();
-      }
-    });
-    boomerangs=boomerangs.filter(function(bm){ return !bm.dead; });
-
-    /* ---- 🧭 유도탄 — 가장 가까운 바위를 스스로 추적한다 ---- */
-    homingMissiles.forEach(function(hm){
+    /* ---- 🐟 바람 물고기 — 목표 방향으로 완만하게 꺾되, 선회 누적으로 주위를 도는 현상을 막는다 ---- */
+    windFishShots.forEach(function(hm){
       if(hm.dead) return;
       if(!frozen){
         hm.life-=sdt;
-        var nearest=null, nd=Infinity;
-        rocks.forEach(function(r){ if(!r.dead){ var hd=Math.hypot(r.x-hm.x,r.y-hm.y); if(hd<nd){nd=hd;nearest=r;} } });
-        if(nearest){
-          var hang=Math.atan2(nearest.y-hm.y, nearest.x-hm.x);
-          hm.vx+=Math.cos(hang)*0.9*frameK; hm.vy+=Math.sin(hang)*0.9*frameK;
-          var hsp=Math.hypot(hm.vx,hm.vy), hmax=7;
-          if(hsp>hmax){ hm.vx=hm.vx/hsp*hmax; hm.vy=hm.vy/hsp*hmax; }
+        if(!hm.target||hm.target.dead)hm.target=nearestEnemy(hm.x,hm.y);
+        if(hm.target){
+          var hang=Math.atan2(hm.target.y-hm.y,hm.target.x-hm.x);
+          var turn=Math.max(-0.11*frameK,Math.min(0.11*frameK,angleDelta(hm.ang,hang)));
+          hm.ang+=turn;
         }
+        var hsp=6.4+upgLevel.speed*0.45+(fusion.dragonfish?1.3:0);
+        hm.vx=Math.cos(hm.ang)*hsp;hm.vy=Math.sin(hm.ang)*hsp;
         hm.x+=hm.vx*frameK*2.6; hm.y+=hm.vy*frameK*2.6;
         rocks.forEach(function(r){
           if(!hm.dead && !r.dead && Math.hypot(r.x-hm.x,r.y-hm.y)<r.r+10){
-            hm.dead=true; r.dead=true; explodeRock(r.x,r.y,r.r); kills++; gainXp(ROCK_XP,el); sfx('pop',0.4);
+            hm.dead=true;r.hp=(r.hp||1)-(fusion.dragonfish?3:2);
+            if(r.hp<=0){r.dead=true;explodeRock(r.x,r.y,r.r);kills++;dropXpPouch(r.x,r.y,ROCK_XP,el);}
+            sfx('pop',0.4);
             if(fusion.dragonfish){
               addSkillFx('dragonfish',r.x,r.y,190,0);
               rocks.forEach(function(r2){
@@ -1050,19 +1069,26 @@ function gSail(){
             }
           }
         });
+        if(!hm.dead&&hm.target&&rocks.indexOf(hm.target)<0&&Math.hypot(hm.target.x-hm.x,hm.target.y-hm.y)<(hm.target.r||30)+12){
+          hm.dead=true;
+          if(!damageBossTarget(hm.target,fusion.dragonfish?4:2,el)){
+            hm.target.hp-=(fusion.dragonfish?4:2);
+            if(hm.target.hp<=0){hm.target.dead=true;explodeRock(hm.target.x,hm.target.y,hm.target.r);kills++;dropXpPouch(hm.target.x,hm.target.y,ROCK_XP*2,el);}
+          }
+        }
         if(hm.life<=0) hm.dead=true;
       }
-      if(!drawImgFit(ASSETS.missileHoming,hm.x,hm.y,72,48,Math.atan2(hm.vy,hm.vx))){
+      if(!drawImgFit(ASSETS.windFish,hm.x,hm.y,72,48,hm.ang)){
         ctx.fillStyle='#9fd8ff'; ctx.beginPath(); ctx.arc(hm.x,hm.y,7,0,7); ctx.fill();
       }
     });
-    homingMissiles=homingMissiles.filter(function(hm){ return !hm.dead; });
+    windFishShots=windFishShots.filter(function(hm){return !hm.dead&&hm.x>-100&&hm.x<W+100&&hm.y>-100&&hm.y<H+100;});
 
-    /* ---- 🚀 미사일 — 주기적으로 강력한 한 발을 날린다 ---- */
-    bigMissiles.forEach(function(bg){
+    /* ---- 🔱 폭풍 작살 — 발사 때 정한 적 방향으로 곧게 나가며 절대 위쪽으로 고정되지 않는다 ---- */
+    stormHarpoons.forEach(function(bg){
       if(bg.dead) return;
-      if(!frozen) bg.y+=bg.vy*frameK*2.6;
-      if(!drawImgFit(ASSETS.missileHoming,bg.x,bg.y,150,100,-Math.PI/2)){
+      if(!frozen){bg.life-=sdt;bg.x+=bg.vx*frameK*2.6;bg.y+=bg.vy*frameK*2.6;}
+      if(!drawImgFit(ASSETS.stormHarpoon,bg.x,bg.y,94,47,bg.ang)){
         ctx.fillStyle='#F0605A'; ctx.beginPath(); ctx.arc(bg.x,bg.y,14,0,7); ctx.fill();
       }
       if(!frozen){
@@ -1072,10 +1098,17 @@ function gSail(){
             if(bg.hp<=0) bg.dead=true;
           }
         });
-        if(bg.y<-60) bg.dead=true;
+        debris.forEach(function(dm){
+          if(!bg.dead&&!dm.dead&&Math.hypot(dm.x-bg.x,dm.y-bg.y)<dm.r+28){
+            dm.hp-=3+upgLevel.missile;bg.hp--;if(dm.hp<=0){dm.dead=true;kills++;dropXpPouch(dm.x,dm.y,ROCK_XP*2,el);}if(bg.hp<=0)bg.dead=true;
+          }
+        });
+        if(!bg.dead&&boss.state==='alive'&&Math.hypot(boss.x-bg.x,boss.y-bg.y)<boss.r+28){damageBossTarget(boss,4+upgLevel.missile,el);bg.dead=true;}
+        if(!bg.dead&&finalBoss.state==='alive'&&Math.hypot(finalBoss.x-bg.x,finalBoss.y-bg.y)<finalBoss.r+28){damageBossTarget(finalBoss,4+upgLevel.missile,el);bg.dead=true;}
+        if(bg.life<=0||bg.x<-100||bg.x>W+100||bg.y<-100||bg.y>H+100)bg.dead=true;
       }
     });
-    bigMissiles=bigMissiles.filter(function(bg){ return !bg.dead; });
+    stormHarpoons=stormHarpoons.filter(function(bg){return !bg.dead;});
 
     /* ---- 최종 보스 (Lv30) — 단계 연출극 없이 "기본 뱀서류" 느낌 그대로,
        평소 스웜(바위·해양쓰레기) 속에서 훨씬 강한 적 한 마리를 잡는다.
@@ -1083,7 +1116,8 @@ function gSail(){
     if(finalBoss.state==='announce' && el>=finalBoss.announceUntil){
       finalBoss.state='alive';
       finalBoss.maxHp=90; finalBoss.hp=90;
-      finalBoss.x=W/2; finalBoss.y=-180; finalBoss.restY=H*0.22; finalBoss.shotTimer=1200; finalBoss.patternStep=0;
+      finalBoss.x=W/2;finalBoss.y=-180;finalBoss.restY=H*0.22;finalBoss.shotTimer=1200;finalBoss.patternStep=0;
+      finalBoss.moveTimer=800;finalBoss.targetX=W/2;finalBoss.targetY=finalBoss.restY;finalBoss.spiral=0;
       finalBoss.asset=ASSETS.krakenBoss; /* 대사집에서 "크라켄"으로 특정된 최종보스 */
       toast('영등할망의 마지막 시련 — 강력한 존재가 나타났다!');
       sfx('boom',0.6);
@@ -1091,7 +1125,18 @@ function gSail(){
     if(finalBoss.state==='alive'){
       if(!frozen){
         if(finalBoss.y<finalBoss.restY) finalBoss.y+=1.6*frameK*2.6;
-        else finalBoss.x=W/2+Math.sin(el*0.6)*(W*0.22);
+        else {
+          finalBoss.moveTimer-=sdt;
+          if(finalBoss.moveTimer<=0){
+            var fmoves=[
+              {x:W*0.18,y:H*0.2},{x:W*0.82,y:H*0.2},{x:W*0.25,y:H*0.5},
+              {x:W*0.75,y:H*0.5},{x:W/2,y:H*0.15},{x:px,y:Math.max(H*0.2,shipY-170)}
+            ];
+            var fmv=pickRandom(fmoves);finalBoss.targetX=fmv.x;finalBoss.targetY=fmv.y;finalBoss.moveTimer=700+Math.random()*850;
+          }
+          finalBoss.x+=(finalBoss.targetX-finalBoss.x)*0.022*frameK;
+          finalBoss.y+=(finalBoss.targetY-finalBoss.y)*0.022*frameK;
+        }
       }
       if(!drawImgFit(finalBoss.asset,finalBoss.x,finalBoss.y,finalBoss.r*2.1,finalBoss.r*2.1,0)){
         ctx.fillStyle='rgba(150,90,220,.9)';ctx.beginPath();ctx.arc(finalBoss.x,finalBoss.y,finalBoss.r,0,7);ctx.fill();
@@ -1113,29 +1158,47 @@ function gSail(){
           }
         }
       }
-      /* 크라켄도 최종보스답게 조준탄/확산탄/촉수 부채꼴 3가지 패턴을 순환한다 */
+      /* 크라켄 5패턴: 이중 원형탄·5way 조준·회전 나선·소환·돌진 십자탄. */
       if(finalBoss.state==='alive' && !frozen && finalBoss.y>=finalBoss.restY){
         finalBoss.shotTimer-=sdt;
         if(finalBoss.shotTimer<=0){
-          finalBoss.patternStep=(finalBoss.patternStep+1)%3;
+          finalBoss.patternStep=(finalBoss.patternStep+1)%5;
           var fang=Math.atan2(shipY-finalBoss.y,px-finalBoss.x);
           if(finalBoss.patternStep===0){
-            /* 패턴: 전방위 촉수 확산탄 */
-            for(var fri=0;fri<12;fri++){
-              var frang=(fri/12)*Math.PI*2;
-              enemyShots.push({x:finalBoss.x,y:finalBoss.y,vx:Math.cos(frang)*3.2,vy:Math.sin(frang)*3.2,dead:false});
+            for(var fri=0;fri<16;fri++){
+              var frang=(fri/16)*Math.PI*2+finalBoss.spiral;
+              var frsp=fri%2?2.8:3.7;
+              enemyShots.push({x:finalBoss.x,y:finalBoss.y,vx:Math.cos(frang)*frsp,vy:Math.sin(frang)*frsp,kind:'orb',dead:false});
             }
-            finalBoss.shotTimer=2800;
+            finalBoss.spiral+=0.18;finalBoss.shotTimer=2300;
           } else if(finalBoss.patternStep===1){
             /* 패턴: 배를 노리는 5way 부채꼴 조준탄 */
             [-0.5,-0.25,0,0.25,0.5].forEach(function(foff){
-              enemyShots.push({x:finalBoss.x,y:finalBoss.y,vx:Math.cos(fang+foff)*3.8,vy:Math.sin(fang+foff)*3.8,dead:false});
+              enemyShots.push({x:finalBoss.x,y:finalBoss.y,vx:Math.cos(fang+foff)*3.8,vy:Math.sin(fang+foff)*3.8,kind:'spike',dead:false});
             });
-            finalBoss.shotTimer=1500;
+            finalBoss.shotTimer=1300;
+          } else if(finalBoss.patternStep===2){
+            for(var fsi=0;fsi<18;fsi++){
+              var fsa=finalBoss.spiral+fsi*0.34;
+              enemyShots.push({x:finalBoss.x,y:finalBoss.y,vx:Math.cos(fsa)*3.45,vy:Math.sin(fsa)*3.45,kind:'wave',dead:false});
+            }
+            finalBoss.spiral+=0.55;finalBoss.shotTimer=1750;
+          } else if(finalBoss.patternStep===3){
+            for(var fsm=0;fsm<6;fsm++){
+              var fsp=spawnEdgePoint(60+fsm*7);
+              rocks.push({x:fsp.x,y:fsp.y,r:22,v:0.66,asset:pickRandom(ASSETS.monsterTiers[3]),passed:false,dead:false,
+                zigzag:true,zzPhase:Math.random()*6.28,homing:true,id:++rockIdCounter,hp:4,maxHp:4,tier:3,
+                ranged:fsm%2===0,shotTimer:700+Math.random()*700,dashTimer:1300+Math.random()*900});
+            }
+            finalBoss.shotTimer=2600;
           } else {
-            /* 패턴: 빠르고 강한 정조준 저격탄 */
-            enemyShots.push({x:finalBoss.x,y:finalBoss.y,vx:Math.cos(fang)*4.4,vy:Math.sin(fang)*4.4,dead:false});
-            finalBoss.shotTimer=800;
+            finalBoss.targetX=Math.max(finalBoss.r,Math.min(W-finalBoss.r,px));
+            finalBoss.targetY=Math.max(finalBoss.r,Math.min(H-finalBoss.r,shipY-90));finalBoss.moveTimer=420;
+            [0,Math.PI/2,Math.PI,Math.PI*1.5].forEach(function(ca){
+              enemyShots.push({x:finalBoss.x,y:finalBoss.y,vx:Math.cos(ca)*4.2,vy:Math.sin(ca)*4.2,kind:'orb',dead:false});
+            });
+            enemyShots.push({x:finalBoss.x,y:finalBoss.y,vx:Math.cos(fang)*5.0,vy:Math.sin(fang)*5.0,kind:'spike',dead:false});
+            finalBoss.shotTimer=1100;
           }
           sfx('pop',0.3);
         }
@@ -1180,7 +1243,7 @@ function gSail(){
         if(dm.shotTimer<=0){
           dm.shotTimer=2200+Math.random()*1000;
           var sang=Math.atan2(shipY-dm.y,px-dm.x);
-          enemyShots.push({x:dm.x,y:dm.y,vx:Math.cos(sang)*3.4,vy:Math.sin(sang)*3.4,dead:false});
+          enemyShots.push({x:dm.x,y:dm.y,vx:Math.cos(sang)*3.4,vy:Math.sin(sang)*3.4,kind:'spike',dead:false});
           sfx('pop',0.3);
         }
         var ddx=Math.abs(dm.x-px), ddy=Math.abs(dm.y-shipY);
@@ -1192,7 +1255,13 @@ function gSail(){
     /* 해양쓰레기가 쏘는 파편 — 배의 청록색 포탄과 구분되도록 보라색 계열로 그린다 */
     enemyShots.forEach(function(es){
       if(!frozen){ es.x+=es.vx*frameK; es.y+=es.vy*frameK; }
-      if(!drawImgFit(ASSETS.enemyShot,es.x,es.y,32,58,Math.atan2(es.vy,es.vx)+Math.PI/2)){
+      if(es.kind==='orb'){
+        var eog=ctx.createRadialGradient(es.x-4,es.y-4,2,es.x,es.y,15);eog.addColorStop(0,'#fff');eog.addColorStop(.35,'#C77DFF');eog.addColorStop(1,'rgba(100,50,180,0)');
+        ctx.fillStyle=eog;ctx.beginPath();ctx.arc(es.x,es.y,16,0,7);ctx.fill();
+      }else if(es.kind==='wave'){
+        ctx.save();ctx.translate(es.x,es.y);ctx.rotate(el*5);ctx.strokeStyle='rgba(105,215,208,.95)';ctx.lineWidth=4;
+        ctx.beginPath();ctx.arc(0,0,13,0.25,5.1);ctx.stroke();ctx.restore();
+      }else if(!drawImgFit(ASSETS.enemyShot,es.x,es.y,32,58,Math.atan2(es.vy,es.vx)+Math.PI/2)){
         ctx.save();ctx.translate(es.x,es.y);ctx.rotate(Math.atan2(es.vy,es.vx));
         var eg=ctx.createLinearGradient(-10,0,10,0);
         eg.addColorStop(0,'#3A1410');eg.addColorStop(1,'#E0645A');
@@ -1207,33 +1276,46 @@ function gSail(){
     enemyShots=enemyShots.filter(function(es){ return !es.dead && es.x>-40 && es.x<W+40 && es.y>-40 && es.y<H+40; });
 
     if(!suspendSpawn){
-      /* 미사일 이동 + 명중 판정 */
+      /* 기본 함포 이동 + 명중 판정 */
       missiles.forEach(function(m){m.x+=m.vx*frameK;m.y+=m.vy*frameK*2.6});
-      missiles=missiles.filter(function(m){return m.y>-40 && m.y<H+40;}); /* 🔙 후방 포격 탄은 아래로 내려가므로 하단 경계도 필요 */
+      missiles=missiles.filter(function(m){return m.x>-60&&m.x<W+60&&m.y>-60&&m.y<H+60;});
       rocks.forEach(function(r){
         if(r.homing){
           /* 뱀서라이크 스웜 — 바위가 배 쪽으로 아주 천천히 끌려온다(지나가는 장애물이 아니라
              서서히 조여오는 적떼 느낌). x/y 둘 다 배 쪽으로 유도한다 */
           var hdx=px-r.x, hdy=shipY-r.y, hd=Math.hypot(hdx,hdy)||1;
-          r.x+=(hdx/hd)*r.v*frameK*2.6;
-          r.y+=(hdy/hd)*r.v*frameK*2.6;
+          if(r.tier>=3){r.dashTimer-=sdt;if(r.dashTimer<=0){r.dashUntil=el+0.42;r.dashTimer=1900+Math.random()*1800;}}
+          var rush=el<(r.dashUntil||0)?2.5:1;
+          r.x+=(hdx/hd)*r.v*frameK*2.6*rush;
+          r.y+=(hdy/hd)*r.v*frameK*2.6*rush;
         } else {
           r.y+=r.v*frameK*2.6;
         }
         if(r.zigzag) r.x+=Math.sin(el*3+r.zzPhase)*1.4*frameK;
+        if(r.ranged){
+          r.shotTimer-=sdt;
+          if(r.shotTimer<=0){
+            r.shotTimer=Math.max(1100,2600-r.tier*320)+Math.random()*700;
+            var rsa=Math.atan2(shipY-r.y,px-r.x);
+            enemyShots.push({x:r.x,y:r.y,vx:Math.cos(rsa)*(2.8+r.tier*0.25),vy:Math.sin(rsa)*(2.8+r.tier*0.25),kind:r.tier>=3?'wave':'spike',dead:false});
+          }
+        }
         for(var mi2=missiles.length-1;mi2>=0;mi2--){
           var m=missiles[mi2];
           if(!r.dead&&Math.hypot(m.x-r.x,m.y-r.y)<r.r+10){
-            r.dead=true;
+            r.hp=(r.hp||1)-(1+Math.floor(upgLevel.focus/2));
             m.hp--; if(m.hp<=0) missiles.splice(mi2,1); /* 🌊 관통탄 — hp가 남아있으면 계속 날아간다 */
             hitFlashes.push({x:r.x,y:r.y,until:el+0.1,big:r.r>44});
             splashes.push({x:r.x,y:r.y,until:el+0.22,tier:r.r>50?2:(r.r>36?1:0)});
-            explodeRock(r.x,r.y,r.r);sfx('pop',0.45);kills++;
+            if(upgLevel.pierce>0)addSkillFx(fusion.tsunami?'tsunami':'tidal',r.x,r.y,fusion.tsunami?220:120,0);
+            if(fusion.typhoon)addSkillFx('typhoon',r.x,r.y,180,0);
+            sfx('pop',0.45);
+            if(r.hp<=0){r.dead=true;explodeRock(r.x,r.y,r.r);kills++;}
             /* 경험치는 즉시 들어오지 않고 복주머니로 떨어진다 — 직접 먹어야 레벨업 */
-            dropXpPouch(r.x,r.y,ROCK_XP,el);
+            if(r.dead)dropXpPouch(r.x,r.y,ROCK_XP,el);
             /* 🌀 태풍포 융합(포격강화+다연장 MAX) — 일반 포탄에도 작은 폭발이 붙는다.
                폭발탄 자체는 이제 별도 투사체(bombShots)로 분리됐다 */
-            if(fusion.typhoon){
+            if(r.dead&&fusion.typhoon){
               rocks.forEach(function(r2){
                 if(r2!==r && !r2.dead && Math.hypot(r2.x-r.x,r2.y-r.y)<55){
                   r2.dead=true; explodeRock(r2.x,r2.y,r2.r); kills++;
@@ -1256,6 +1338,8 @@ function gSail(){
           ctx.fillStyle='rgba(255,255,255,.14)';ctx.beginPath();
           ctx.moveTo(r.x,r.y-r.r);ctx.lineTo(r.x+r.r*.5,r.y+r.r*.2);ctx.lineTo(r.x,r.y+r.r*.4);ctx.closePath();ctx.fill();
         }
+        if(r.ranged){ctx.strokeStyle='rgba(199,125,255,.9)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(r.x,r.y,r.r+5,0,7);ctx.stroke();}
+        if((r.maxHp||1)>1){ctx.fillStyle='rgba(0,0,0,.45)';ctx.fillRect(r.x-r.r,r.y-r.r-9,r.r*2,4);ctx.fillStyle='#69D7D0';ctx.fillRect(r.x-r.r,r.y-r.r-9,r.r*2*Math.max(0,r.hp/r.maxHp),4);}
         var dx=Math.abs(r.x-px), dy=Math.abs(r.y-shipY);
         if(dx<r.r+30 && dy<r.r+34){ if(!r.noHit) hit=true; }
         if(!r.passed && r.y>shipY+40){ r.passed=true; }
@@ -1542,7 +1626,7 @@ function gSail(){
         if(ctx.roundRect){ ctx.beginPath();ctx.roundRect(cx0,cy0,cardW,cardH,18);ctx.stroke(); }
         else ctx.strokeRect(cx0,cy0,cardW,cardH);
         ctx.textAlign='center';ctx.font='700 12px SCDream, sans-serif';ctx.fillStyle=rarity.color;
-        ctx.fillText(rarity.label,cx,cy0+20);
+        ctx.fillText((UPGRADES[key].type==='weapon'?'무기':'보조')+' · '+rarity.label,cx,cy0+20);
         ctx.font='40px sans-serif';ctx.fillStyle='#F2F0EA';
         ctx.fillText(UPGRADES[key].emoji, cx, cy0+64);
         ctx.font='800 17px SCDream, sans-serif';ctx.fillStyle='#F2F0EA';
