@@ -1185,7 +1185,7 @@ function gCatch(){
   var items=[],pieces=[],fx=[],sprites=[],flashes=[],popups=[],banners=[],trail=[];
   var score=0,combo=0,comboUntil=0,bestCombo=0,cnt={fruit:0,gold:0,rotten:0};
   var elapsed=0,last=null,spawnT=600,hitStop=0,shakeT=0,shakeMag=0,zoom=1;
-  var lastPt=null,hitSet=null,strokeKills=[],ildoAt=-9999,lastSliceSnd=0,guided=false;
+  var lastPt=null,strokeKills=[],ildoAt=-9999,lastSliceSnd=0,guided=false;
   var fever=false,legendSpawned=false,countdownShown=0,finished=false,endT=0,resultReady=false,resultT=0;
   var flashAlpha=0,flashColor='#FFF';
   var bg=makeBg();
@@ -1298,9 +1298,14 @@ function gCatch(){
     var ang=Math.atan2(p1.y-p0.y,p1.x-p0.x),killed=0,kx=0,ky=0;
     if(elapsed-lastSliceSnd>110&&Math.hypot(p1.x-p0.x,p1.y-p0.y)>6){lastSliceSnd=elapsed;sfx('slice',0.3)}
     for(var i=items.length-1;i>=0;i--){var it=items[i];
-      if(hitSet.indexOf(it)>=0)continue;
-      if(segPointDist(p0,p1,it.x,it.y)<it.r+18*U){
-        hitSet.push(it);guided=true;
+      /* 손가락이 귤 안에 머무는 동안은 1회만 — 빠져나갔다가(inside=false) 다시 들어오면 재타격.
+         왕귤은 한 스트로크로 왔다갔다 그어도 여러 번 베이게 하기 위함 */
+      var near=segPointDist(p0,p1,it.x,it.y)<it.r+18*U;
+      if(!near){it.inside=false;continue}
+      if(it.inside||elapsed-(it.lastHit||-999)<70)continue;
+      it.inside=true;it.lastHit=elapsed;
+      {
+        guided=true;
         if(it.k.rotten){
           score=Math.max(0,score-30);combo=0;cnt.rotten++;
           juice(it.x,it.y,ang,'rotten',14);shake(9,18);stop(50);
@@ -1348,9 +1353,9 @@ function gCatch(){
       }
     }
   }
-  cv.onpointerdown=function(e){e.preventDefault();hitSet=[];strokeKills=[];lastPt=pt(e);trail=[{x:lastPt.x,y:lastPt.y,t:elapsed}];if(finished){if(resultReady)finishCatch(score);return}slice(lastPt,lastPt)};
+  cv.onpointerdown=function(e){e.preventDefault();items.forEach(function(it){it.inside=false});strokeKills=[];lastPt=pt(e);trail=[{x:lastPt.x,y:lastPt.y,t:elapsed}];if(finished){if(resultReady)finishCatch(score);return}slice(lastPt,lastPt)};
   cv.onpointermove=function(e){if(!lastPt||finished)return;var p=pt(e);slice(lastPt,p);lastPt=p;trail.push({x:p.x,y:p.y,t:elapsed});if(trail.length>22)trail.shift()};
-  cv.onpointerup=function(){lastPt=null;hitSet=null;strokeKills=[]};
+  cv.onpointerup=function(){lastPt=null;items.forEach(function(it){it.inside=false});strokeKills=[]};
   cv.onpointercancel=cv.onpointerup;
 
   /* ---- 그리기: 귤 ---- */
