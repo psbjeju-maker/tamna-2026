@@ -765,7 +765,10 @@ function gSail(){
     }
 
     /* 미니보스 — 알림 문구가 뜨는 동안 완전히 멈춘 뒤 등장한다. 레벨이 오를수록 더 자주 나온다 */
-    if(boss.state==='idle' && el>=boss.nextAt && !frozen && lv>=10 && finalBoss.state==='idle'){
+    /* 미니보스는 "레벨 10 찍어야 나옴"이 아니라 순수 경과시간(boss.nextAt, 처음엔
+       34초)으로만 나온다 — 사장님 피드백: 레벨업 속도에 매여 들쭉날쭉하지 않고
+       항상 "시간이 지나면 보스가 온다" 느낌이어야 함 */
+    if(boss.state==='idle' && el>=boss.nextAt && !frozen && finalBoss.state==='idle'){
       boss.state='announce'; boss.announceUntil=el+1.5;
       /* 4. 첫 엘리트 몬스터(미니보스) 출현은 전용 대사, 그 다음부터는 BOSS_LINES */
       if(!firstBossShown){ firstBossShown=true; showCutin(FIRST_BOSS_LINE,1500,true); }
@@ -801,10 +804,12 @@ function gSail(){
     var suspendSpawn = frozen;
 
     if(!suspendSpawn && !ending){
-      /* 10레벨까지는 튜토리얼 수준으로 계속 쉬워야 한다는 요청 — 스폰 간격도
-         튜토리얼과 같은 배율을 유지하고, 시간/레벨에 따른 상승폭은 거의 없앤다 */
-      var diffEase = lv<10 ? 0.1 : 1;
-      var spawnRate = (tutorialDone && lv>=10) ? 1 : 0.45;
+      /* Lv8→Lv12 사이에 서서히 올려서, 첫 미니보스(대략 Lv10 근방에서 시간상
+         마주치게 됨)를 잡고 나서 난이도가 한 프레임에 확 뛰는 절벽을 없앤다
+         (사장님 피드백: "보스 잡고 갑자기 너무 확 어려운 느낌") */
+      var diffRamp = Math.max(0,Math.min(1,(lv-8)/4));
+      var diffEase = 0.1 + diffRamp*0.9;
+      var spawnRate = tutorialDone ? (0.45 + diffRamp*0.55) : 0.45;
       /* 지금 웨이브의 몬스터 종류 — 한동안은 같은 종류만 몰려오다가 주기적으로 바뀐다.
          활성 풀은 배 단계에 맞춰 자동으로 넓어졌다 좁아진다(activeMonsterPool 참고) */
       waveTimer-=sdt;
@@ -818,10 +823,13 @@ function gSail(){
            나타나 배 쪽으로 아주 천천히 끌려오는 몬스터떼로 바꿨다. 몬스터는 정말 작게,
            바위(무생물)와 섞여서 나온다. 일부만 지그재그가 섞인다 */
         var bossActive=boss.state!=='idle'||finalBoss.state!=='idle';
-        var batchCount=lv<10?1:(lv<20?2:(lv<30?3:4));
+        /* 몬스터 수 증가 시점을 Lv10→Lv8로 당김(사장님 피드백: "8레벨 부분에
+           몬스터 갯수를 늘려야겠음") — 보스전 직후가 아니라 그 전부터 이미
+           2마리씩 나와 있어서 보스를 깨도 새삼스럽게 확 늘지 않는다 */
+        var batchCount=lv<8?1:(lv<20?2:(lv<30?3:4));
         if(bossActive) batchCount=Math.max(1,Math.round(batchCount*0.7)); /* 보스전 중 일반 몬스터 30% 감소 */
         for(var spi=0;spi<batchCount;spi++){
-          var useMonster=Math.random()<(lv<10?0.65:0.82);
+          var useMonster=Math.random()<(lv<8?0.65:0.82);
           var spawnAsset=useMonster ? waveType : pickRandom(ASSETS.rockShapePool);
           var tier=Math.min(3,Math.floor(lv/10));
           var zz=useMonster&&(tier>=1||Math.random()<0.25);
@@ -995,6 +1003,9 @@ function gSail(){
           for(var hsi=0;hsi<hc;hsi++){
             var ht=targets.length?targets[hsi%targets.length]:null;
             var ha=ht?Math.atan2(ht.y-shipY,ht.x-px):(fireRotation+(hsi/hc)*Math.PI*2);
+            /* 진화 전(기본 작살)에도 발사 이펙트가 있어야 처음부터 눈에 보인다 —
+               융합(소용돌이 작살진) 때만 뜨던 걸 기본 발사에도 추가 */
+            if(!fusion.harpoonstorm) addSkillFx('harpoon',px,shipY,130,ha+Math.PI/2);
             stormHarpoons.push({x:px,y:shipY,vx:Math.cos(ha)*(6.3+upgLevel.missile*0.25),vy:Math.sin(ha)*(6.3+upgLevel.missile*0.25),
               ang:ha,hp:fusion.harpoonstorm?2:1,life:2200,dead:false});
           }
@@ -1795,7 +1806,6 @@ function gSail(){
       var timerNow={fire:fireTimer,pierce:pierceTimer,windpush:windpushTimer,lightning:lightningTimer,
         missile:missileTimer,homing:homingTimer,bomb:bombTimer,shield:shieldTimer};
       var iw=76, gap=10, hy=H-24-iw;
-      var anyTelegraph=false;
       ownedKeys.forEach(function(k,ki){
         var hx=22+ki*(iw+gap);
         var pulsing = el<skillPulseUntil[k];
@@ -1804,7 +1814,6 @@ function gSail(){
         var tRem = timerNow[k]||0;
         /* 발동 0.12~0.2초 전 예고 — 아이콘 테두리가 밝게 빛난다(가시성 패치) */
         var telegraph = tRem>0 && tRem<180 && !(k==='shield'&&shieldCharge>0);
-        if(telegraph) anyTelegraph=true;
         var frac = (k==='shield' && shieldCharge>0) ? 0 : Math.max(0,Math.min(1,tRem/(skillFull[k]||1)));
         ctx.save();
         ctx.translate(hx+iw/2,hy+iw/2); ctx.scale(scale,scale); ctx.translate(-(hx+iw/2),-(hy+iw/2));
@@ -1824,12 +1833,8 @@ function gSail(){
         ctx.fillText(isMax?'MAX':('Lv.'+upgLevel[k]),hx+iw/2,hy+iw-8);
         ctx.restore();
       });
-      if(anyTelegraph){
-        ctx.save();ctx.globalAlpha=0.5+Math.sin(el*30)*0.15;
-        ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=3;
-        ctx.beginPath();ctx.arc(px,shipY,46,0,Math.PI*2);ctx.stroke();
-        ctx.restore();
-      }
+      /* 배 중심에 흰 테두리 원으로 뜨던 발동예고 링은 모양이 이상하다는
+         피드백으로 제거 — 예고는 아래 스킬 HUD 아이콘 테두리 반짝임만으로 충분 */
     })();
 
     /* ---- 각성 시 커다란 용 파도 백드롭(장식) ---- */
