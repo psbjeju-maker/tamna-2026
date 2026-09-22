@@ -142,6 +142,21 @@ function drawSkillFrame(img,x,y,size,startedAt,now,loop,rot){
   ctx.restore();
   return true;
 }
+/* 캔버스 버퍼가 실제 CSS 화면의 2배(cv.width=wrapper*2)라서, 여기 쓰는 폰트
+   px 값은 항상 화면에 보이는 크기의 절반이다 — 카드 글씨가 작아 보이던 원인
+   (가시성 패치). 긴 설명은 폰트를 줄이는 대신 최대 2줄로 줄바꿈한다 */
+function wrapCanvasText(ctx2,text,maxWidth,maxLines){
+  var lines=[], cur='';
+  for(var i=0;i<text.length;i++){
+    var ch=text[i], test=cur+ch;
+    if(ctx2.measureText(test).width>maxWidth && cur.length>0){
+      lines.push(cur); cur=ch;
+      if(lines.length>=maxLines){ return lines; }
+    } else cur=test;
+  }
+  if(cur) lines.push(cur);
+  return lines.slice(0,maxLines);
+}
 /* 스킬 이펙트 시트 로딩 실패 시 Canvas 도형으로 대신 그리는 대체 연출(V4 패치) —
    이미지가 하나도 안 왔거나 아직 로딩 중이어도 기술이 "안 보이는" 일이 없게 한다 */
 function drawSkillFxFallback(key,x,y,size,rot){
@@ -340,23 +355,25 @@ function gSail(){
                 spread:0,focus:0,angle:0,cdr:0,rear:0,speed:0,bok:0,heart:0};
   var UPG_MAX ={fire:5,pierce:5,windpush:5,lightning:5,missile:5,homing:5,bomb:5,shield:5,
                 spread:3,focus:3,angle:3,cdr:3,rear:3,speed:3,bok:3,heart:3};
+  /* 카드 설명은 짧을수록 좋다 — 2x 캔버스 버퍼에서 작은 폰트로 desc가 안 보이던
+     문제(가시성 패치)를 폰트 축소가 아니라 문구 자체를 축약해서 해결했다 */
   var UPGRADES={
-    fire:     {type:'weapon',emoji:'💥',title:'함포 연사',desc:'가장 가까운 적을 향해 자동 포격한다'},
-    pierce:   {type:'weapon',emoji:'🌊',title:'관통 해일',desc:'화면을 가로지르는 파도가 적을 관통한다'},
-    windpush: {type:'weapon',emoji:'🌪',title:'영등 바람',desc:'적이 몰린 방향으로 바람길을 뚫는다'},
-    lightning:{type:'weapon',emoji:'⚡',title:'연쇄 벼락',desc:'주기적으로 적에게 벼락을 내린다'},
-    missile:  {type:'weapon',emoji:'🔱',title:'폭풍 작살',desc:'가장 가까운 적에게 직선 작살을 발사한다'},
-    homing:   {type:'weapon',emoji:'🐟',title:'바람 물고기',desc:'적을 추적해 부딪히는 바람 물고기'},
-    bomb:     {type:'weapon',emoji:'🍊',title:'제주 감귤탄',desc:'적 방향으로 날아가 범위 폭발한다'},
-    shield:   {type:'weapon',emoji:'🛡',title:'파도 방패',desc:'일정 시간마다 공격을 한 번 막는다'},
-    spread:   {type:'passive',emoji:'🧨',title:'폭풍 화약통',desc:'함포 수와 포격 범위를 강화한다'},
-    focus:    {type:'passive',emoji:'💧',title:'조수의 돌',desc:'관통과 보스 피해를 강화한다'},
-    angle:    {type:'passive',emoji:'🎐',title:'영등 비단',desc:'바람 범위를 넓힌다'},
-    cdr:      {type:'passive',emoji:'🔮',title:'폭풍 구슬',desc:'모든 스킬 대기시간을 줄인다'},
-    rear:     {type:'passive',emoji:'🧭',title:'산호 나침반',desc:'작살의 수와 탐지 범위를 늘린다'},
-    speed:    {type:'passive',emoji:'🐉',title:'용왕의 비늘',desc:'이동과 바람 물고기 속도를 높인다'},
-    bok:      {type:'passive',emoji:'🧺',title:'해녀의 망사리',desc:'복과 감귤탄의 폭발 범위를 늘린다'},
-    heart:    {type:'passive',emoji:'🐚',title:'소라 부적',desc:'최대 체력을 늘리고 즉시 회복한다'}
+    fire:     {type:'weapon',emoji:'💥',title:'함포 연사',desc:'자동 포격 강화'},
+    pierce:   {type:'weapon',emoji:'🌊',title:'관통 해일',desc:'화면 관통 파도'},
+    windpush: {type:'weapon',emoji:'🌪',title:'영등 바람',desc:'적 무리 밀어냄'},
+    lightning:{type:'weapon',emoji:'⚡',title:'연쇄 벼락',desc:'주기적 벼락 공격'},
+    missile:  {type:'weapon',emoji:'🔱',title:'폭풍 작살',desc:'가까운 적 작살 명중'},
+    homing:   {type:'weapon',emoji:'🐟',title:'바람 물고기',desc:'적 추적 물고기'},
+    bomb:     {type:'weapon',emoji:'🍊',title:'제주 감귤탄',desc:'적 방향 폭발탄'},
+    shield:   {type:'weapon',emoji:'🛡',title:'파도 방패',desc:'공격 한 번 방어'},
+    spread:   {type:'passive',emoji:'🧨',title:'폭풍 화약통',desc:'함포 수·범위 증가'},
+    focus:    {type:'passive',emoji:'💧',title:'조수의 돌',desc:'관통·보스 피해 증가'},
+    angle:    {type:'passive',emoji:'🎐',title:'영등 비단',desc:'바람 범위 확대'},
+    cdr:      {type:'passive',emoji:'🔮',title:'폭풍 구슬',desc:'스킬 대기시간 감소'},
+    rear:     {type:'passive',emoji:'🧭',title:'산호 나침반',desc:'작살 수·범위 증가'},
+    speed:    {type:'passive',emoji:'🐉',title:'용왕의 비늘',desc:'이동·물고기 속도 증가'},
+    bok:      {type:'passive',emoji:'🧺',title:'해녀의 망사리',desc:'복·폭발 범위 증가'},
+    heart:    {type:'passive',emoji:'🐚',title:'소라 부적',desc:'체력 증가·즉시 회복'}
   };
   var UPG_KEYS=Object.keys(UPGRADES);
   var RARITY=[
@@ -386,7 +403,6 @@ function gSail(){
       if(!fusion[f.key] && upgLevel[f.a]>=UPG_MAX[f.a] && upgLevel[f.b]>=1){
         fusion[f.key]=true;
         showBig('무기 진화!', f.emoji+' '+f.name+' 완성!', 1800,'fusion');
-        toast('💫 '+f.name+' 완성! '+f.desc);
         sfx('fanfare',0.8);
         /* 6. 첫 무기 융합 완성 — 처음 한 번만 전용 대사 */
         if(!firstFusionShown){ firstFusionShown=true; showCutin(FIRST_FUSION_LINE,1500); }
@@ -406,12 +422,15 @@ function gSail(){
     else if(key==='shield') shieldTimer=16;
     else if(key==='fire') fireTimer=16;
   }
+  /* 상단 토스트로 스킬명·효과를 알리던 방식을 없애고(가시성 패치), 중앙에
+     1.2초간 "이름 강화/습득 · Lv.전→후 · 효과"를 크게 한 번만 보여준다 */
   function applyUpgrade(key,rarity){
     var before=upgLevel[key];
     upgLevel[key]=Math.min(UPG_MAX[key], upgLevel[key]+rarity.discrete);
     var after=upgLevel[key];
     if(key==='heart'){ var d=after-before; maxHearts+=d; hearts=Math.min(maxHearts,hearts+d); }
-    toast(UPGRADES[key].emoji+' '+UPGRADES[key].title+' Lv.'+after+(after>=UPG_MAX[key]?' MAX!':'')+' ('+rarity.label+')');
+    var lvText = after>=UPG_MAX[key] ? ('Lv.'+before+' → MAX') : ('Lv.'+before+' → Lv.'+after);
+    showBig(UPGRADES[key].title+' '+(before===0?'습득':'강화'), lvText, 1200, 'skillget', UPGRADES[key].desc);
     sfx('bonus',0.6);
     if(UPGRADES[key].type==='weapon') primeWeaponTimer(key);
     checkFusions();
@@ -520,25 +539,58 @@ function gSail(){
   var lightningTimer=2000, windpushTimer=4000, shieldTimer=8000, shieldCharge=0;
   var bombTimer=3200, homingTimer=3000, missileTimer=4200, pierceTimer=2600;
   var lightningBolts=[], bombShots=[], windGusts=[], windFishShots=[], stormHarpoons=[], pierceWaves=[];
+  /* 좌측 하단 스킬 레벨 HUD용 — 각 스킬의 "이번 주기 전체 쿨타임"과 "방금 발동
+     펄스" 시각만 기록한다(실제 쿨타임 로직은 위 XxxTimer 그대로) */
+  var skillFull={fire:1000,pierce:2600,windpush:2800,lightning:2000,missile:3400,homing:2700,bomb:2500,shield:14800};
+  var skillPulseUntil={fire:0,pierce:0,windpush:0,lightning:0,missile:0,homing:0,bomb:0,shield:0};
   var muzzleFlashes=[], hitFlashes=[], splashes=[];
+  var dmgNumbers=[]; /* 데미지 숫자 — 0.5~0.7초 표시, 개수 제한(가시성 패치) */
+  var recentDmg=[]; /* 최근 8초 딜량 로그 — 보스 체력 스케일링(난이도 패치)용 */
+  function showDmgNumber(x,y,val,el){
+    if(dmgNumbers.length>=20) dmgNumbers.shift();
+    dmgNumbers.push({x:x,y:y-10,val:val,from:el,until:el+0.6});
+    recentDmg.push({t:el,v:val});
+    if(recentDmg.length>400) recentDmg=recentDmg.filter(function(d){return el-d.t<8;}); /* 무한 누적 방지 */
+  }
+  function currentDps(el){
+    recentDmg=recentDmg.filter(function(d){return el-d.t<8;});
+    var sum=0; recentDmg.forEach(function(d){sum+=d.v;});
+    return sum/8;
+  }
+  var lastBossHp=0; /* 보스마다 이전 보스의 약 1.35배 이상이 되도록 하는 바닥값 */
   var skillFx=[]; /* 새 4x2 스킬 시트의 일회성 애니메이션 */
   var xpPouches=[]; /* 바위를 부수면 떨어지는 경험치 복주머니 — 직접 날아가서 먹어야 경험치가 들어온다 */
   var rockIdCounter=0;
   function cdrMul(){ return 1 - Math.min(0.55, upgLevel.cdr*0.12); } /* ⏱ 재빠른 손놀림 — 모든 스킬 쿨타임에 공통 적용 */
 
-  function nearestEnemy(x,y){
-    var best=null,bestD=Infinity;
-    rocks.forEach(function(r){if(!r.dead){var d0=Math.hypot(r.x-x,r.y-y);if(d0<bestD){bestD=d0;best=r;}}});
-    debris.forEach(function(r){if(!r.dead){var d0=Math.hypot(r.x-x,r.y-y);if(d0<bestD){bestD=d0;best=r;}}});
-    if(boss.state==='alive'){var bd=Math.hypot(boss.x-x,boss.y-y);if(bd<bestD){bestD=bd;best=boss;}}
-    if(finalBoss.state==='alive'){var fd=Math.hypot(finalBoss.x-x,finalBoss.y-y);if(fd<bestD){bestD=fd;best=finalBoss;}}
+  /* 화면 밖·갓 스폰된 적은 타깃·피격 불가(가시성 패치) — 화면 안쪽 80px 여백 안에
+     있고, 스폰 후 0.4초가 지난 적만 진짜 "보이는 위협"으로 취급한다 */
+  var TARGET_MARGIN=80, TARGET_GRACE=0.4;
+  function onScreenMargin(x,y,m){ return x>=m && x<=W-m && y>=m && y<=H-m; }
+  function isTargetable(o,el){
+    if(!o || o.dead) return false;
+    if(o.spawnedAt!=null && el-o.spawnedAt<TARGET_GRACE) return false;
+    return onScreenMargin(o.x,o.y,TARGET_MARGIN);
+  }
+  /* 자동 공격 사거리 — 화면 너비의 약 35% 안에 있는 적만 조준한다(무한 사거리 저격 방지) */
+  function nearestEnemy(x,y,el){
+    var best=null,bestD=Infinity, maxR=W*0.35;
+    function consider(o){
+      if(!isTargetable(o,el)) return;
+      var d0=Math.hypot(o.x-x,o.y-y);
+      if(d0<=maxR && d0<bestD){bestD=d0;best=o;}
+    }
+    rocks.forEach(consider);
+    debris.forEach(consider);
+    if(boss.state==='alive') consider(boss);
+    if(finalBoss.state==='alive') consider(finalBoss);
     return best;
   }
-  function aimAngle(x,y,fallback){var t=nearestEnemy(x,y);return t?Math.atan2(t.y-y,t.x-x):fallback;}
+  function aimAngle(x,y,fallback,el){var t=nearestEnemy(x,y,el);return t?Math.atan2(t.y-y,t.x-x):fallback;}
   function angleDelta(a,b){var d=b-a;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;return d;}
 
   function addSkillFx(key,x,y,size,rot,anchor){
-    skillFx.push({key:key,x:x,y:y,size:size||160,rot:rot||0,anchor:anchor||null,started:performance.now(),duration:720});
+    skillFx.push({key:key,x:x,y:y,size:size||160,rot:rot||0,anchor:anchor||null,started:performance.now(),duration:980}); /* 가시성 패치 — 유지시간 36% 증가 */
   }
   function paintSkillFx(now){
     skillFx.forEach(function(f){
@@ -552,7 +604,7 @@ function gSail(){
   }
 
   function showCutin(text,dur,freeze){ cutin.text=text; cutin.from=performance.now(); cutin.until=cutin.from+dur; cutin.freeze=!!freeze; }
-  function showBig(a,b,dur,kind){ bigText={a:a,b:b,from:performance.now(),until:performance.now()+dur,kind:kind}; }
+  function showBig(a,b,dur,kind,c){ bigText={a:a,b:b,c:c,from:performance.now(),until:performance.now()+dur,kind:kind}; }
   function shake(v){ cam.shake=Math.max(cam.shake,v); }
   function zoomTo(v){ cam.zoomTo=v; }
   function triggerEnding(el,won){
@@ -560,9 +612,27 @@ function gSail(){
     ending=true; endingT0=el; endingWon=!!won;
     showCutin(pickRandom(won?WIN_LINES:END_LINES),2000);
   }
+  /* 페이즈 전환(70%/35% 체력) 진입 시 0.6초 전환 연출 + 그 동안 연속 피해 50%만
+     적용, 한 번의 공격은 최대체력의 10%를 넘게 못 깎는다(난이도 패치) */
+  function applyBossHit(target,damage,el){
+    damage=Math.min(damage,target.maxHp*0.1);
+    if(target.dmgReduceUntil && el<target.dmgReduceUntil) damage*=0.5;
+    target.hp-=damage; target.flashUntil=el+0.08;
+    showDmgNumber(target.x,target.y-target.r,Math.round(damage),el);
+    var p=target.hp/target.maxHp;
+    if(!target.phase2Done && p<=0.7){
+      target.phase2Done=true; target.transitionUntil=el+0.6; target.dmgReduceUntil=el+0.6;
+      target.v=(target.v||1)*1.15; shake(8);
+      showBig(target===finalBoss?'크라켄이 분노한다!':'적이 거칠어진다!','',900,'break');
+    } else if(!target.phase3Done && p<=0.35){
+      target.phase3Done=true; target.transitionUntil=el+0.6; target.dmgReduceUntil=el+0.6;
+      target.v=(target.v||1)*1.15; shake(10);
+      showBig(target===finalBoss?'크라켄이 최후의 발악!':'적이 최후의 발악!','',900,'break');
+    }
+  }
   function damageBossTarget(target,damage,el){
     if(target===boss&&boss.state==='alive'){
-      boss.hp-=damage;boss.flashUntil=el+0.08;shake(2);
+      applyBossHit(boss,damage,el);shake(2);
       if(boss.hp<=0){
         explodeRock(boss.x,boss.y,boss.r,true);sfx('boom',0.7);shake(12);kills+=3;bossKillCount++;
         gainXp(30,el);giveBok(20);showBig('BREAK ×보스!','',1000,'break');toast('👹 엘리트 몬스터 격파!');
@@ -571,7 +641,7 @@ function gSail(){
       return true;
     }
     if(target===finalBoss&&finalBoss.state==='alive'){
-      finalBoss.hp-=damage;finalBoss.flashUntil=el+0.08;shake(2);
+      applyBossHit(finalBoss,damage,el);shake(2);
       if(finalBoss.hp<=0){
         finalBoss.state='idle';explodeRock(finalBoss.x,finalBoss.y,finalBoss.r,true);sfx('boom',0.85);shake(18);triggerEnding(el,true);
       }
@@ -702,8 +772,14 @@ function gSail(){
       else showCutin(pickRandom(BOSS_LINES),1500,true);
     }
     if(boss.state==='announce' && el>=boss.announceUntil){
-      /* "보스는 정말 강력하게" — 체력을 레벨에 비례해서 계속 키운다(고정 5는 너무 약했음) */
-      boss.state='alive'; boss.maxHp=14+Math.floor(lv*0.8); boss.hp=boss.maxHp;
+      /* 보스 체력 = max(레벨 기반 기본치, 최근 8초 DPS×25초), 그리고 항상 이전
+         보스의 1.35배 이상 — "2~3방에 죽는다"는 문제를 레벨만이 아니라 실제
+         화력에 맞춰 잡는다(난이도 패치) */
+      var bossBaseHp=14+Math.floor(lv*0.8);
+      var bossScaledHp=Math.max(bossBaseHp, currentDps(el)*25, lastBossHp*1.35);
+      boss.state='alive'; boss.maxHp=Math.round(bossScaledHp); boss.hp=boss.maxHp;
+      boss.phase2Done=false; boss.phase3Done=false; boss.transitionUntil=0; boss.dmgReduceUntil=0;
+      lastBossHp=boss.maxHp;
       boss.x=Math.max(shipMargin,Math.min(W-shipMargin,W/2)); boss.y=-160; boss.r=130;
       boss.restY=H*0.26; boss.v=1.0+Math.min(1.2,lv*0.03);
       boss.shotTimer=900;boss.patternStep=0;boss.moveTimer=900;boss.targetX=W/2;boss.targetY=boss.restY;
@@ -741,7 +817,9 @@ function gSail(){
         /* 뱀서라이크 스웜 느낌 — "지나가는" 바위가 아니라 사방(상하좌우) 화면 밖에서
            나타나 배 쪽으로 아주 천천히 끌려오는 몬스터떼로 바꿨다. 몬스터는 정말 작게,
            바위(무생물)와 섞여서 나온다. 일부만 지그재그가 섞인다 */
+        var bossActive=boss.state!=='idle'||finalBoss.state!=='idle';
         var batchCount=lv<10?1:(lv<20?2:(lv<30?3:4));
+        if(bossActive) batchCount=Math.max(1,Math.round(batchCount*0.7)); /* 보스전 중 일반 몬스터 30% 감소 */
         for(var spi=0;spi<batchCount;spi++){
           var useMonster=Math.random()<(lv<10?0.65:0.82);
           var spawnAsset=useMonster ? waveType : pickRandom(ASSETS.rockShapePool);
@@ -753,7 +831,7 @@ function gSail(){
             v:0.26+tier*0.09+Math.random()*0.08,asset:spawnAsset,passed:false,dead:false,
             zigzag:zz,zzPhase:Math.random()*Math.PI*2,homing:true,id:++rockIdCounter,
             hp:useMonster?1+tier:1,maxHp:useMonster?1+tier:1,tier:tier,ranged:ranged,
-            shotTimer:900+Math.random()*1600,dashTimer:tier>=3?1800+Math.random()*1800:999999});
+            shotTimer:900+Math.random()*1600,dashTimer:tier>=3?1800+Math.random()*1800:999999,spawnedAt:el});
         }
       }
       foodSpawn-=sdt;
@@ -777,7 +855,7 @@ function gSail(){
             var dsp=spawnEdgePoint(70+dsi*20);
             debris.push({x:dsp.x,y:dsp.y,r:32+Math.random()*6,v:0.72+Math.min(0.7,(lv-18)*0.025),
               swayPhase:Math.random()*Math.PI*2,asset:ASSETS.debrisPool[dk],hp:3+Math.floor(lv/15),
-              shotTimer:1000+Math.random()*900,dead:false});
+              shotTimer:1000+Math.random()*900,dead:false,spawnedAt:el});
           }
         }
       }
@@ -791,14 +869,15 @@ function gSail(){
         if(fireTimer<=0){
           var baseFireEvery = T.fireEvery>0 ? T.fireEvery : 1.4;
           fireTimer=baseFireEvery*1000*Math.pow(0.85,upgLevel.fire);
+          skillFull.fire=fireTimer; skillPulseUntil.fire=el+0.25;
           beep(880,0.06,'sawtooth',0.09);
-          muzzleFlashes.push({x:px,y:shipY-30,until:el+0.12,big:mc>=3});
+          muzzleFlashes.push({x:px,y:shipY-30,until:el+0.16,big:mc>=3});
           var pierceHp=1+(fusion.typhoon?3:0)+(fusion.tsunami?3:0);
           /* 몬스터가 사방에서 몰려오므로 포격도 위쪽 고정이 아니라 가장 가까운
              위협을 자동 조준해서 그쪽으로 나간다(뱀서라이크 오토에임).
              주변에 적이 하나도 없을 때만(초반 등) 사방을 훑는 스윕으로 대체 */
-          var fireSpeed=9+shipTier;
-          var targetNow=nearestEnemy(px,shipY);
+          var fireSpeed=(9+shipTier)*0.83; /* 가시성 패치 — 투사체 속도 17% 감소 */
+          var targetNow=nearestEnemy(px,shipY,el);
           var baseAng=targetNow?Math.atan2(targetNow.y-shipY,targetNow.x-px):fireRotation;
           if(!targetNow)fireRotation+=Math.PI/6;
           /* 포탄이 2발 이상인데 spread각이 0이면 전부 같은 궤적에 겹쳐 보여서
@@ -818,10 +897,11 @@ function gSail(){
         pierceTimer-=sdt;
         if(pierceTimer<=0){
           pierceTimer=Math.max(1000,2600-upgLevel.pierce*320)*cdrMul();
+          skillFull.pierce=pierceTimer; skillPulseUntil.pierce=el+0.25;
           var waveCount=fusion.tsunami?3:1;
           for(var pwi=0;pwi<waveCount;pwi++){
-            var pa=aimAngle(px,shipY,fireRotation)+(waveCount>1?(pwi-(waveCount-1)/2)*0.36:0);
-            pierceWaves.push({x:px,y:shipY,ang:pa,vx:Math.cos(pa)*8.4,vy:Math.sin(pa)*8.4,life:2400,hit:[],spawnedAt:now});
+            var pa=aimAngle(px,shipY,fireRotation,el)+(waveCount>1?(pwi-(waveCount-1)/2)*0.36:0);
+            pierceWaves.push({x:px,y:shipY,ang:pa,vx:Math.cos(pa)*7,vy:Math.sin(pa)*7,life:950,maxLife:950,hit:[],spawnedAt:now});
           }
           sfx('pop',0.35);
         }
@@ -832,7 +912,8 @@ function gSail(){
         lightningTimer-=sdt;
         if(lightningTimer<=0){
           lightningTimer=Math.max(500,2000-upgLevel.lightning*300)*cdrMul()*(fusion.thunderstorm?0.55:1);
-          var aliveRocks=rocks.filter(function(r){return !r.dead;});
+          skillFull.lightning=lightningTimer; skillPulseUntil.lightning=el+0.25;
+          var aliveRocks=rocks.filter(function(r){return isTargetable(r,el);});
           if(aliveRocks.length>0){
             var target=pickRandom(aliveRocks);
             var boltHits=[target];
@@ -844,7 +925,7 @@ function gSail(){
             boltHits.forEach(function(t){
               t.dead=true; explodeRock(t.x,t.y,t.r);
               kills++; gainXp(ROCK_XP,el);
-              lightningBolts.push({x:t.x,y:t.y,until:el+0.24});
+              lightningBolts.push({x:t.x,y:t.y,until:el+0.32});
               addSkillFx(fusion.thunderstorm?'thunderstorm':'lightning',t.x,t.y,fusion.thunderstorm?230:150,0);
             });
             sfx('pop',0.4);
@@ -852,15 +933,19 @@ function gSail(){
           }
         }
       }
-      /* 🌪 영등바람 — 배에서 바람을 일자로 쏘아 올려 지나가는 길의 바위를 좌우로
-         밀어낸다(파괴가 아니라 밀어내기 — 순간적으로 지나갈 통로를 뚫어준다) */
+      /* 🌪 영등바람(회오리) — 적이 모인 위치까지 천천히 이동한 뒤 그 자리에서
+         1.5~2초 머무르며 0.35~0.5초마다 주변 적을 밀어내고 조금씩 깎는다.
+         목표가 죽어 사라지면 마지막 위치에서 남은 시간을 그대로 채운다(가시성 패치) */
       if(upgLevel.windpush>0){
         windpushTimer-=sdt;
         if(windpushTimer<=0){
           windpushTimer=Math.max(1000,2800-upgLevel.windpush*360)*cdrMul();
+          skillFull.windpush=windpushTimer; skillPulseUntil.windpush=el+0.25;
           var gw=(70+upgLevel.windpush*26)*(fusion.gale?1.6:1);
-          var gwa=aimAngle(px,shipY,fireRotation);
-          windGusts.push({x:px,y:shipY,w:gw,vx:Math.cos(gwa)*7,vy:Math.sin(gwa)*7,ang:gwa,until:el+1.6});
+          var wt=nearestEnemy(px,shipY,el);
+          var tgx=wt?wt.x:(px+Math.cos(fireRotation)*160), tgy=wt?wt.y:(shipY+Math.sin(fireRotation)*160);
+          var gwa=Math.atan2(tgy-shipY,tgx-px);
+          windGusts.push({x:px,y:shipY,w:gw,ang:gwa,tx:tgx,ty:tgy,phase:'travel',tickTimer:0,settleUntil:0});
           addSkillFx(fusion.gale?'gale':'wind',px+Math.cos(gwa)*55,shipY+Math.sin(gwa)*55,fusion.gale?250:170,gwa+Math.PI/2);
           sfx('evolve',0.35);
         }
@@ -871,10 +956,11 @@ function gSail(){
         bombTimer-=sdt;
         if(bombTimer<=0){
           bombTimer=Math.max(1100,2500-upgLevel.bomb*280)*cdrMul();
+          skillFull.bomb=bombTimer; skillPulseUntil.bomb=el+0.25;
           var bombCount=fusion.goldstorm?3:1;
           for(var bi=0;bi<bombCount;bi++){
-            var ba=aimAngle(px,shipY,fireRotation)+(bi-(bombCount-1)/2)*0.18;
-            var bs=4.2+(bi%2)*0.3;
+            var ba=aimAngle(px,shipY,fireRotation,el)+(bi-(bombCount-1)/2)*0.18;
+            var bs=3.5+(bi%2)*0.25;
             bombShots.push({x:px,y:shipY,vx:Math.cos(ba)*bs,vy:Math.sin(ba)*bs,life:2400});
             addSkillFx(fusion.goldstorm?'goldstorm':'tangerine',px,shipY,fusion.goldstorm?140:100,ba+Math.PI/2);
           }
@@ -885,9 +971,10 @@ function gSail(){
         homingTimer-=sdt;
         if(homingTimer<=0){
           homingTimer=Math.max(1200,2700-upgLevel.homing*300)*cdrMul();
+          skillFull.homing=homingTimer; skillPulseUntil.homing=el+0.25;
           var fishCount=fusion.dragonfish?3:1;
           for(var fi=0;fi<fishCount;fi++){
-            var fa=aimAngle(px,shipY,fireRotation)+(fi-(fishCount-1)/2)*0.12;
+            var fa=aimAngle(px,shipY,fireRotation,el)+(fi-(fishCount-1)/2)*0.12;
             var fish={x:px,y:shipY,ang:fa,vx:Math.cos(fa)*6.4,vy:Math.sin(fa)*6.4,life:2600,target:null,dead:false};
             windFishShots.push(fish);
             addSkillFx(fusion.dragonfish?'dragonfish':'fish',fish.x,fish.y,fusion.dragonfish?176:104,0,fish);
@@ -899,15 +986,16 @@ function gSail(){
         missileTimer-=sdt;
         if(missileTimer<=0){
           missileTimer=Math.max(1450,3400-upgLevel.missile*390)*cdrMul();
-          var targets=rocks.filter(function(r){return !r.dead;}).concat(debris.filter(function(r){return !r.dead;}));
-          if(boss.state==='alive')targets.push(boss);if(finalBoss.state==='alive')targets.push(finalBoss);
+          skillFull.missile=missileTimer; skillPulseUntil.missile=el+0.25;
+          var targets=rocks.filter(function(r){return isTargetable(r,el);}).concat(debris.filter(function(r){return isTargetable(r,el);}));
+          if(isTargetable(boss,el)&&boss.state==='alive')targets.push(boss);if(isTargetable(finalBoss,el)&&finalBoss.state==='alive')targets.push(finalBoss);
           targets.sort(function(a,b){return Math.hypot(a.x-px,a.y-shipY)-Math.hypot(b.x-px,b.y-shipY);});
           var hc=fusion.harpoonstorm?Math.min(8,Math.max(4,targets.length)):Math.min(1+Math.floor(upgLevel.rear/2),3);
           if(fusion.harpoonstorm)addSkillFx('harpoonstorm',px,shipY,290,0);
           for(var hsi=0;hsi<hc;hsi++){
             var ht=targets.length?targets[hsi%targets.length]:null;
             var ha=ht?Math.atan2(ht.y-shipY,ht.x-px):(fireRotation+(hsi/hc)*Math.PI*2);
-            stormHarpoons.push({x:px,y:shipY,vx:Math.cos(ha)*(7.6+upgLevel.missile*0.3),vy:Math.sin(ha)*(7.6+upgLevel.missile*0.3),
+            stormHarpoons.push({x:px,y:shipY,vx:Math.cos(ha)*(6.3+upgLevel.missile*0.25),vy:Math.sin(ha)*(6.3+upgLevel.missile*0.25),
               ang:ha,hp:fusion.harpoonstorm?2:1,life:2200,dead:false});
           }
         }
@@ -917,6 +1005,7 @@ function gSail(){
         shieldTimer-=sdt;
         if(shieldTimer<=0){
           shieldTimer=Math.max(6500,14800-upgLevel.shield*1660)*cdrMul();
+          skillFull.shield=shieldTimer; skillPulseUntil.shield=el+0.25;
           shieldCharge=fusion.seabarrier?3:1;
           toast('🛡 바람막이 준비됨');
         }
@@ -982,7 +1071,7 @@ function gSail(){
             ];
             var bmv=pickRandom(bmoves);boss.targetX=bmv.x;boss.targetY=bmv.y;boss.moveTimer=900+Math.random()*900;
           }
-          boss.x+=(boss.targetX-boss.x)*0.025*frameK;boss.y+=(boss.targetY-boss.y)*0.025*frameK;
+          boss.x+=(boss.targetX-boss.x)*0.025*(boss.v||1)*frameK;boss.y+=(boss.targetY-boss.y)*0.025*(boss.v||1)*frameK;
         }
       }
       if(!drawImgFit(boss.asset,boss.x,boss.y,boss.r*2.3,boss.r*2.4,0)){
@@ -996,19 +1085,13 @@ function gSail(){
       if(el<boss.flashUntil){ ctx.globalAlpha=0.5; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(boss.x,boss.y,boss.r*1.1,0,7); ctx.fill(); ctx.globalAlpha=1; }
       for(var bmi=missiles.length-1;bmi>=0;bmi--){
         var bm=missiles[bmi];
-        if(Math.hypot(bm.x-boss.x,bm.y-boss.y)<boss.r+8){
-          /* 🔥 화력 집중 — 보스에게는 한 발당 데미지가 더 크다 */
-          boss.hp-=(1+upgLevel.focus);
-          missiles.splice(bmi,1); boss.flashUntil=el+0.08; shake(3);
-          sfx('pop',0.4);
-          if(boss.hp<=0){
-            explodeRock(boss.x,boss.y,boss.r,true); sfx('boom',0.7); shake(12);
-            kills+=3; bossKillCount++; gainXp(30,el); giveBok(20);
-            showBig('BREAK ×보스!','',1000,'break');
-            toast('👹 거대 바위 격파! 큰 보상 획득');
-            boss.state='idle'; boss.nextAt=el+Math.max(20,45-lv*0.6);
-            break;
-          }
+        if(isTargetable(boss,el) && Math.hypot(bm.x-boss.x,bm.y-boss.y)<boss.r+8){
+          /* 🔥 화력 집중 — 보스에게는 한 발당 데미지가 더 크다. 모든 보스 피해는
+             damageBossTarget 한 곳으로만 통과시켜 단일피해 상한·페이즈 전환을
+             빠짐없이 적용한다(난이도 패치, 중복 코드 정리) */
+          missiles.splice(bmi,1); shake(3); sfx('pop',0.4);
+          damageBossTarget(boss,1+upgLevel.focus,el);
+          if(boss.state!=='alive') break;
         }
       }
       if(boss.state==='alive'){
@@ -1016,7 +1099,7 @@ function gSail(){
         if(bdx<boss.r+30 && bdy<boss.r+34){ hit=true; }
       }
       /* 미니보스 패턴: 조준탄·원형탄·회전탄·지원 몬스터 소환을 순환한다. */
-      if(boss.state==='alive' && !frozen && boss.y>=boss.restY){
+      if(boss.state==='alive' && !frozen && boss.y>=boss.restY && el>=(boss.transitionUntil||0)){
         boss.shotTimer-=sdt;
         if(boss.shotTimer<=0){
           boss.patternStep=(boss.patternStep+1)%4;
@@ -1040,11 +1123,12 @@ function gSail(){
             boss.targetX=Math.max(boss.r,Math.min(W-boss.r,px+(Math.random()-.5)*180));
             boss.targetY=Math.max(boss.r,Math.min(H*0.58,shipY-140));boss.moveTimer=520;boss.shotTimer=1500;
           } else {
-            for(var bsm=0;bsm<4;bsm++){
+            var bossSummonN=boss.phase3Done?6:(boss.phase2Done?5:4); /* 페이즈 전환마다 소환량 강화 */
+            for(var bsm=0;bsm<bossSummonN;bsm++){
               var bsp=spawnEdgePoint(50+bsm*8);
               rocks.push({x:bsp.x,y:bsp.y,r:20,v:0.55,asset:pickRandom(activeMonsterPool()),passed:false,dead:false,
                 zigzag:true,zzPhase:Math.random()*6.28,homing:true,id:++rockIdCounter,hp:2,maxHp:2,tier:2,
-                ranged:bsm%2===0,shotTimer:900+Math.random()*700,dashTimer:999999});
+                ranged:bsm%2===0,shotTimer:900+Math.random()*700,dashTimer:999999,spawnedAt:el});
             }
             boss.shotTimer=2400;
           }
@@ -1069,22 +1153,48 @@ function gSail(){
       }
     });
 
-    /* ---- 🌪 바람 가스트 — 파괴가 아니라 지나가는 길의 바위를 좌우로 밀어낸다.
-       세기(upgLevel.windpush)에 맞는 회오리 그림을 가스트 진행 방향으로 흘려보낸다 ---- */
+    /* ---- 🌪 회오리(영등바람) — 적이 모인 곳까지 이동한 뒤 그 자리에 자리잡고
+       주기적으로 밀어내며 깎는다. 흐린 원형 바닥 효과로 실제 판정 범위를 보여준다 ---- */
     windGusts.forEach(function(g2){
       if(!frozen){
-        g2.x+=g2.vx*frameK*2.6;g2.y+=g2.vy*frameK*2.6;
-        rocks.forEach(function(r){
-          var gd=Math.hypot(r.x-g2.x,r.y-g2.y)||1;
-          if(!r.dead && gd<g2.w*0.58){
-            r.x+=(r.x-g2.x)/gd*9*frameK;r.y+=(r.y-g2.y)/gd*9*frameK;
+        if(g2.phase==='travel'){
+          var gdx=g2.tx-g2.x, gdy=g2.ty-g2.y, gdd=Math.hypot(gdx,gdy)||1;
+          if(gdd<28){ g2.phase='settle'; g2.settleUntil=el+1.8; g2.tickTimer=0; }
+          else { g2.x+=(gdx/gdd)*5.8*frameK*2.6; g2.y+=(gdy/gdd)*5.8*frameK*2.6; }
+        } else {
+          g2.tickTimer-=sdt;
+          if(g2.tickTimer<=0){
+            g2.tickTimer=400+Math.random()*100; /* 0.35~0.5초마다 한 번씩 */
+            var tickDmg=1+Math.floor(upgLevel.windpush/2);
+            rocks.forEach(function(r){
+              if(isTargetable(r,el) && Math.hypot(r.x-g2.x,r.y-g2.y)<g2.w*0.55){
+                var gd2=Math.hypot(r.x-g2.x,r.y-g2.y)||1;
+                r.x+=(r.x-g2.x)/gd2*10;r.y+=(r.y-g2.y)/gd2*10; /* 살짝 밀어냄 */
+                r.hp=(r.hp||1)-tickDmg;
+                if(r.hp<=0){ r.dead=true; explodeRock(r.x,r.y,r.r); kills++; dropXpPouch(r.x,r.y,ROCK_XP,el); }
+              }
+            });
+            debris.forEach(function(dm){
+              if(isTargetable(dm,el) && Math.hypot(dm.x-g2.x,dm.y-g2.y)<g2.w*0.55){
+                dm.hp-=tickDmg;
+                if(dm.hp<=0){ dm.dead=true; kills++; dropXpPouch(dm.x,dm.y,ROCK_XP*2,el); }
+              }
+            });
+            if(isTargetable(boss,el)&&boss.state==='alive'&&Math.hypot(boss.x-g2.x,boss.y-g2.y)<g2.w*0.55+boss.r) damageBossTarget(boss,tickDmg,el);
+            if(isTargetable(finalBoss,el)&&finalBoss.state==='alive'&&Math.hypot(finalBoss.x-g2.x,finalBoss.y-g2.y)<g2.w*0.55+finalBoss.r) damageBossTarget(finalBoss,tickDmg,el);
+            sfx('pop',0.25);
           }
-        });
+        }
       }
+      /* 흐린 원형 바닥 효과 — 실제 판정 반지름(w*0.55)과 일치시킨다 */
+      var gRad=g2.w*0.55;
+      var gGrad=ctx.createRadialGradient(g2.x,g2.y,gRad*0.2,g2.x,g2.y,gRad);
+      gGrad.addColorStop(0,'rgba(79,195,161,.28)');gGrad.addColorStop(1,'rgba(79,195,161,0)');
+      ctx.fillStyle=gGrad;ctx.beginPath();ctx.arc(g2.x,g2.y,gRad,0,Math.PI*2);ctx.fill();
       ctx.save();ctx.globalAlpha=0.55;
       var gustTier=Math.min(3,Math.round(g2.w/40)-1);
-      if(!drawImgFit(ASSETS.windpushPool[Math.max(0,gustTier)],g2.x,g2.y,g2.w,g2.w,g2.ang+Math.PI/2)){
-        ctx.save();ctx.translate(g2.x,g2.y);ctx.rotate(g2.ang);
+      if(!drawImgFit(ASSETS.windpushPool[Math.max(0,gustTier)],g2.x,g2.y,g2.w,g2.w,g2.ang+Math.PI/2+el*(g2.phase==='settle'?2.4:0))){
+        ctx.save();ctx.translate(g2.x,g2.y);ctx.rotate(g2.ang+(g2.phase==='settle'?el*2.4:0));
         ctx.strokeStyle='rgba(79,195,161,.85)';ctx.lineWidth=5;
         ctx.beginPath();ctx.arc(0,0,g2.w*0.22,0.3,2.6);ctx.stroke();
         ctx.beginPath();ctx.arc(8,0,g2.w*0.14,0.5,2.4);ctx.stroke();
@@ -1092,18 +1202,18 @@ function gSail(){
       }
       ctx.restore();
     });
-    windGusts=windGusts.filter(function(g2){return el<g2.until&&g2.x>-180&&g2.x<W+180&&g2.y>-180&&g2.y<H+180;});
+    windGusts=windGusts.filter(function(g2){return (g2.phase==='travel'||el<g2.settleUntil)&&g2.x>-180&&g2.x<W+180&&g2.y>-180&&g2.y<H+180;});
 
     /* ---- 💣 폭발탄(전용 투사체) — 바위에 닿거나 화면 위쪽에 닿으면 실제로 폭발한다 ---- */
     bombShots.forEach(function(b){
       if(b.dead) return;
       if(!frozen){b.life-=sdt;b.x+=b.vx*frameK*2.6;b.y+=b.vy*frameK*2.6;}
-      if(!drawImgFit(ASSETS.shotLarge,b.x,b.y,30,30,Math.atan2(b.vy,b.vx)+Math.PI/2)){
-        ctx.fillStyle='#F5B331'; ctx.beginPath(); ctx.arc(b.x,b.y,10,0,7); ctx.fill();
+      if(!drawImgFit(ASSETS.shotLarge,b.x,b.y,40,40,Math.atan2(b.vy,b.vx)+Math.PI/2)){
+        ctx.fillStyle='#F5B331'; ctx.beginPath(); ctx.arc(b.x,b.y,13,0,7); ctx.fill();
       }
       if(!frozen){
         var hitRock=null;
-        rocks.forEach(function(r){ if(!hitRock && !r.dead && Math.hypot(r.x-b.x,r.y-b.y)<r.r+14) hitRock=r; });
+        rocks.forEach(function(r){ if(!hitRock && isTargetable(r,el) && Math.hypot(r.x-b.x,r.y-b.y)<r.r+14) hitRock=r; });
         if(hitRock || b.life<=0 || b.x<-40 || b.x>W+40 || b.y<-40 || b.y>H+40){
           b.dead=true;
           var ex=hitRock?hitRock.x:b.x, ey=hitRock?hitRock.y:b.y;
@@ -1111,27 +1221,30 @@ function gSail(){
           addSkillFx(fusion.goldstorm?'goldstorm':'tangerine',ex,ey,fusion.goldstorm?270:170,0);
           if(fusion.tsunami) addSkillFx('tsunami',ex,ey,280,0);
           explodeRock(ex,ey,radius*0.5,true);
-          sfx('boom',0.55); shake(fusion.tsunami?8:5);
+          sfx('boom',0.55); shake(fusion.tsunami?8:5); pauseUntil=Math.max(pauseUntil,el+0.06);
           var bombHitN=0;
           rocks.forEach(function(r){
-            if(!r.dead && Math.hypot(r.x-ex,r.y-ey)<radius){ r.dead=true; bombHitN++; }
+            if(isTargetable(r,el) && Math.hypot(r.x-ex,r.y-ey)<radius){ r.dead=true; bombHitN++; }
           });
-          debris.forEach(function(dm){if(!dm.dead&&Math.hypot(dm.x-ex,dm.y-ey)<radius){dm.hp-=2+upgLevel.bomb;if(dm.hp<=0){dm.dead=true;bombHitN++;}}});
-          if(boss.state==='alive'&&Math.hypot(boss.x-ex,boss.y-ey)<radius+boss.r)damageBossTarget(boss,2+upgLevel.bomb,el);
-          if(finalBoss.state==='alive'&&Math.hypot(finalBoss.x-ex,finalBoss.y-ey)<radius+finalBoss.r)damageBossTarget(finalBoss,2+upgLevel.bomb,el);
+          debris.forEach(function(dm){if(isTargetable(dm,el)&&Math.hypot(dm.x-ex,dm.y-ey)<radius){dm.hp-=2+upgLevel.bomb;if(dm.hp<=0){dm.dead=true;bombHitN++;}}});
+          if(isTargetable(boss,el)&&Math.hypot(boss.x-ex,boss.y-ey)<radius+boss.r)damageBossTarget(boss,2+upgLevel.bomb,el);
+          if(isTargetable(finalBoss,el)&&Math.hypot(finalBoss.x-ex,finalBoss.y-ey)<radius+finalBoss.r)damageBossTarget(finalBoss,2+upgLevel.bomb,el);
           if(bombHitN>0){ kills+=bombHitN; gainXp(bombHitN*ROCK_XP,el); }
         }
       }
     });
     bombShots=bombShots.filter(function(b){return !b.dead;});
 
-    /* ---- 🌊 관통 해일 — 화면을 가로지르며 지나가는 모든 적을 한 번씩만 때리는
-       독립 파도 무기. 명중해도 사라지지 않고 화면 밖으로 나갈 때까지 계속 간다 ---- */
+    /* ---- 🌊 관통 해일 — 배 앞으로 넓게 퍼지는 중거리 파도. 지나가는 길의 적을
+       한 번씩만 때리고(같은 적 중복 타격 없음) 죽이지 못한 적은 살짝 밀어낸다.
+       수명이 짧아(0.8~1.1초) 화면을 끝까지 가로지르기보다 중거리에서 넓어지다
+       사라진다(가시성 패치) ---- */
     pierceWaves.forEach(function(pw){
       if(!frozen){ pw.life-=sdt; pw.x+=pw.vx*frameK*2.6; pw.y+=pw.vy*frameK*2.6; }
-      var waveSize=100+upgLevel.pierce*14+(fusion.tsunami?60:0);
+      var lifeP=1-Math.max(0,pw.life)/pw.maxLife; /* 0=막 생성 → 1=소멸 직전, 갈수록 넓어진다 */
+      var waveSize=(80+upgLevel.pierce*12+(fusion.tsunami?50:0))*(0.7+lifeP*0.6);
       if(!drawSkillFrame(SKILL_SHEETS[fusion.tsunami?'tsunami':'tidal'],pw.x,pw.y,waveSize,pw.spawnedAt,now,true,pw.ang+Math.PI/2)){
-        ctx.save();ctx.translate(pw.x,pw.y);ctx.rotate(pw.ang);
+        ctx.save();ctx.translate(pw.x,pw.y);ctx.rotate(pw.ang);ctx.globalAlpha=1-lifeP*0.4;
         ctx.strokeStyle='rgba(120,200,255,.85)';ctx.lineWidth=6;ctx.lineCap='round';
         ctx.beginPath();ctx.moveTo(-waveSize*0.3,6);ctx.quadraticCurveTo(0,-waveSize*0.3,waveSize*0.3,6);ctx.stroke();
         ctx.beginPath();ctx.moveTo(-waveSize*0.18,16);ctx.quadraticCurveTo(0,-waveSize*0.14,waveSize*0.18,16);ctx.stroke();
@@ -1140,21 +1253,29 @@ function gSail(){
       if(!frozen){
         var pierceDmg=2+upgLevel.focus;
         rocks.forEach(function(r){
-          if(!r.dead && pw.hit.indexOf(r)<0 && Math.hypot(r.x-pw.x,r.y-pw.y)<r.r+waveSize*0.32){
+          if(isTargetable(r,el) && pw.hit.indexOf(r)<0 && Math.hypot(r.x-pw.x,r.y-pw.y)<r.r+waveSize*0.32){
             pw.hit.push(r); r.dead=true; explodeRock(r.x,r.y,r.r); kills++; dropXpPouch(r.x,r.y,ROCK_XP,el);
           }
         });
         debris.forEach(function(dm){
-          if(!dm.dead && pw.hit.indexOf(dm)<0 && Math.hypot(dm.x-pw.x,dm.y-pw.y)<dm.r+waveSize*0.32){
+          if(isTargetable(dm,el) && pw.hit.indexOf(dm)<0 && Math.hypot(dm.x-pw.x,dm.y-pw.y)<dm.r+waveSize*0.32){
             pw.hit.push(dm); dm.hp-=pierceDmg;
             if(dm.hp<=0){ dm.dead=true; kills++; dropXpPouch(dm.x,dm.y,ROCK_XP*2,el); }
+            else { dm.x+=pw.vx*3; dm.y+=pw.vy*3; } /* 죽지 않은 적은 살짝 밀려난다 */
           }
         });
-        if(boss.state==='alive' && pw.hit.indexOf(boss)<0 && Math.hypot(boss.x-pw.x,boss.y-pw.y)<boss.r+waveSize*0.32){
+        if(boss.state==='alive' && isTargetable(boss,el) && pw.hit.indexOf(boss)<0 && Math.hypot(boss.x-pw.x,boss.y-pw.y)<boss.r+waveSize*0.32){
           pw.hit.push(boss); damageBossTarget(boss,pierceDmg,el);
         }
-        if(finalBoss.state==='alive' && pw.hit.indexOf(finalBoss)<0 && Math.hypot(finalBoss.x-pw.x,finalBoss.y-pw.y)<finalBoss.r+waveSize*0.32){
+        if(finalBoss.state==='alive' && isTargetable(finalBoss,el) && pw.hit.indexOf(finalBoss)<0 && Math.hypot(finalBoss.x-pw.x,finalBoss.y-pw.y)<finalBoss.r+waveSize*0.32){
           pw.hit.push(finalBoss); damageBossTarget(finalBoss,pierceDmg,el);
+        }
+      }
+      if(pw.life<=0 && !pw.popped){
+        pw.popped=true;
+        for(var pdi=0;pdi<6;pdi++){
+          var pda=Math.random()*Math.PI*2;
+          fx.push({x:pw.x,y:pw.y,vx:Math.cos(pda)*2.2,vy:Math.sin(pda)*2.2,l:1,c:'#9fd8ff',sz:2+Math.random()*2});
         }
       }
     });
@@ -1165,17 +1286,21 @@ function gSail(){
       if(hm.dead) return;
       if(!frozen){
         hm.life-=sdt;
-        if(!hm.target||hm.target.dead)hm.target=nearestEnemy(hm.x,hm.y);
+        if(!hm.target||hm.target.dead||!isTargetable(hm.target,el)) hm.target=nearestEnemy(hm.x,hm.y,el);
         if(hm.target){
           var hang=Math.atan2(hm.target.y-hm.y,hm.target.x-hm.x);
           var turn=Math.max(-0.11*frameK,Math.min(0.11*frameK,angleDelta(hm.ang,hang)));
           hm.ang+=turn;
+        } else if(hm.everHadTarget){
+          /* 화면 안 목표를 잃고 재조준할 곳도 없으면 자연 소멸한다(가시성 패치) */
+          hm.dead=true;
         }
-        var hsp=6.4+upgLevel.speed*0.45+(fusion.dragonfish?1.3:0);
+        if(hm.target) hm.everHadTarget=true;
+        var hsp=5.3+upgLevel.speed*0.4+(fusion.dragonfish?1.1:0);
         hm.vx=Math.cos(hm.ang)*hsp;hm.vy=Math.sin(hm.ang)*hsp;
         hm.x+=hm.vx*frameK*2.6; hm.y+=hm.vy*frameK*2.6;
         rocks.forEach(function(r){
-          if(!hm.dead && !r.dead && Math.hypot(r.x-hm.x,r.y-hm.y)<r.r+10){
+          if(!hm.dead && isTargetable(r,el) && Math.hypot(r.x-hm.x,r.y-hm.y)<r.r+13){
             hm.dead=true;r.hp=(r.hp||1)-(fusion.dragonfish?3:2);
             if(r.hp<=0){r.dead=true;explodeRock(r.x,r.y,r.r);kills++;dropXpPouch(r.x,r.y,ROCK_XP,el);}
             sfx('pop',0.4);
@@ -1187,7 +1312,7 @@ function gSail(){
             }
           }
         });
-        if(!hm.dead&&hm.target&&rocks.indexOf(hm.target)<0&&Math.hypot(hm.target.x-hm.x,hm.target.y-hm.y)<(hm.target.r||30)+12){
+        if(!hm.dead&&hm.target&&rocks.indexOf(hm.target)<0&&Math.hypot(hm.target.x-hm.x,hm.target.y-hm.y)<(hm.target.r||30)+16){
           hm.dead=true;
           if(!damageBossTarget(hm.target,fusion.dragonfish?4:2,el)){
             hm.target.hp-=(fusion.dragonfish?4:2);
@@ -1196,11 +1321,11 @@ function gSail(){
         }
         if(hm.life<=0) hm.dead=true;
       }
-      if(!drawImgFit(ASSETS.windFish,hm.x,hm.y,72,48,hm.ang)){
+      if(!drawImgFit(ASSETS.windFish,hm.x,hm.y,94,62,hm.ang)){
         ctx.save();ctx.translate(hm.x,hm.y);ctx.rotate(hm.ang);
         ctx.fillStyle='#9fd8ff';
-        ctx.beginPath();ctx.ellipse(0,0,16,7,0,0,Math.PI*2);ctx.fill();
-        ctx.beginPath();ctx.moveTo(-15,0);ctx.lineTo(-24,-6);ctx.lineTo(-24,6);ctx.closePath();ctx.fill();
+        ctx.beginPath();ctx.ellipse(0,0,21,9,0,0,Math.PI*2);ctx.fill();
+        ctx.beginPath();ctx.moveTo(-19,0);ctx.lineTo(-31,-8);ctx.lineTo(-31,8);ctx.closePath();ctx.fill();
         ctx.restore();
       }
     });
@@ -1210,28 +1335,29 @@ function gSail(){
     stormHarpoons.forEach(function(bg){
       if(bg.dead) return;
       if(!frozen){bg.life-=sdt;bg.x+=bg.vx*frameK*2.6;bg.y+=bg.vy*frameK*2.6;}
-      if(!drawImgFit(ASSETS.stormHarpoon,bg.x,bg.y,94,47,bg.ang)){
+      if(!drawImgFit(ASSETS.stormHarpoon,bg.x,bg.y,113,56,bg.ang)){
         ctx.save();ctx.translate(bg.x,bg.y);ctx.rotate(bg.ang);
-        ctx.strokeStyle='#F0605A';ctx.lineWidth=4;
-        ctx.beginPath();ctx.moveTo(-22,0);ctx.lineTo(18,0);ctx.stroke();
+        ctx.strokeStyle='#F0605A';ctx.lineWidth=5;
+        ctx.beginPath();ctx.moveTo(-26,0);ctx.lineTo(22,0);ctx.stroke();
         ctx.fillStyle='#F0605A';
-        ctx.beginPath();ctx.moveTo(24,0);ctx.lineTo(12,-8);ctx.lineTo(12,8);ctx.closePath();ctx.fill();
+        ctx.beginPath();ctx.moveTo(29,0);ctx.lineTo(14,-10);ctx.lineTo(14,10);ctx.closePath();ctx.fill();
         ctx.restore();
       }
       if(!frozen){
         rocks.forEach(function(r){
-          if(!bg.dead && !r.dead && Math.hypot(r.x-bg.x,r.y-bg.y)<r.r+46){
+          if(!bg.dead && isTargetable(r,el) && Math.hypot(r.x-bg.x,r.y-bg.y)<r.r+46){
             bg.hp--; r.dead=true; explodeRock(r.x,r.y,r.r*1.4,true); kills++; gainXp(ROCK_XP*2,el); sfx('boom',0.4); shake(3);
+            pauseUntil=Math.max(pauseUntil,el+0.05); /* 강한 공격 — 짧은 히트스톱(가시성 패치) */
             if(bg.hp<=0) bg.dead=true;
           }
         });
         debris.forEach(function(dm){
-          if(!bg.dead&&!dm.dead&&Math.hypot(dm.x-bg.x,dm.y-bg.y)<dm.r+28){
+          if(!bg.dead&&isTargetable(dm,el)&&Math.hypot(dm.x-bg.x,dm.y-bg.y)<dm.r+28){
             dm.hp-=3+upgLevel.missile;bg.hp--;if(dm.hp<=0){dm.dead=true;kills++;dropXpPouch(dm.x,dm.y,ROCK_XP*2,el);}if(bg.hp<=0)bg.dead=true;
           }
         });
-        if(!bg.dead&&boss.state==='alive'&&Math.hypot(boss.x-bg.x,boss.y-bg.y)<boss.r+28){damageBossTarget(boss,4+upgLevel.missile,el);bg.dead=true;}
-        if(!bg.dead&&finalBoss.state==='alive'&&Math.hypot(finalBoss.x-bg.x,finalBoss.y-bg.y)<finalBoss.r+28){damageBossTarget(finalBoss,4+upgLevel.missile,el);bg.dead=true;}
+        if(!bg.dead&&isTargetable(boss,el)&&boss.state==='alive'&&Math.hypot(boss.x-bg.x,boss.y-bg.y)<boss.r+28){damageBossTarget(boss,4+upgLevel.missile,el);bg.dead=true;}
+        if(!bg.dead&&isTargetable(finalBoss,el)&&finalBoss.state==='alive'&&Math.hypot(finalBoss.x-bg.x,finalBoss.y-bg.y)<finalBoss.r+28){damageBossTarget(finalBoss,4+upgLevel.missile,el);bg.dead=true;}
         if(bg.life<=0||bg.x<-100||bg.x>W+100||bg.y<-100||bg.y>H+100)bg.dead=true;
       }
     });
@@ -1241,8 +1367,12 @@ function gSail(){
        평소 스웜(바위·해양쓰레기) 속에서 훨씬 강한 적 한 마리를 잡는다.
        화면에 내려와 자리잡고 버티면서 파편을 쏘고, 체력을 다 깎으면 승리 */
     if(finalBoss.state==='announce' && el>=finalBoss.announceUntil){
+      /* 목표 전투시간이 미니보스보다 길어(25~35초) 30초 기준 DPS로 스케일한다(난이도 패치) */
+      var fbScaledHp=Math.max(90, currentDps(el)*30, lastBossHp*1.35);
       finalBoss.state='alive';
-      finalBoss.maxHp=90; finalBoss.hp=90;
+      finalBoss.maxHp=Math.round(fbScaledHp); finalBoss.hp=finalBoss.maxHp;
+      finalBoss.phase2Done=false; finalBoss.phase3Done=false; finalBoss.transitionUntil=0; finalBoss.dmgReduceUntil=0;
+      lastBossHp=finalBoss.maxHp;
       finalBoss.x=W/2;finalBoss.y=-180;finalBoss.restY=H*0.22;finalBoss.shotTimer=1200;finalBoss.patternStep=0;
       finalBoss.moveTimer=800;finalBoss.targetX=W/2;finalBoss.targetY=finalBoss.restY;finalBoss.spiral=0;
       finalBoss.asset=ASSETS.krakenBoss; /* 대사집에서 "크라켄"으로 특정된 최종보스 */
@@ -1251,7 +1381,7 @@ function gSail(){
     }
     if(finalBoss.state==='alive'){
       if(!frozen){
-        if(finalBoss.y<finalBoss.restY) finalBoss.y+=1.6*frameK*2.6;
+        if(finalBoss.y<finalBoss.restY) finalBoss.y+=1.6*(finalBoss.v||1)*frameK*2.6;
         else {
           finalBoss.moveTimer-=sdt;
           if(finalBoss.moveTimer<=0){
@@ -1261,8 +1391,8 @@ function gSail(){
             ];
             var fmv=pickRandom(fmoves);finalBoss.targetX=fmv.x;finalBoss.targetY=fmv.y;finalBoss.moveTimer=700+Math.random()*850;
           }
-          finalBoss.x+=(finalBoss.targetX-finalBoss.x)*0.022*frameK;
-          finalBoss.y+=(finalBoss.targetY-finalBoss.y)*0.022*frameK;
+          finalBoss.x+=(finalBoss.targetX-finalBoss.x)*0.022*(finalBoss.v||1)*frameK;
+          finalBoss.y+=(finalBoss.targetY-finalBoss.y)*0.022*(finalBoss.v||1)*frameK;
         }
       }
       if(!drawImgFit(finalBoss.asset,finalBoss.x,finalBoss.y,finalBoss.r*2.1,finalBoss.r*2.1,0)){
@@ -1274,19 +1404,14 @@ function gSail(){
       if(el<finalBoss.flashUntil){ ctx.globalAlpha=0.5; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(finalBoss.x,finalBoss.y,finalBoss.r*1.05,0,7); ctx.fill(); ctx.globalAlpha=1; }
       for(var fbi=missiles.length-1;fbi>=0;fbi--){
         var fbm=missiles[fbi];
-        if(Math.hypot(fbm.x-finalBoss.x,fbm.y-finalBoss.y)<finalBoss.r+10){
-          finalBoss.hp-=(1+upgLevel.focus); missiles.splice(fbi,1); finalBoss.flashUntil=el+0.08; shake(2);
-          sfx('pop',0.4);
-          if(finalBoss.hp<=0){
-            finalBoss.state='idle';
-            explodeRock(finalBoss.x,finalBoss.y,finalBoss.r,true); sfx('boom',0.85); shake(18);
-            triggerEnding(el,true);
-            break;
-          }
+        if(isTargetable(finalBoss,el) && Math.hypot(fbm.x-finalBoss.x,fbm.y-finalBoss.y)<finalBoss.r+10){
+          missiles.splice(fbi,1); shake(2); sfx('pop',0.4);
+          damageBossTarget(finalBoss,1+upgLevel.focus,el);
+          if(finalBoss.state!=='alive') break;
         }
       }
       /* 크라켄 5패턴: 이중 원형탄·5way 조준·회전 나선·소환·돌진 십자탄. */
-      if(finalBoss.state==='alive' && !frozen && finalBoss.y>=finalBoss.restY){
+      if(finalBoss.state==='alive' && !frozen && finalBoss.y>=finalBoss.restY && el>=(finalBoss.transitionUntil||0)){
         finalBoss.shotTimer-=sdt;
         if(finalBoss.shotTimer<=0){
           finalBoss.patternStep=(finalBoss.patternStep+1)%5;
@@ -1311,11 +1436,12 @@ function gSail(){
             }
             finalBoss.spiral+=0.55;finalBoss.shotTimer=1750;
           } else if(finalBoss.patternStep===3){
-            for(var fsm=0;fsm<6;fsm++){
+            var fbSummonN=finalBoss.phase3Done?9:(finalBoss.phase2Done?7:6); /* 페이즈 전환마다 소환량 강화 */
+            for(var fsm=0;fsm<fbSummonN;fsm++){
               var fsp=spawnEdgePoint(60+fsm*7);
               rocks.push({x:fsp.x,y:fsp.y,r:22,v:0.66,asset:pickRandom(ASSETS.monsterTiers[3]),passed:false,dead:false,
                 zigzag:true,zzPhase:Math.random()*6.28,homing:true,id:++rockIdCounter,hp:4,maxHp:4,tier:3,
-                ranged:fsm%2===0,shotTimer:700+Math.random()*700,dashTimer:1300+Math.random()*900});
+                ranged:fsm%2===0,shotTimer:700+Math.random()*700,dashTimer:1300+Math.random()*900,spawnedAt:el});
             }
             finalBoss.shotTimer=2600;
           } else {
@@ -1348,7 +1474,7 @@ function gSail(){
       if(!drawImgFit(dm.asset,dm.x,dm.y,dm.r*2.2,dm.r*2.2,0)){
         ctx.fillStyle='#5A4A32';ctx.beginPath();ctx.arc(dm.x,dm.y,dm.r,0,7);ctx.fill();
       }
-      if(!frozen && !dm.dead){
+      if(!frozen && isTargetable(dm,el)){
         for(var dmi=missiles.length-1;dmi>=0;dmi--){
           var dmm=missiles[dmi];
           if(Math.hypot(dmm.x-dm.x,dmm.y-dm.y)<dm.r+10){
@@ -1365,7 +1491,7 @@ function gSail(){
           }
         }
       }
-      if(!frozen && !dm.dead){
+      if(!frozen && isTargetable(dm,el)){
         dm.shotTimer-=sdt;
         if(dm.shotTimer<=0){
           dm.shotTimer=2200+Math.random()*1000;
@@ -1419,7 +1545,7 @@ function gSail(){
           r.y+=r.v*frameK*2.6;
         }
         if(r.zigzag) r.x+=Math.sin(el*3+r.zzPhase)*1.4*frameK;
-        if(r.ranged){
+        if(r.ranged && isTargetable(r,el)){
           r.shotTimer-=sdt;
           if(r.shotTimer<=0){
             r.shotTimer=Math.max(1100,2600-r.tier*320)+Math.random()*700;
@@ -1429,12 +1555,17 @@ function gSail(){
         }
         for(var mi2=missiles.length-1;mi2>=0;mi2--){
           var m=missiles[mi2];
-          if(!r.dead&&Math.hypot(m.x-r.x,m.y-r.y)<r.r+10){
-            r.hp=(r.hp||1)-(1+Math.floor(upgLevel.focus/2));
+          if(isTargetable(r,el)&&Math.hypot(m.x-r.x,m.y-r.y)<r.r+10){
+            var cannonDmg=1+Math.floor(upgLevel.focus/2);
+            r.hp=(r.hp||1)-cannonDmg;
             m.hp--; if(m.hp<=0) missiles.splice(mi2,1); /* 🌊 관통탄 — hp가 남아있으면 계속 날아간다 */
-            hitFlashes.push({x:r.x,y:r.y,until:el+0.1,big:r.r>44});
-            splashes.push({x:r.x,y:r.y,until:el+0.22,tier:r.r>50?2:(r.r>36?1:0)});
-            if(upgLevel.pierce>0)addSkillFx(fusion.tsunami?'tsunami':'tidal',r.x,r.y,fusion.tsunami?220:120,0);
+            hitFlashes.push({x:r.x,y:r.y,until:el+0.14,big:r.r>44});
+            splashes.push({x:r.x,y:r.y,until:el+0.3,tier:r.r>50?2:(r.r>36?1:0)});
+            /* 피격 넉백 + 파티클 + 데미지 숫자(가시성 패치) */
+            var kbA=Math.atan2(m.vy,m.vx), kb=3+Math.random()*3;
+            r.x+=Math.cos(kbA)*kb; r.y+=Math.sin(kbA)*kb;
+            fx.push({x:r.x,y:r.y,vx:Math.cos(kbA)*1.6,vy:Math.sin(kbA)*1.6,l:1,c:'#9fd8ff',sz:2+Math.random()*2});
+            showDmgNumber(r.x,r.y,cannonDmg,el);
             if(fusion.typhoon)addSkillFx('typhoon',r.x,r.y,180,0);
             sfx('pop',0.45);
             if(r.hp<=0){r.dead=true;explodeRock(r.x,r.y,r.r);kills++;}
@@ -1629,6 +1760,17 @@ function gSail(){
     });
     splashes=splashes.filter(function(sp){return sp.until>el;});
 
+    /* ---- 데미지 숫자 — 위로 살짝 뜨며 0.5~0.7초 안에 사라진다(가시성 패치) ---- */
+    ctx.textAlign='center';
+    dmgNumbers.forEach(function(dn){
+      var dp=(el-dn.from)/(dn.until-dn.from);
+      ctx.globalAlpha=Math.max(0,1-dp);
+      ctx.font='800 22px SCDream, sans-serif';ctx.fillStyle='#FFE9A8';
+      ctx.fillText(String(dn.val), dn.x, dn.y-dp*22);
+    });
+    ctx.globalAlpha=1;
+    dmgNumbers=dmgNumbers.filter(function(dn){return dn.until>el;});
+
     /* ---- HUD ---- */
     ctx.textAlign='left';ctx.font='800 15px SCDream, sans-serif';ctx.fillStyle='rgba(234,244,255,.7)';
     ctx.fillText('생존',22,36);
@@ -1644,6 +1786,51 @@ function gSail(){
     /* 하트 — 업그레이드로 늘어날 수 있어 maxHearts만큼 그린다 */
     ctx.textAlign='left';ctx.font='22px sans-serif';
     for(var hi=0;hi<maxHearts;hi++){ ctx.fillText(hi<hearts?'❤️':'🖤', 22+hi*30, 96); }
+
+    /* ---- 좌측 하단 보유 스킬 레벨 HUD(최대 6개) — 상단 토스트 대신 여기서
+       항상 "지금 뭘 들고 있고 몇 레벨인지"가 보이게 한다(가시성 패치) */
+    (function(){
+      var ownedKeys=UPG_KEYS.filter(function(k){return UPGRADES[k].type==='weapon' && upgLevel[k]>0;}).slice(0,6);
+      if(!ownedKeys.length) return;
+      var timerNow={fire:fireTimer,pierce:pierceTimer,windpush:windpushTimer,lightning:lightningTimer,
+        missile:missileTimer,homing:homingTimer,bomb:bombTimer,shield:shieldTimer};
+      var iw=76, gap=10, hy=H-24-iw;
+      var anyTelegraph=false;
+      ownedKeys.forEach(function(k,ki){
+        var hx=22+ki*(iw+gap);
+        var pulsing = el<skillPulseUntil[k];
+        var scale = pulsing ? 1.14 : 1;
+        var isMax = upgLevel[k]>=UPG_MAX[k];
+        var tRem = timerNow[k]||0;
+        /* 발동 0.12~0.2초 전 예고 — 아이콘 테두리가 밝게 빛난다(가시성 패치) */
+        var telegraph = tRem>0 && tRem<180 && !(k==='shield'&&shieldCharge>0);
+        if(telegraph) anyTelegraph=true;
+        var frac = (k==='shield' && shieldCharge>0) ? 0 : Math.max(0,Math.min(1,tRem/(skillFull[k]||1)));
+        ctx.save();
+        ctx.translate(hx+iw/2,hy+iw/2); ctx.scale(scale,scale); ctx.translate(-(hx+iw/2),-(hy+iw/2));
+        ctx.fillStyle='rgba(10,16,30,.72)';
+        if(ctx.roundRect){ ctx.beginPath();ctx.roundRect(hx,hy,iw,iw,14);ctx.fill(); } else ctx.fillRect(hx,hy,iw,iw);
+        ctx.strokeStyle= telegraph ? '#FFFFFF' : ((k==='shield'&&shieldCharge>0) ? '#F5B331' : 'rgba(242,240,234,.35)');
+        ctx.lineWidth=telegraph?4:(isMax?3:2);
+        if(ctx.roundRect){ ctx.beginPath();ctx.roundRect(hx,hy,iw,iw,14);ctx.stroke(); } else ctx.strokeRect(hx,hy,iw,iw);
+        ctx.textAlign='center';ctx.font='40px sans-serif';ctx.fillStyle='#F2F0EA';
+        ctx.fillText(UPGRADES[k].emoji,hx+iw/2,hy+iw*0.6);
+        /* 쿨타임 — 위에서부터 남은 비율만큼 어두운 마스크(다 차면 사라짐) */
+        if(frac>0){
+          ctx.fillStyle='rgba(4,6,14,.68)';
+          ctx.fillRect(hx,hy,iw,iw*frac);
+        }
+        ctx.font='800 20px SCDream, sans-serif';ctx.fillStyle=isMax?'#F5B331':'#BFEEDC';
+        ctx.fillText(isMax?'MAX':('Lv.'+upgLevel[k]),hx+iw/2,hy+iw-8);
+        ctx.restore();
+      });
+      if(anyTelegraph){
+        ctx.save();ctx.globalAlpha=0.5+Math.sin(el*30)*0.15;
+        ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=3;
+        ctx.beginPath();ctx.arc(px,shipY,46,0,Math.PI*2);ctx.stroke();
+        ctx.restore();
+      }
+    })();
 
     /* ---- 각성 시 커다란 용 파도 백드롭(장식) ---- */
     if(awakened && imgOk(ASSETS.dragonWave)){
@@ -1733,18 +1920,31 @@ function gSail(){
         ctx.fillText(bigText.a, W/2, H*0.24);
         ctx.font='800 20px SCDream, sans-serif';ctx.fillStyle='#F2F0EA';
         ctx.fillText(bigText.b, W/2, H*0.24+34);
+      } else if(bigText.kind==='skillget'){
+        /* 상단 토스트 대신 중앙에 짧게: 이름(강화/습득) · Lv.전→후 · 효과 한 줄(가시성 패치).
+           카드와 마찬가지로 2x 캔버스 버퍼 기준 폰트 크기를 쓴다 */
+        ctx.fillStyle='rgba(4,6,14,'+(0.4*bAlpha)+')';ctx.fillRect(0,H*0.32,W,H*0.2);
+        ctx.textAlign='center';ctx.font='800 40px SCDream, sans-serif';ctx.fillStyle='#F5B331';
+        ctx.fillText(bigText.a, W/2, H*0.42);
+        ctx.font='700 30px SCDream, sans-serif';ctx.fillStyle='#BFEEDC';
+        ctx.fillText(bigText.b, W/2, H*0.42+40);
+        ctx.font='600 26px SCDream, sans-serif';ctx.fillStyle='rgba(242,240,234,.85)';
+        ctx.fillText(bigText.c||'', W/2, H*0.42+76);
       }
       ctx.globalAlpha=1;
     } else if(bigText){ bigText=null; }
 
-    /* ---- 업그레이드 선택 카드(최대 3장, 탭해서 선택 — 희귀도에 따라 테두리색이 다르다) ---- */
+    /* ---- 업그레이드 선택 카드(최대 3장, 탭해서 선택 — 희귀도에 따라 테두리색이 다르다) ----
+       cv.width가 CSS 화면의 2배라서 여기 폰트 px는 전부 "실제 보이는 크기 × 2"로 잡는다
+       (예: 화면 15px 원하면 30px 지정) — 이전엔 이걸 안 맞춰서 카드 글씨가 실제로는
+       절반 크기로만 보였다(가시성 패치, 안내 제목 최소 24px/스킬명 20px/설명 15px 기준) */
     if(pick.open){
       ctx.fillStyle='rgba(6,10,20,.6)';ctx.fillRect(0,0,W,H);
-      ctx.textAlign='center';ctx.font='800 22px SCDream, sans-serif';ctx.fillStyle='#F5B331';
+      ctx.textAlign='center';ctx.font='800 48px SCDream, sans-serif';ctx.fillStyle='#F5B331';
       ctx.fillText(pickTitle, W/2, H*0.2);
-      ctx.font='700 14px SCDream, sans-serif';ctx.fillStyle='rgba(242,240,234,.65)';
-      ctx.fillText('카드를 탭해서 하나만 고른다', W/2, H*0.2+26);
-      var cw=W/pick.options.length, cardW=cw-22, cardH=H*0.34, cardY=H*0.28;
+      ctx.font='700 30px SCDream, sans-serif';ctx.fillStyle='rgba(242,240,234,.65)';
+      ctx.fillText('카드를 탭해서 하나만 고른다', W/2, H*0.2+40);
+      var cw=W/pick.options.length, cardW=cw-22, cardH=H*0.34, cardY=H*0.3;
       pick.options.forEach(function(opt,i){
         var key=opt.key, rarity=opt.rarity;
         var cx=i*cw+cw/2, cx0=cx-cardW/2, cy0=cardY;
@@ -1755,20 +1955,18 @@ function gSail(){
         ctx.strokeStyle=rarity.color;ctx.lineWidth=rarity.key==='legendary'?4:2.5;
         if(ctx.roundRect){ ctx.beginPath();ctx.roundRect(cx0,cy0,cardW,cardH,18);ctx.stroke(); }
         else ctx.strokeRect(cx0,cy0,cardW,cardH);
-        ctx.textAlign='center';ctx.font='700 12px SCDream, sans-serif';ctx.fillStyle=rarity.color;
-        ctx.fillText((UPGRADES[key].type==='weapon'?'무기':'보조')+' · '+rarity.label,cx,cy0+20);
-        ctx.font='40px sans-serif';ctx.fillStyle='#F2F0EA';
-        ctx.fillText(UPGRADES[key].emoji, cx, cy0+64);
-        ctx.font='800 17px SCDream, sans-serif';ctx.fillStyle='#F2F0EA';
-        ctx.fillText(UPGRADES[key].title, cx, cy0+98);
-        var dSize=13, dtxt=UPGRADES[key].desc;
-        ctx.font='700 '+dSize+'px SCDream, sans-serif';
-        while(ctx.measureText(dtxt).width>cardW-20 && dSize>9){ dSize-=1; ctx.font='700 '+dSize+'px SCDream, sans-serif'; }
-        ctx.fillStyle='rgba(242,240,234,.72)';
-        ctx.fillText(dtxt, cx, cy0+122);
+        ctx.textAlign='center';ctx.font='700 28px SCDream, sans-serif';ctx.fillStyle=rarity.color;
+        ctx.fillText((UPGRADES[key].type==='weapon'?'무기':'보조')+' · '+rarity.label,cx,cy0+32);
+        ctx.font='38px sans-serif';ctx.fillStyle='#F2F0EA';
+        ctx.fillText(UPGRADES[key].emoji, cx, cy0+76);
+        ctx.font='800 40px SCDream, sans-serif';ctx.fillStyle='#F2F0EA';
+        ctx.fillText(UPGRADES[key].title, cx, cy0+128);
+        ctx.font='600 30px SCDream, sans-serif';ctx.fillStyle='rgba(242,240,234,.78)';
+        var dLines=wrapCanvasText(ctx,UPGRADES[key].desc,cardW-24,2);
+        dLines.forEach(function(dl,dli){ ctx.fillText(dl, cx, cy0+168+dli*40.5); });
         var curLv=upgLevel[key], newLv=Math.min(UPG_MAX[key],curLv+rarity.discrete);
-        ctx.font='700 12px SCDream, sans-serif';ctx.fillStyle='rgba(242,240,234,.5)';
-        ctx.fillText('Lv.'+curLv+' → '+newLv+' / '+UPG_MAX[key], cx, cy0+cardH-24);
+        ctx.font='700 28px SCDream, sans-serif';ctx.fillStyle='rgba(242,240,234,.6)';
+        ctx.fillText('Lv.'+curLv+' → '+newLv+' / '+UPG_MAX[key], cx, cy0+cardH-30);
         ctx.fillStyle='rgba(255,255,255,.14)';ctx.fillRect(cx0+12,cy0+cardH-14,cardW-24,5);
         ctx.fillStyle=rarity.color;ctx.fillRect(cx0+12,cy0+cardH-14,(cardW-24)*pctLeft,5);
       });
