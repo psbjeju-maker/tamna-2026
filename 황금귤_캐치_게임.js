@@ -188,14 +188,17 @@ function gCatch(){
   }
   /* ---- 슬라이스 판정 ---- */
   function slice(p0,p1){
-    var ang=Math.atan2(p1.y-p0.y,p1.x-p0.x),killed=0,kx=0,ky=0;
-    if(elapsed-lastSliceSnd>110&&Math.hypot(p1.x-p0.x,p1.y-p0.y)>6){lastSliceSnd=elapsed;sfx('slice',0.3)}
+    var ang=Math.atan2(p1.y-p0.y,p1.x-p0.x),killed=0,kx=0,ky=0,moveLen=Math.hypot(p1.x-p0.x,p1.y-p0.y);
+    if(elapsed-lastSliceSnd>110&&moveLen>6){lastSliceSnd=elapsed;sfx('slice',0.3)}
     for(var i=items.length-1;i>=0;i--){var it=items[i];
       /* 손가락이 귤 안에 머무는 동안은 1회만 — 빠져나갔다가(inside=false) 다시 들어오면 재타격.
          왕귤은 한 스트로크로 왔다갔다 그어도 여러 번 베이게 하기 위함 */
       var near=segPointDist(p0,p1,it.x,it.y)<it.r+18*U;
       if(!near){it.inside=false;continue}
       if(it.inside||elapsed-(it.lastHit||-999)<70)continue;
+      /* 여러 번 타격이 필요한 큰 귤(대/왕/전설)은 제자리 탭(클릭)으로는 안 잘리고
+         실제로 스쳐 지나가는 슬라이스일 때만 타격 — 탭 연타로 깎이는 것 방지 */
+      if(it.need>1&&moveLen<8*U)continue;
       it.inside=true;it.lastHit=elapsed;
       {
         guided=true;
