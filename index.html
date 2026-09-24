@@ -139,8 +139,8 @@
         <button class="btn btn--secondary btn--sm" data-game="catch">도전</button>
       </div>
       <div class="game">
-        <div><div class="game__title">영등할망의 바람</div><div class="game__desc">몰려오는 해양 몬스터를 물리치고 스킬을 진화시켜 크라켄에 도전하세요.</div><div class="game__best" id="best-sail">최고 0초</div></div>
-        <button class="btn btn--secondary btn--sm" data-game="sail">도전</button>
+        <div><div class="game__title">영등할망의 바람배달</div><div class="game__desc">바람을 그려 바구니를 반짝이는 배송지로! 30초 안에 몇 개나 배달할 수 있을까요.</div><div class="game__best" id="best-wind">최고 0점</div></div>
+        <button class="btn btn--secondary btn--sm" data-game="wind">도전</button>
       </div>
       <div class="game">
         <div><div class="game__title">기억력 카드</div><div class="game__desc">12장 중 같은 그림 6쌍. 빠를수록 복이 큽니다.</div><div class="game__best" id="best-memo">최고 기록 없음</div></div>
@@ -275,6 +275,7 @@
     <button class="stagebar__x" id="stClose" aria-label="닫기"><svg class="icon"><use href="#i-close"/></svg></button></div>
   <div id="canvasWrap"><canvas id="gcv"></canvas><div id="lightningFlash"></div></div>
   <div id="memo" style="display:none"></div>
+  <div id="wind" style="display:none"></div>
 </div>
 
 <!-- 나침반 추적 -->
@@ -515,7 +516,7 @@ function load(){
   try{var v=JSON.parse(localStorage.getItem(KEY));if(v&&v.name)return v;}catch(e){}
   return {name:'',phone:'',gold:0,crew:{},tickets:[],days:[],
           daily:{},                 // {날짜:{games:n, photo:1, sns:1, buy:1, attend:1}}
-          best:{catch:0,sail:0,memo:0}, flags:{}, photos:[null,null,null,null]};
+          best:{catch:0,wind:0,memo:0}, flags:{}, photos:[null,null,null,null]};
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function d(){var t=today();if(!S.daily[t])S.daily[t]={};return S.daily[t]}
@@ -999,7 +1000,7 @@ function decayRate(){
 function paintGame(){
   $('#decayTag').textContent='오늘 '+(d().games||0)+'회 · 지급률 '+Math.round(decayRate()*100)+'%';
   $('#best-catch').textContent='최고 '+(S.best.catch||0)+'점';
-  $('#best-sail').textContent='최고 '+(S.best.sail||0)+'초';
+  $('#best-wind').textContent='최고 '+(S.best.wind||0)+'점';
   $('#best-memo').textContent=S.best.memo?'최고 '+S.best.memo+'초':'최고 기록 없음';
 }
 function reward(raw,label){
@@ -1018,74 +1019,22 @@ var stage=$('#stage'),cv=$('#gcv'),ctx=cv.getContext('2d'),raf=null,cur=null;
 function openStage(title){
   cur=title;stage.classList.add('on');
   $('#stTitle').textContent=title;$('#stScore').textContent='';
-  var w=$('#canvasWrap');cv.width=w.clientWidth*2;cv.height=w.clientHeight*2;
-  cv.style.display='block';$('#memo').style.display='none';
+  var w=$('#canvasWrap');w.style.display='';cv.width=w.clientWidth*2;cv.height=w.clientHeight*2;
+  cv.style.display='block';$('#memo').style.display='none';var windEl0=$('#wind');if(windEl0)windEl0.style.display='none';
 }
 function stopGame(){
   if(raf)cancelAnimationFrame(raf);raf=null;
   stage.classList.remove('on');
-  window.removeEventListener('deviceorientation',tiltH);
-  cv.onpointerdown=null;cv.onpointermove=null;cv.onpointerup=null;
+  cv.onpointerdown=null;cv.onpointermove=null;cv.onpointerup=null;cv.onpointercancel=null;
   sfxStopAmbient();
+  /* 미니게임이 canvasWrap에 동적으로 붙여둔 보조 버튼(바람배달의 ◀/▶·소리·실전시작 등) 정리 */
+  ['#windAssistBtns','#windPracticeCta','#windSoundBtn'].forEach(function(sel){var el=$(sel);if(el)el.remove()});
+  var windEl=$('#wind');if(windEl)windEl.style.display='none';
 }
 function startGame(k){
   if(k==='catch')gCatch();
-  if(k==='sail')startSailWithPreload();
+  if(k==='wind')gWind();
   if(k==='memo')gMemo();
-}
-/* 영등할망의 바람 — 배·몬스터·스킬 이미지(130여 장)를 Promise.all로 전부
-   불러온 뒤에만 게임을 시작한다. 실패한 파일은 1회 재시도하고, 그래도
-   안 되면 콘솔에 남기고 넘어간다(그 개별 그림만 도형 대체로 표시됨).
-   로딩 중엔 진행률만 보여주고 게임 루프는 절대 시작하지 않는다(가시성 패치) */
-function collectSailImages(){
-  var list=[];
-  function add(v){ if(!v) return; if(Array.isArray(v)) v.forEach(add); else if(v instanceof Image) list.push(v); }
-  if(typeof ASSETS!=='undefined') Object.keys(ASSETS).forEach(function(k){ add(ASSETS[k]); });
-  if(typeof SKILL_SHEETS!=='undefined') Object.keys(SKILL_SHEETS).forEach(function(k){ add(SKILL_SHEETS[k]); });
-  return list;
-}
-function waitForImage(im,retriesLeft){
-  return new Promise(function(resolve){
-    function ok(){ resolve(true); }
-    function fail(){
-      console.warn('[영등할망 이미지 로딩 실패]', im.src);
-      if(retriesLeft>0){
-        var retrySrc=im.src;
-        im.onload=ok; im.onerror=function(){ resolve(false); };
-        im.src=retrySrc+(retrySrc.indexOf('?')>=0?'&':'?')+'retry='+Date.now();
-      } else resolve(false);
-    }
-    if(im.complete){ if(im.naturalWidth>0){ ok(); return; } fail(); return; }
-    im.addEventListener('load',ok,{once:true});
-    im.addEventListener('error',fail,{once:true});
-  });
-}
-function startSailWithPreload(){
-  var imgs=collectSailImages();
-  var total=imgs.length, done=0;
-  var ov=document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;z-index:400;background:rgba(6,10,20,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#F2F0EA;font-family:SCDream,sans-serif;gap:14px;';
-  ov.innerHTML='<div style="font-size:16px;font-weight:800;">영등할망의 바람 준비 중…</div>'+
-    '<div style="width:70%;max-width:260px;height:8px;background:rgba(255,255,255,.15);border-radius:5px;overflow:hidden;">'+
-    '<div id="sailLoadBar" style="width:0%;height:100%;background:#F5B331;"></div></div>'+
-    '<div id="sailLoadPct" style="font-size:13px;color:rgba(242,240,234,.7);">0 / '+total+'</div>';
-  document.body.appendChild(ov);
-  if(total===0){ ov.remove(); gSail(); return; }
-  Promise.all(imgs.map(function(im){
-    return waitForImage(im,1).then(function(ok){
-      done++;
-      var pct=Math.round(done/total*100);
-      var bar=ov.querySelector('#sailLoadBar'), pctEl=ov.querySelector('#sailLoadPct');
-      if(bar) bar.style.width=pct+'%';
-      if(pctEl) pctEl.textContent=done+' / '+total;
-      return ok;
-    });
-  })).then(function(results){
-    var failN=results.filter(function(r){return !r;}).length;
-    if(failN>0) console.warn('[영등할망] 끝내 로딩 실패한 이미지 '+failN+'개 — 해당 그림만 도형으로 대체됨');
-    ov.remove();
-    gSail();
-  });
 }
 
 /* ---------------- 사운드 ---------------- */
@@ -1573,2065 +1522,456 @@ function finishCatch(score){
   reward(score/4,'황금귤 캐치 · '+score+'점'+(isBest?' · 신기록!':''));
 }
 
-/* ============================================================
-   영등할망의 바람 — 탐라문화제 앱(index.html) 안의 미니게임 코드
-   canvas(#gcv)에 그리는 방식이라 순수 HTML 마크업은 거의 없고
-   대부분 JS입니다. 이 파일만 떼서 쓰려면 아래 "의존 요소"를
-   먼저 준비해야 합니다.
-
-   ── 의존 요소 (index.html 다른 곳에 있음) ──
-   · <canvas id="gcv"></canvas>            게임을 그리는 캔버스
-   · <div id="lightningFlash"></div>       번개 카드용 CSS 플래시 오버레이(캔버스 위,
-     #canvasWrap 안에 position:relative로 겹쳐둠 — app.css의 #lightningFlash 참고)
-   · var cv=$('#gcv'), ctx=cv.getContext('2d'), raf=null;
-   · openStage(title) / stopGame()          게임 화면 열기/닫기
-   · sfx(name,vol) / sfxAmbient(name,vol) / beep(freq,dur,type,vol)
-   · toast(msg) / reward(rawPoint,label)    화면 하단 토스트 · 보상 시트
-   · $('#stScore')                          canvas 밖 상단 점수 텍스트(지금은 비워둠)
-   · d() / S.best.sail                      오늘 기록 저장소
-
-   ── 이미지 에셋 (assets/sail-game/*.png, assets/sail-game/sheet/*.png) ──
-   탐라문화제 원본 스프라이트시트에서 잘라낸 실제 그림들이 이미
-   assets/sail-game/ 안에 들어있습니다(배·바위·몬스터·발사체 등).
-   assets/sail-game/sheet/ 안에는 4x4 그리드 시트 8장(01~08)에서 잘라낸
-   128개 항해감/이펙트/HUD/진화 그림이 들어있습니다(파일명은 ASSETS 참고).
-   파일이 없거나 로드에 실패해도 게임은 죽지 않고 기존 Canvas 도형으로
-   자동 대체됩니다(ASSETS 참고).
-   ============================================================ */
-
-/* ---------------- 에셋 ---------------- */
-var ASSETS_DIR = 'assets/sail-game/';
-function loadAsset(file){ var im = new Image(); im.src = ASSETS_DIR + file; return im; }
-function imgOk(im){ return !!im && im.complete && im.naturalWidth > 0; }
-function drawImgFit(im, x, y, w, h, rot){
-  if(!imgOk(im)) return false;
-  ctx.save();
-  ctx.translate(x, y);
-  if(rot) ctx.rotate(rot);
-  ctx.drawImage(im, -w/2, -h/2, w, h);
-  ctx.restore();
-  return true;
+/* --- ② 영등할망의 바람배달 --- */
+/* 이미지 에셋 슬롯 — PNG만 교체하면 자동 적용. 로드 실패/미완료면 도형 폴백으로 그린다. */
+var WIND_DIR='assets/wind-game/';
+var WIND_IMG={};
+['orange_basket','gift_basket','harbor_target','village_target','orchard_target',
+ 'wind_gust','wind_trail','combo_star','water_splash','golden_orange','dokkaebi','seagull'
+].forEach(function(n){var im=new Image();im.src=WIND_DIR+n+'.png';WIND_IMG[n]=im});
+function wimg(n){var im=WIND_IMG[n];return(im&&im.complete&&im.naturalWidth>0)?im:null}
+function drawWImgC(im,x,y,w,rot,alpha){
+  var h=w*im.naturalHeight/im.naturalWidth;
+  ctx.save();ctx.translate(x,y);if(rot)ctx.rotate(rot);if(alpha!=null)ctx.globalAlpha=alpha;
+  ctx.drawImage(im,-w/2,-h/2,w,h);ctx.restore();
 }
-var ASSETS = {
-  ship:      [loadAsset('ship1.png'), loadAsset('ship2.png'), loadAsset('ship3.png'), loadAsset('ship4.png')],
-  /* 뱀서라이크 스웜 — 바위(무생물, 항상 등장)와 실제 바다 몬스터(09시트, 4단계로
-     나뉨)를 섞어서 사방으로 몰려온다. rockPool은 하위호환용 별칭으로 남겨둔다 */
-  rockShapePool: [loadAsset('sheet/rock_volcanic_s.png'), loadAsset('sheet/rock_volcanic_m.png'), loadAsset('sheet/rock_crack_l.png'),
-              loadAsset('sheet/rock_spiky.png'), loadAsset('sheet/rock_round.png'), loadAsset('sheet/rock_long.png'), loadAsset('sheet/rock_broken.png')],
-  /* 몬스터 4단계 — 배 단계(조각배/풍선/범선/용선)에 맞춰 등장 풀이 바뀐다.
-     1단계만→1+2단계→1+2+3단계→2+3+4단계(1단계는 빠짐) 순으로 넓어졌다 좁아진다.
-     한 번에 여러 종류가 뒤섞이지 않도록, 활성 풀 안에서도 일정 시간은 한
-     종류만 계속 나오는 "웨이브"로 스폰한다(같은 몬스터가 몰려오는 느낌) */
-  monsterTiers: [
-    [loadAsset('sheet/monster_hydra_fish.png'), loadAsset('sheet/monster_pufferfish.png'), loadAsset('sheet/monster_crab_blue.png'), loadAsset('sheet/monster_jellyfish.png')],
-    [loadAsset('sheet/monster_eel_electric.png'), loadAsset('sheet/monster_squid.png'), loadAsset('sheet/monster_octopus.png'), loadAsset('sheet/monster_turtle.png')],
-    [loadAsset('sheet/monster_flyingfish.png'), loadAsset('sheet/monster_lionfish.png'), loadAsset('sheet/monster_lobster.png'), loadAsset('sheet/monster_seasnake.png')],
-    [loadAsset('sheet/monster_starfish_eye.png'), loadAsset('sheet/monster_urchin.png'), loadAsset('sheet/monster_mantis_shrimp.png'), loadAsset('sheet/monster_hammerhead.png')]
-  ],
-  /* 해양쓰레기 몬스터(Lv21+) — 10_pollution_mutants 시트의 실제 오염 돌연변이 16종 */
-  debrisPool:[loadAsset('sheet/mutant_bottle_crab.png'), loadAsset('sheet/mutant_bag_ghost.png'), loadAsset('sheet/mutant_barrel_pufferfish.png'),
-              loadAsset('sheet/mutant_net_turtle.png'), loadAsset('sheet/mutant_net_ray.png'), loadAsset('sheet/mutant_trash_snake.png'),
-              loadAsset('sheet/mutant_wing_dragon.png'), loadAsset('sheet/mutant_foam_spider.png'), loadAsset('sheet/mutant_tire_octopus.png'),
-              loadAsset('sheet/mutant_can_crab.png'), loadAsset('sheet/mutant_pipe_eel.png'), loadAsset('sheet/mutant_battery_clam.png'),
-              loadAsset('sheet/mutant_oil_ray.png'), loadAsset('sheet/mutant_rust_shark.png'), loadAsset('sheet/mutant_bubble_blob.png'),
-              loadAsset('sheet/mutant_anglerfish.png')],
-  /* 엘리트 보스급(11시트) — 미니보스/최종보스 전용, 매번 랜덤하게 하나 골라 쓴다 */
-  elitePool: [loadAsset('sheet/elite_crab_titan.png'), loadAsset('sheet/elite_manta_electric.png'), loadAsset('sheet/elite_turtle_coral.png'),
-              loadAsset('sheet/elite_jellyfish_crown.png'), loadAsset('sheet/elite_dragonfish.png'), loadAsset('sheet/elite_serpent_lightning.png'),
-              loadAsset('sheet/elite_octopus_crest.png'), loadAsset('sheet/elite_lobster_crystal.png'), loadAsset('sheet/elite_ray_spike.png'),
-              loadAsset('sheet/elite_whaleshark.png'), loadAsset('sheet/elite_anglerfish_deep.png'), loadAsset('sheet/elite_dragoneel_twin.png'),
-              loadAsset('sheet/elite_golem_coral.png'), loadAsset('sheet/elite_kraken.png'), loadAsset('sheet/elite_orca_electric.png'),
-              loadAsset('sheet/elite_serpent_lava.png')],
-  krakenBoss:  loadAsset('sheet/elite_kraken.png'), /* Lv30 최종보스 전용 — 대사에서 "크라켄"으로 특정됨 */
-  windOrb:     loadAsset('windOrb.png'),     /* 최종 시련(Lv30) 바람구슬 전용 */
-  bossVortex:  loadAsset('bossVortex.png'),  /* 미니보스 등장 연출용(폴백) */
-  enemyShot:   loadAsset('enemyShot.png'),   /* 해양쓰레기 몬스터가 쏘는 파편 전용 */
-  foodRice:      loadAsset('sheet/food_ricecake.png'),
-  foodTangerine: loadAsset('sheet/food_tangerine.png'),
-  foodBag:       loadAsset('sheet/food_bag.png'),
-  foodGold:      loadAsset('sheet/food_goldtangerine.png'), /* 아주 낮은 확률로 나오는 희귀 보상 먹거리 */
-  cannonShot:    loadAsset('sheet/shot_small.png'),   /* 아군 기본 포탄 */
-  shotLarge:     loadAsset('sheet/shot_large.png'),   /* 제주 감귤탄의 이동 중 발사체 */
-  stormHarpoon:  loadAsset('skills/storm_harpoon_projectile.png'), /* 360도 자동조준 폭풍 작살 */
-  windFish:      loadAsset('skills/wind_fish_projectile.png'), /* 궤도를 도는 미사일 대신 쓰는 바람 물고기 */
-  pierceRing:    loadAsset('sheet/pierce_ring.png'),  /* 🪃 부메랑 전용(회전하는 고리) */
-  muzzleFlash: [loadAsset('sheet/muzzle_small.png'), loadAsset('sheet/muzzle_medium.png')],
-  hitFlash:    [loadAsset('sheet/hit_flash_small.png'), loadAsset('sheet/hit_flash_large.png')],
-  splashPool:  [loadAsset('sheet/splash_small.png'), loadAsset('sheet/splash_medium.png'), loadAsset('sheet/splash_large.png')],
-  explosionFrames: [loadAsset('sheet/explosion_1.png'), loadAsset('sheet/explosion_2.png'), loadAsset('sheet/explosion_3.png'), loadAsset('sheet/explosion_4_smoke.png')],
-  windpushPool: [loadAsset('sheet/windpush_s.png'), loadAsset('sheet/windpush_m.png'), loadAsset('sheet/windpush_l.png'), loadAsset('sheet/windpush_max.png')],
-  lightningPool: [loadAsset('sheet/lightning_1.png'), loadAsset('sheet/lightning_2.png'), loadAsset('sheet/lightning_chain.png')],
-  rockExplosion: loadAsset('sheet/explosion_1.png'),
-  justBurst:     loadAsset('justBurst.png'),
-  evoBurst:      loadAsset('evoBurst.png'),
-  evoBanner:     [null, loadAsset('evoBanner2.png'), loadAsset('evoBanner3.png'), loadAsset('evoBanner4.png')],
-  awakenHalo:    loadAsset('awakenHalo.png'),
-  dragonWave:    loadAsset('dragonWave.png'),
-  windFeather:   loadAsset('windFeather.png'),
-  windTrail:     loadAsset('windTrailStreak.png'),
-  windStreak:    loadAsset('windStreak.png'),
-  foamPuff:      loadAsset('foamPuff.png'),
-  windParticle:  loadAsset('windParticle.png'),
-  windSwirlBlue:   loadAsset('windSwirlBlue.png'),
-  windSwirlPurple: loadAsset('windSwirlPurple.png'),
-  yeongdeung:    loadAsset('yeongdeung.png'), /* 아직 없음 — 실루엣은 자동으로 스웰 아이콘으로 대체됨 */
-  /* 항해감(배 뒤 물살) 전용 — 속도 단계별(0=거의정지~3=고속) 세트 */
-  wakeV:      [loadAsset('sheet/wake_v_s1.png'), loadAsset('sheet/wake_v_s2.png'), loadAsset('sheet/wake_v_s3.png'), loadAsset('sheet/wake_v_fast.png')],
-  foamStern:  [loadAsset('sheet/foam_stern_1.png'), loadAsset('sheet/foam_stern_2.png'), loadAsset('sheet/foam_stern_3.png'), loadAsset('sheet/foam_stern_fast.png')],
-  sprayBow:   [loadAsset('sheet/spray_bow_s.png'), loadAsset('sheet/spray_bow_m.png'), loadAsset('sheet/spray_bow_l.png')],
-  wakeTurnLeft:  loadAsset('sheet/wake_turn_left.png'),
-  wakeTurnRight: loadAsset('sheet/wake_turn_right.png')
+var WIND_HERO=new Image();WIND_HERO.src='gods/final/GOD4.jpg';
+function windHeroOk(){return WIND_HERO.complete&&WIND_HERO.naturalWidth>0}
+
+/* 조작감 수치 — 전부 여기서 조정한다(현장 시연 후 수정 지점) */
+var WIND_CONFIG={
+  duration:30000, fallMs:4000, startYPct:0.17, judgeYPct:0.74,
+  windMax:2, minSwipe:18, maxSwipe:220,
+  vxPerGust:0.55, vyMul:0.5, tau:0.25,
+  bigWindStart:20000, bigWindDur:700,
+  dokAt:15000, dokDur:1300,
+  seagullTimes:[7000,22000], seagullDur:1600,
+  fxDur:450
 };
-
-/* ---------------- 뱀서류 스킬 애니메이션 ----------------
-   모든 시트는 1776x888, 4열x2행, 프레임당 444x444다.
-   GIF는 검수용이고 게임에서는 아래 PNG 시트만 사용한다. */
-var SKILL_FRAME=444, SKILL_COLS=4, SKILL_FRAMES=8;
-var SKILL_SHEETS={
-  tidal:       loadAsset('skills/base_02_tidal_wave_4x2.png'),
-  wind:        loadAsset('skills/base_03_yeongdeung_wind_4x2.png'),
-  lightning:   loadAsset('skills/base_04_chain_lightning_4x2.png'),
-  harpoon:     loadAsset('skills/base_05_storm_harpoon_4x2.png'),
-  fish:        loadAsset('skills/base_06_homing_wind_fish_4x2.png'),
-  tangerine:   loadAsset('skills/base_07_tangerine_bomb_4x2.png'),
-  shield:      loadAsset('skills/base_08_wave_shield_4x2.png'),
-  typhoon:     loadAsset('skills/evolved_01_typhoon_cannon_4x2.png'),
-  tsunami:     loadAsset('skills/evolved_02_great_tsunami_4x2.png'),
-  gale:        loadAsset('skills/evolved_03_great_yeongdeung_gale_4x2.png'),
-  thunderstorm:loadAsset('skills/evolved_04_thunderstorm_4x2.png'),
-  harpoonstorm:loadAsset('skills/evolved_05_whirlpool_harpoon_array_4x2.png'),
-  dragonfish:  loadAsset('skills/evolved_06_dragonrise_fish_school_4x2.png'),
-  goldstorm:   loadAsset('skills/evolved_07_golden_tangerine_storm_4x2.png'),
-  seabarrier:  loadAsset('skills/evolved_08_seagod_barrier_4x2.png')
-};
-
-function drawSkillFrame(img,x,y,size,startedAt,now,loop,rot){
-  if(!imgOk(img)) return false;
-  var age=Math.max(0,now-startedAt), frame=Math.floor(age/90);
-  if(loop) frame=frame%SKILL_FRAMES;
-  else frame=Math.min(SKILL_FRAMES-1,frame);
-  var sx=(frame%SKILL_COLS)*SKILL_FRAME;
-  var sy=Math.floor(frame/SKILL_COLS)*SKILL_FRAME;
-  ctx.save();ctx.translate(x,y);if(rot)ctx.rotate(rot);
-  ctx.drawImage(img,sx,sy,SKILL_FRAME,SKILL_FRAME,-size/2,-size/2,size,size);
-  ctx.restore();
-  return true;
-}
-/* 캔버스 버퍼가 실제 CSS 화면의 2배(cv.width=wrapper*2)라서, 여기 쓰는 폰트
-   px 값은 항상 화면에 보이는 크기의 절반이다 — 카드 글씨가 작아 보이던 원인
-   (가시성 패치). 긴 설명은 폰트를 줄이는 대신 최대 2줄로 줄바꿈한다 */
-function wrapCanvasText(ctx2,text,maxWidth,maxLines){
-  var lines=[], cur='';
-  for(var i=0;i<text.length;i++){
-    var ch=text[i], test=cur+ch;
-    if(ctx2.measureText(test).width>maxWidth && cur.length>0){
-      lines.push(cur); cur=ch;
-      if(lines.length>=maxLines){ return lines; }
-    } else cur=test;
-  }
-  if(cur) lines.push(cur);
-  return lines.slice(0,maxLines);
-}
-/* 스킬 이펙트 시트 로딩 실패 시 Canvas 도형으로 대신 그리는 대체 연출(V4 패치) —
-   이미지가 하나도 안 왔거나 아직 로딩 중이어도 기술이 "안 보이는" 일이 없게 한다 */
-function drawSkillFxFallback(key,x,y,size,rot){
-  var s=size*0.5;
-  ctx.save();ctx.translate(x,y);if(rot)ctx.rotate(rot);
-  switch(key){
-    case 'wind': case 'gale':
-      ctx.strokeStyle='rgba(79,195,161,.85)';ctx.lineWidth=Math.max(3,s*0.12);
-      ctx.beginPath();ctx.arc(0,0,s*0.45,0.3,2.6);ctx.stroke();
-      ctx.beginPath();ctx.arc(s*0.12,0,s*0.28,0.5,2.4);ctx.stroke();
-      break;
-    case 'fish': case 'dragonfish':
-      ctx.fillStyle='#9fd8ff';
-      ctx.beginPath();ctx.ellipse(0,0,s*0.5,s*0.22,0,0,Math.PI*2);ctx.fill();
-      ctx.beginPath();ctx.moveTo(-s*0.48,0);ctx.lineTo(-s*0.75,-s*0.2);ctx.lineTo(-s*0.75,s*0.2);ctx.closePath();ctx.fill();
-      break;
-    case 'harpoon': case 'harpoonstorm':
-      ctx.strokeStyle='#F0605A';ctx.lineWidth=Math.max(3,s*0.1);
-      ctx.beginPath();ctx.moveTo(-s*0.6,0);ctx.lineTo(s*0.5,0);ctx.stroke();
-      ctx.fillStyle='#F0605A';
-      ctx.beginPath();ctx.moveTo(s*0.62,0);ctx.lineTo(s*0.36,-s*0.18);ctx.lineTo(s*0.36,s*0.18);ctx.closePath();ctx.fill();
-      break;
-    case 'shield': case 'seabarrier':
-      ctx.strokeStyle='rgba(79,195,161,.9)';ctx.lineWidth=Math.max(3,s*0.1);
-      ctx.beginPath();ctx.arc(0,0,s*0.55,0,Math.PI*2);ctx.stroke();
-      ctx.strokeStyle='rgba(220,250,255,.6)';ctx.beginPath();ctx.arc(0,0,s*0.38,0,Math.PI*2);ctx.stroke();
-      break;
-    case 'tangerine': case 'goldstorm':
-      ctx.fillStyle=key==='goldstorm'?'#F5B331':'#F0935A';
-      ctx.beginPath();ctx.arc(0,0,s*0.42,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=2;ctx.stroke();
-      break;
-    case 'tidal': case 'tsunami':
-      ctx.strokeStyle='rgba(120,200,255,.85)';ctx.lineWidth=Math.max(4,s*0.14);ctx.lineCap='round';
-      ctx.beginPath();ctx.moveTo(-s*0.55,s*0.1);ctx.quadraticCurveTo(0,-s*0.5,s*0.55,s*0.1);ctx.stroke();
-      break;
-    case 'lightning': case 'thunderstorm':
-      ctx.strokeStyle='rgba(220,235,255,.95)';ctx.lineWidth=Math.max(3,s*0.1);
-      ctx.beginPath();ctx.moveTo(0,-s*0.5);ctx.lineTo(-s*0.15,-s*0.1);ctx.lineTo(s*0.1,0);ctx.lineTo(-s*0.05,s*0.5);ctx.stroke();
-      break;
-    default:
-      ctx.fillStyle='rgba(220,250,255,.55)';ctx.beginPath();ctx.arc(0,0,s*0.35,0,Math.PI*2);ctx.fill();
-  }
-  ctx.restore();
-}
-
-/* ---------------- 기울기(선택 조작) ---------------- */
-var tiltX = 0, tiltY = 0, tiltBetaBase = null;
-function tiltH(e){
-  if(e.gamma != null) tiltX = Math.max(-1, Math.min(1, e.gamma/25));
-  if(e.beta != null){
-    /* 사람마다 폰을 쥔 각도가 다르므로 첫 값을 "중립 자세"로 삼고 거기서부터의
-       변화량만 상하 이동에 쓴다(원시 beta값을 그대로 쓰면 쥔 각도에 따라 한쪽으로 쏠림) */
-    if(tiltBetaBase == null) tiltBetaBase = e.beta;
-    /* 실기기 확인 결과 마이너스(반전) 버전이 반대였음 — 플러스가 정답으로
-       확정됨(폰을 앞으로 기울이면 배가 위로 간다) */
-    tiltY = Math.max(-1, Math.min(1, (e.beta - tiltBetaBase)/25));
-  }
-}
-
-/* 배 진화 4단계 — need는 "그 단계까지 오는데 필요한 진화 게이지" 증분값.
-   2단계부터 자동 함포 수가 늘어나 사방의 몬스터를 직접 공격한다. */
-/* 단계마다 포탄 수·발사속도·각도가 눈에 띄게 달라져야 "진화했다"는 느낌이 나므로
-   이전엔 조각배→풍선 전환이 사실상 총알 1개 그대로라 체감이 없었던 것을 고쳤다 */
-var SHIP_TIERS=[
-  {name:'조각배',   need:0, fireEvery:0,    missiles:0, spread:0,    aura:false},
-  {name:'풍선(風船)',need:2, fireEvery:1.0,  missiles:2, spread:14,   aura:false},
-  {name:'범선',     need:3, fireEvery:0.65, missiles:3, spread:16,   aura:true },
-  {name:'용선(龍船)',need:3, fireEvery:0.22, missiles:4, spread:20,   aura:true }
+var WIND_DESTS=[
+  {key:'harbor', label:'항구', img:'harbor_target'},
+  {key:'village',label:'마을', img:'village_target'},
+  {key:'orchard',label:'귤밭', img:'orchard_target'}
 ];
-
-function drawShip(ctx,lvl,glowPulse){
-  var T=SHIP_TIERS[lvl];
-  var hullW=40+lvl*10, hullH=14+lvl*2, mastH=54+lvl*14;
-  if(T.aura){
-    var ag=ctx.createRadialGradient(0,-mastH*0.3,4,0,-mastH*0.3,hullW*1.6);
-    ag.addColorStop(0,'rgba(79,195,161,'+(0.28+glowPulse*0.14)+')');ag.addColorStop(1,'rgba(79,195,161,0)');
-    ctx.fillStyle=ag;ctx.beginPath();ctx.arc(0,-mastH*0.25,hullW*1.6,0,7);ctx.fill();
-  }
-  var shipW=(hullW*2.3), shipH=(mastH+hullH+34);
-  if(drawImgFit(ASSETS.ship[lvl],0,-shipH*0.32,shipW,shipH,0)) return;
-  /* ---- fallback: 이미지가 없을 때만 그리는 기존 벡터 선박 ---- */
-  ctx.fillStyle=lvl>=3?'#3a2440':'#2A2F4A';
-  ctx.beginPath();ctx.moveTo(-hullW,hullH);ctx.lineTo(hullW,hullH);ctx.lineTo(hullW*.68,hullH+30);ctx.lineTo(-hullW*.68,hullH+30);ctx.closePath();ctx.fill();
-  ctx.strokeStyle='rgba(79,195,161,.5)';ctx.lineWidth=2;ctx.stroke();
-  var masts=[0].concat(lvl>=2?[-hullW*0.55]:[]).concat(lvl>=3?[hullW*0.55]:[]);
-  masts.forEach(function(mx,mi){
-    var mh=mastH*(mi===0?1:0.72);
-    ctx.fillStyle='#F5B331';ctx.fillRect(mx-2.5,-mh,5,mh+hullH+6);
-    ctx.fillStyle=lvl>=3?'#F2F0EA':'#E4F7EF';
-    ctx.beginPath();ctx.moveTo(mx,-mh);ctx.lineTo(mx+28,-mh*0.42+10);ctx.lineTo(mx,-mh*0.28+10);ctx.closePath();ctx.fill();
-  });
-  if(lvl>=3){
-    ctx.fillStyle='#F0605A';ctx.beginPath();
-    ctx.moveTo(0,-mastH-2);ctx.lineTo(22,-mastH+7);ctx.lineTo(0,-mastH+16);ctx.closePath();ctx.fill();
-  }
-  if(T.missiles>0){
-    for(var pi=0;pi<T.missiles;pi++){
-      var pxo=(pi-(T.missiles-1)/2)*16;
-      ctx.fillStyle='rgba(79,195,161,'+(0.7+glowPulse*0.3)+')';
-      ctx.beginPath();ctx.arc(pxo,hullH-2,3.2,0,7);ctx.fill();
-    }
-  }
+function windRank(n){
+  if(n>=14)return '바람길 장인!';
+  if(n>=10)return '갈매기보다 빠른 배송!';
+  if(n>=6)return '영등할망도 감탄!';
+  if(n>=1)return '귤 하나만 더!';
+  return '다음엔 더 잘할 수 있어요';
 }
 
-/* ---------------- 대사 한 줄 컷인 ---------------- */
-/* 영등할망 대사는 항상 한 번에 한 문장만, 화면 위쪽에 짧게 떴다 사라진다. */
-function makeCutin(){
-  return { text:'', until:0, from:0 };
+/* ---- 진입: 시작 화면(DOM) ---- */
+function gWind(){
+  openStage('영등할망의 바람배달');
+  cv.style.display='none';
+  $('#canvasWrap').style.display='none';
+  var p=$('#wind');p.style.display='flex';
+  windScreenStart();
 }
-
-/* ---------------- 카메라(흔들림/줌) ---------------- */
-function makeCam(){ return { shake:0, zoom:1, zoomTo:1 }; }
-
-function gSail(){
-  openStage('영등할망의 바람');
-  sfxAmbient('ocean',0.22);
-  /* 자이로 조작 — 기울이는 쪽으로 배가 움직인다. 판마다 쥔 자세를
-     새 중립값으로 다시 잡고, 손을 대고 있으면 드래그가 우선한다 */
-  tiltX=0; tiltY=0; tiltBetaBase=null;
-  if(window.DeviceOrientationEvent&&DeviceOrientationEvent.requestPermission){
-    DeviceOrientationEvent.requestPermission().then(function(r){
-      if(r==='granted')window.addEventListener('deviceorientation',tiltH)}).catch(function(){});
-  } else window.addEventListener('deviceorientation',tiltH);
-
-  var W=cv.width,H=cv.height,px=W/2,rocks=[],foods=[],missiles=[],debris=[],enemyShots=[],t0=performance.now(),lastNow=t0;
-  /* 상하좌우 자유 이동(드래그) — 뱀서라이크답게 화면 전체를 자유롭게 오갈 수 있다
-     (예전엔 화면 중하단으로만 묶여있었음). 위/아래는 HUD·바닥에 살짝만 여백을 둔다 */
-  var shipYMin=170, shipYMax=H-70;
-  var shipY=H*0.62, dragY=shipY;
-  var spawn=900,foodSpawn=2600,debrisSpawn=6000,alive=true;
-  var evoFlashUntil=0,haloSpin=0,fireTimer=0,kills=0,bossKillCount=0;
-  var waveType=null, waveTimer=0; /* 지금 웨이브에서 몰려오는 몬스터 종류(한동안 같은 종류만 나옴) */
-  /* 배 단계에 맞춰 등장 가능한 몬스터 풀이 바뀐다 — 1단계만→1+2→1+2+3→2+3+4(1단계 빠짐) */
-  function activeMonsterPool(){
-    var mt=ASSETS.monsterTiers;
-    if(shipTier===0) return mt[0];
-    if(shipTier===1) return mt[0].concat(mt[1]);
-    if(shipTier===2) return mt[0].concat(mt[1],mt[2]);
-    return mt[1].concat(mt[2],mt[3]);
-  }
-  var fireRotation=-Math.PI/2; /* 포탄이 1발뿐일 때 쏠 때마다 30도씩 돌아가며 사방을 훑는다 */
-  /* 항해감 — 실제 이동량(프레임 정규화 속도)으로 기울기·물살을 정한다 */
-  var prevPx=px, prevShipY=shipY, shipVX=0, shipVY=0, turnSprayUntil=0, turnSprayDir=0;
-  var flashes=[],fx=[],bgParticles=[];
-  var maxHearts=2,hearts=2,invulnUntil=0;
-  var breakComboN=0,breakComboLast=-99;
-  var ROCK_XP=3; /* 바위 하나 파괴할 때 주는 경험치 — 자동공격/폭발탄으로 죽여도 동일 적용 */
-  var cam=makeCam();
-  var cutin=makeCutin();
-  var bigText=null; /* {a,b,until,from,kind} 화면 중앙 큰 텍스트/배너 연출 */
-  var slowmoUntil=0,pauseUntil=0;
-
-  function pickRandom(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-  /* 뱀서라이크 스웜 — 위에서만 나오지 않고 사방(상하좌우) 화면 밖에서 나타나
-     배 쪽으로 천천히 몰려온다. 어느 변에서 나올지 매번 무작위로 고른다 */
-  function spawnEdgePoint(margin){
-    var side=Math.floor(Math.random()*4);
-    if(side===0) return {x:60+Math.random()*(W-120), y:-margin};           /* 위 */
-    if(side===1) return {x:60+Math.random()*(W-120), y:H+margin};         /* 아래 */
-    if(side===2) return {x:-margin, y:H*0.15+Math.random()*(H*0.7)};      /* 왼쪽 */
-    return {x:W+margin, y:H*0.15+Math.random()*(H*0.7)};                  /* 오른쪽 */
-  }
-  /* 사장님이 전달한 대사집(2026-09-18) 그대로 반영 — 상황별 1줄, 감정 태그는
-     주석으로만 남겨둔다(전용 초상화는 아직 없어서 기존 yeongdeung.png 그대로 씀) */
-  var OPEN_LINE='여기저기 잘 피행다니라이';                    /* 1. 게임 시작 · 기본 */
-  var FIRST_PICK_LINE='신중이 생각행 고르라이';                 /* 2. 첫 레벨업 선택 · 미소 */
-  var LV10_LINE='몬스터덜이 막몰려 올거난! 조심허라이~';         /* 3. 첫 대규모 몬스터 웨이브 · 엄격 */
-  var FIRST_BOSS_LINE='잘도 큰아이 왔저. 조심허라이';            /* 4. 첫 엘리트 몬스터 출현 · 놀람 */
-  var LOW_HP_LINE='혼저 빠져나오라!';                          /* 5. 체력 30% 이하 · 걱정 */
-  var FIRST_FUSION_LINE='다 쓸어불라!';                        /* 6. 첫 무기 융합 완성 · 미소 */
-  var BOSS_LINES=['정신 바짝 차려불라!'];                       /* 7. 중간보스 출현(2회차부터) · 엄격 */
-  var AWAKEN_LINE='보롬 쎄게 불엄신게 기회라 기회!';             /* 8. 용선 각성·피버타임 · 전투지시 */
-  var FINALBOSS_LINES=['오징어 촉수에 잽히지 말앙 피허라이!'];   /* 9. 크라켄 최종보스 등장 · 엄격 */
-  var WIN_LINES=['잘도 요망진 아이구나이'];                     /* 10-A. 크라켄 처치·승리 · 완주미소 */
-  var END_LINES=['아이고 폭삭 속아신게'];                       /* 10-B. 체력 0·실패 · 걱정 */
-  var HIT_LINES=['아이고게, 정신 촐리라게!','아이고 놀란 것 좀 보라!']; /* 피격 시(대사집 외 기존 유지) */
-  var firstPickShown=false, firstBossShown=false, firstFusionShown=false, lowHpShown=false;
-
-  /* ================= Lv/EXP 시스템 ================= *
-     레벨이 항상 눈에 보이고, 레벨업마다(뱀서라이크처럼) 업그레이드 카드
-     3장이 뜬다. 복(보상 재화)과는 완전히 분리된 경험치다.
-     가만히 있어도 시간이 지나면 자동으로 차오르던 것(드래곤플라이트식
-     경험치 자동획득)은 "레벨업이 왜 자동으로 되냐"는 피드백으로 없앴다 —
-     이제 경험치는 바위를 부술 때 떨어지는 복주머니(xpPouches)를
-     직접 날아가서 먹어야만 들어온다. */
-  var lv=1, xp=0, xpNeed=4+lv*2;
-  var shipTier=0, prestige=0;
-  function tierForLevel(l){ if(l>=20) return 3; if(l>=10) return 2; if(l>=5) return 1; return 0; }
-
-  /* ---- 업그레이드 카드 — JUST(회피의 감) 삭제, 신규 5종 추가, 전부 MAX 상한 ----
-     "카드가 무한히 쌓여서 절대 안 죽는다"는 문제를 해결하기 위해 레벨마다
-     상한(MAX)을 두고, MAX에 도달하면 카드 풀에서 빠진다. 특정 두 카드가
-     둘 다 MAX면 더 강한 특수 무기로 합쳐진다(진화 조합). */
-  var upgLevel={fire:0,pierce:0,windpush:0,lightning:0,missile:0,homing:0,bomb:0,shield:0,
-                spread:0,focus:0,angle:0,cdr:0,rear:0,speed:0,bok:0,heart:0};
-  var UPG_MAX ={fire:5,pierce:5,windpush:5,lightning:5,missile:5,homing:5,bomb:5,shield:5,
-                spread:3,focus:3,angle:3,cdr:3,rear:3,speed:3,bok:3,heart:3};
-  /* 카드 설명은 짧을수록 좋다 — 2x 캔버스 버퍼에서 작은 폰트로 desc가 안 보이던
-     문제(가시성 패치)를 폰트 축소가 아니라 문구 자체를 축약해서 해결했다 */
-  var UPGRADES={
-    fire:     {type:'weapon',emoji:'💥',title:'함포 연사',desc:'자동 포격 강화'},
-    pierce:   {type:'weapon',emoji:'🌊',title:'관통 해일',desc:'화면 관통 파도'},
-    windpush: {type:'weapon',emoji:'🌪',title:'영등 바람',desc:'적 무리 밀어냄'},
-    lightning:{type:'weapon',emoji:'⚡',title:'연쇄 벼락',desc:'주기적 벼락 공격'},
-    missile:  {type:'weapon',emoji:'🔱',title:'폭풍 작살',desc:'가까운 적 작살 명중'},
-    homing:   {type:'weapon',emoji:'🐟',title:'바람 물고기',desc:'적 추적 물고기'},
-    bomb:     {type:'weapon',emoji:'🍊',title:'제주 감귤탄',desc:'적 방향 폭발탄'},
-    shield:   {type:'weapon',emoji:'🛡',title:'파도 방패',desc:'공격 한 번 방어'},
-    spread:   {type:'passive',emoji:'🧨',title:'폭풍 화약통',desc:'함포 수·범위 증가'},
-    focus:    {type:'passive',emoji:'💧',title:'조수의 돌',desc:'관통·보스 피해 증가'},
-    angle:    {type:'passive',emoji:'🎐',title:'영등 비단',desc:'바람 범위 확대'},
-    cdr:      {type:'passive',emoji:'🔮',title:'폭풍 구슬',desc:'스킬 대기시간 감소'},
-    rear:     {type:'passive',emoji:'🧭',title:'산호 나침반',desc:'작살 수·범위 증가'},
-    speed:    {type:'passive',emoji:'🐉',title:'용왕의 비늘',desc:'이동·물고기 속도 증가'},
-    bok:      {type:'passive',emoji:'🧺',title:'해녀의 망사리',desc:'복·폭발 범위 증가'},
-    heart:    {type:'passive',emoji:'🐚',title:'소라 부적',desc:'체력 증가·즉시 회복'}
+function windScreenStart(){
+  var p=$('#wind');
+  p.innerHTML=
+    (windHeroOk()?'<img class="windHero" src="gods/final/GOD4.jpg" alt="영등할망">':
+      '<div style="font-size:44px">🌬️</div>')+
+    '<h2 style="font-family:var(--font-display);font-size:23px;margin:6px 0 0">영등할망의 바람배달</h2>'+
+    '<p style="color:var(--color-text-secondary);font-size:15px;margin:2px 0 0;max-width:320px">바람을 그려 바구니를 반짝이는 곳으로!</p>'+
+    '<label class="windCard" style="display:flex;align-items:center;gap:10px;text-align:left;font-size:13px;color:var(--color-text-secondary);cursor:pointer">'+
+      '<input type="checkbox" id="windAssistChk" style="width:20px;height:20px;flex:none">'+
+      '스와이프가 어려우면 화면 아래 ◀ / ▶ 버튼으로 바람을 보낼 수 있어요'+
+    '</label>'+
+    '<button class="btn btn--primary btn--block btn--lg" id="windStartBtn" style="max-width:360px">시작하기</button>';
+  $('#windStartBtn').onclick=function(){
+    var assist=$('#windAssistChk').checked;
+    windScreenTutorial(assist);
   };
-  var UPG_KEYS=Object.keys(UPGRADES);
-  var RARITY=[
-    {key:'common',   label:'일반', p:0.70, discrete:1, color:'#8FA3B8'},
-    {key:'rare',     label:'희귀', p:0.25, discrete:2, color:'#4FC3A1'},
-    {key:'legendary',label:'전설', p:0.05, discrete:3, color:'#F5B331'}
-  ];
-  function rollRarity(){
-    var r=Math.random(), acc=0;
-    for(var i=0;i<RARITY.length;i++){ acc+=RARITY[i].p; if(r<acc) return RARITY[i]; }
-    return RARITY[0];
-  }
-  /* 뱀서류 방식: 기본 무기 MAX + 대응 보조 아이템 1레벨 이상이면 진화한다. */
-  var FUSION=[
-    {a:'fire',b:'spread',key:'typhoon',name:'태풍 함포',emoji:'🌀',desc:'포탄이 관통하며 폭풍을 일으킨다'},
-    {a:'pierce',b:'focus',key:'tsunami',name:'대해일',emoji:'🌊',desc:'관통 충격이 넓은 해일로 번진다'},
-    {a:'windpush',b:'angle',key:'gale',name:'대영등 돌개바람',emoji:'🌬️',desc:'적이 몰린 방향을 크게 휩쓴다'},
-    {a:'lightning',b:'cdr',key:'thunderstorm',name:'뇌우',emoji:'⚡',desc:'더 빠른 연쇄 벼락이 여러 적을 덮친다'},
-    {a:'missile',b:'rear',key:'harpoonstorm',name:'소용돌이 작살진',emoji:'🔱',desc:'여러 적을 조준해 360도로 작살을 발사한다'},
-    {a:'homing',b:'speed',key:'dragonfish',name:'용오름 어군',emoji:'🐟',desc:'물고기 떼가 적을 빠르게 추적한다'},
-    {a:'bomb',b:'bok',key:'goldstorm',name:'황금 귤폭풍',emoji:'🍊',desc:'황금 감귤탄이 연쇄 폭발한다'},
-    {a:'shield',b:'heart',key:'seabarrier',name:'해신의 결계',emoji:'🛡️',desc:'결계가 세 번의 공격을 막아준다'}
-  ];
-  var fusion={};
-  function checkFusions(){
-    FUSION.forEach(function(f){
-      if(!fusion[f.key] && upgLevel[f.a]>=UPG_MAX[f.a] && upgLevel[f.b]>=1){
-        fusion[f.key]=true;
-        showBig('무기 진화!', f.emoji+' '+f.name+' 완성!', 1800,'fusion');
-        sfx('fanfare',0.8);
-        /* 6. 첫 무기 융합 완성 — 처음 한 번만 전용 대사 */
-        if(!firstFusionShown){ firstFusionShown=true; showCutin(FIRST_FUSION_LINE,1500); }
-      }
+}
+function windScreenTutorial(assist){
+  var p=$('#wind');
+  p.innerHTML=
+    '<h2 style="font-size:19px;margin:8px 0 0">바구니가 내려오면</h2>'+
+    '<div class="windCard" style="max-width:340px">'+
+      '<svg viewBox="0 0 300 150" style="width:100%;display:block" aria-hidden="true">'+
+        '<circle cx="60" cy="36" r="18" fill="var(--color-accent)"/>'+
+        '<path d="M60 54 Q150 86 224 112" stroke="var(--color-text-secondary)" stroke-width="3" fill="none" stroke-dasharray="6 8"/>'+
+        '<circle cx="224" cy="112" r="15" fill="none" stroke="var(--color-accent)" stroke-width="3"/>'+
+        '<circle cx="224" cy="112" r="25" fill="none" stroke="var(--color-accent)" stroke-width="2" opacity=".45"/>'+
+      '</svg>'+
+      '<p style="font-weight:800;font-size:16px;margin:8px 0 0">슥! 바람을 그려 보내세요</p>'+
+      '<p style="color:var(--color-text-secondary);font-size:13px;margin:4px 0 0">손가락으로 방향을 그으면, 그 방향으로 바구니가 바로 밀려요. 반짝이는 배송지에 넣으면 성공!</p>'+
+    '</div>'+
+    '<div style="display:flex;gap:10px;width:100%;max-width:340px">'+
+      '<button class="btn btn--secondary btn--block btn--lg" id="windPracticeBtn">연습하기</button>'+
+      '<button class="btn btn--primary btn--block btn--lg" id="windSkipBtn">바로 시작</button>'+
+    '</div>';
+  $('#windPracticeBtn').onclick=function(){ windRound(true,assist); };
+  $('#windSkipBtn').onclick=function(){ windRound(false,assist); };
+}
+
+/* ---- 실제 플레이(캔버스) ---- */
+function windRound(isPractice,assist){
+  var p=$('#wind');p.style.display='none';
+  $('#canvasWrap').style.display='';
+  cv.style.display='block';
+  var W=cv.width,H=cv.height;
+  var U=Math.max(0.8,Math.min(1.7,W/750));
+  var C=WIND_CONFIG;
+  var pxScale=W/Math.max(1,$('#canvasWrap').clientWidth); /* CSS px → 캔버스 px(대개 2) */
+  var judgeY=H*C.judgeYPct, destY=H*0.865, destW=W/3;
+  var dests=WIND_DESTS.map(function(d,i){return {key:d.key,label:d.label,img:d.img,x:destW*(i+0.5),w:destW}});
+
+  var soundOn=true;
+  function wsfx(n,v){ if(soundOn) sfx(n,v); }
+  function wbeep(f,d,t,v){ if(soundOn) beep(f,d,t,v); }
+  function vib(ms){ if(soundOn && navigator.vibrate) try{navigator.vibrate(ms)}catch(e){} }
+
+  var score=0,deliveries=0,combo=0,bestCombo=0;
+  var elapsed=0,last=null,noMoreSpawn=false,phase='play';
+  var basketCount=0,targetHistory=[];
+  var basket=null,nextSpawnAt=0;
+  var dokShown=false,seagullSpawned=[false,false],seagulls=[];
+  var fxList=[],popups=[];
+  var resultT=0,resultReady=false;
+  var activePointerId=null,dragStart=null,dragCur=null;
+
+  /* ---- 배경(그라데이션·구름) ---- */
+  var bg=makeBg();
+  function makeBg(){
+    var c=document.createElement('canvas');c.width=W;c.height=H;var g=c.getContext('2d');
+    var sky=g.createLinearGradient(0,0,0,H*0.78);
+    sky.addColorStop(0,'#DFF5ED');sky.addColorStop(1,'#BFE6DA');
+    g.fillStyle=sky;g.fillRect(0,0,W,H*0.78);
+    var sea=g.createLinearGradient(0,H*0.78,0,H);
+    sea.addColorStop(0,'#22485A');sea.addColorStop(1,'#163344');
+    g.fillStyle=sea;g.fillRect(0,H*0.78,W,H*0.22);
+    g.fillStyle='rgba(255,255,255,.55)';
+    [[0.16,0.14,0.16],[0.62,0.09,0.13],[0.85,0.2,0.11]].forEach(function(cl){
+      var cx=W*cl[0],cy=H*cl[1],r=W*cl[2];
+      g.beginPath();g.ellipse(cx,cy,r,r*0.55,0,0,7);g.fill();
+      g.beginPath();g.ellipse(cx-r*0.5,cy+r*0.12,r*0.6,r*0.4,0,0,7);g.fill();
+      g.beginPath();g.ellipse(cx+r*0.5,cy+r*0.12,r*0.6,r*0.4,0,0,7);g.fill();
     });
-  }
-  /* 획득/강화 직후 다음 프레임에 즉시 한 번 발동하도록 해당 스킬의 대기시간을
-     0에 가깝게 당겨준다 — 처음 얻은 기술이 기존 쿨타임(최대 3~5초)을 그대로
-     기다리느라 안 나가는 것처럼 보이던 문제(V4 패치) 대응 */
-  function primeWeaponTimer(key){
-    if(key==='lightning') lightningTimer=16;
-    else if(key==='windpush') windpushTimer=16;
-    else if(key==='bomb') bombTimer=16;
-    else if(key==='homing') homingTimer=16;
-    else if(key==='missile') missileTimer=16;
-    else if(key==='pierce') pierceTimer=16;
-    else if(key==='shield') shieldTimer=16;
-    else if(key==='fire') fireTimer=16;
-  }
-  /* 상단 토스트로 스킬명·효과를 알리던 방식을 없애고(가시성 패치), 중앙에
-     1.2초간 "이름 강화/습득 · Lv.전→후 · 효과"를 크게 한 번만 보여준다 */
-  function applyUpgrade(key,rarity){
-    var before=upgLevel[key];
-    upgLevel[key]=Math.min(UPG_MAX[key], upgLevel[key]+rarity.discrete);
-    var after=upgLevel[key];
-    if(key==='heart'){ var d=after-before; maxHearts+=d; hearts=Math.min(maxHearts,hearts+d); }
-    var lvText = after>=UPG_MAX[key] ? ('Lv.'+before+' → MAX') : ('Lv.'+before+' → Lv.'+after);
-    showBig(UPGRADES[key].title+' '+(before===0?'습득':'강화'), lvText, 1200, 'skillget', UPGRADES[key].desc);
-    sfx('bonus',0.6);
-    if(UPGRADES[key].type==='weapon') primeWeaponTimer(key);
-    checkFusions();
-  }
-  function shuffle(a){ for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;} return a; }
-
-  var pick={open:false,options:[],until:0}; /* options: [{key,rarity}] */
-  var PICK_TITLES=['바람이 하나를 골라달라 한다','요망진 걸로 골라보라이','무사 하나만 고르라!'];
-  var pickTitle='';
-  var upgHistory={}; /* 결과화면에 보여줄 획득 카드 집계 */
-  function openPick(el){
-    var pool=UPG_KEYS.filter(function(k){ return upgLevel[k]<UPG_MAX[k]; });
-    if(pool.length===0) return; /* 전부 MAX면 더 뽑을 카드가 없다 */
-    var keys=shuffle(pool.slice()).slice(0,Math.min(3,pool.length));
-    pick.options=keys.map(function(k){ return {key:k, rarity:rollRarity()}; });
-    pick.open=true; pick.until=el+8;
-    pickTitle=pickRandom(PICK_TITLES);
-    if(!firstPickShown){ firstPickShown=true; showCutin(FIRST_PICK_LINE,1800); }
-  }
-  function closePick(opt,el){
-    pick.open=false;
-    applyUpgrade(opt.key,opt.rarity);
-    upgHistory[opt.key]=(upgHistory[opt.key]||0)+1;
+    return c;
   }
 
-  /* 경험치 획득 + 레벨업 처리 — 바위 파괴/생존시간/먹거리에서 들어온다
-     (근접 회피 보너스는 삭제 — 의미가 없다는 피드백 반영) */
-  function gainXp(n,el){
-    xp+=n;
-    while(xp>=xpNeed){
-      xp-=xpNeed; lv++; xpNeed=4+lv*2;
-      onLevelUp(el);
-    }
+  function pt(e){var r=cv.getBoundingClientRect();return {x:(e.clientX-r.left)*(W/r.width),y:(e.clientY-r.top)*(H/r.height)}}
+
+  function drawText(txt,x,y,size,color,stroke,weight){
+    size=Math.round(size*U);
+    ctx.font=(weight||800)+' '+size+'px SCDream, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    if(stroke){ctx.lineJoin='round';ctx.strokeStyle=stroke;ctx.lineWidth=size*0.14;ctx.strokeText(txt,x,y)}
+    ctx.fillStyle=color;ctx.fillText(txt,x,y);
   }
-  function onLevelUp(el){
-    var newTier=tierForLevel(lv);
-    if(newTier>shipTier){ evolveTo(newTier,el); }
-    else if(lv===30 && finalBoss.state==='idle' && !transcended){ startFinalBoss(el); return; }
-    else if(lv>30 && transcended && lv%10===0){ prestigeFlash(el); }
-    else {
-      showBig('레벨업!','Lv.'+lv,700,'levelup'); sfx('bonus',0.5);
-      shake(5); zoomTo(1.08); setTimeout(function(){zoomTo(1)},220);
-      /* 텍스트만으로는 심심해서 배 주변에 반짝이는 파티클 링을 터뜨린다 */
-      for(var lui=0;lui<16;lui++){
-        var luAng=(lui/16)*Math.PI*2;
-        fx.push({x:px,y:shipY,vx:Math.cos(luAng)*4,vy:Math.sin(luAng)*4,l:1,c:lui%2?'#F5B331':'#F2F0EA',sz:4+Math.random()*3});
+  function rrect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+
+  /* ---- 목표 배송지 선택: 처음 3개는 왼쪽→오른쪽→가운데, 이후 무작위(3연속 금지) ---- */
+  function pickTargetIdx(n){
+    if(!isPractice && n<3) return [0,2,1][n];
+    var idx;
+    do{ idx=Math.floor(Math.random()*3); }
+    while(targetHistory.length>=2 && idx===targetHistory[targetHistory.length-1] && idx===targetHistory[targetHistory.length-2]);
+    return idx;
+  }
+
+  /* ---- 바구니 생성 ---- */
+  function spawnBasket(){
+    var tIdx=pickTargetIdx(basketCount++);
+    targetHistory.push(tIdx);if(targetHistory.length>3)targetHistory.shift();
+    var vy0=(judgeY-H*C.startYPct)/(C.fallMs/1000); /* px/초 */
+    basket={
+      kind:Math.random()<0.5?'orange_basket':'gift_basket',
+      tIdx:tIdx,
+      x:W*0.5+(Math.random()*0.3-0.15)*W,
+      y:H*C.startYPct,
+      vx:0,vy:0,vy0:vy0,
+      windLeft:C.windMax,
+      resolved:false,rot:0
+    };
+  }
+
+  /* ---- 바람 넣기: 궤적 길이는 힘에 영향 없음, 방향만 반영 ---- */
+  function applyGust(dirX,dirY){
+    var b=basket;if(!b||b.resolved||b.windLeft<=0)return;
+    b.windLeft--;
+    var force=W*C.vxPerGust; /* px/초 */
+    b.vx+=dirX*force;
+    b.vy+=dirY*force*C.vyMul;
+    b.vy=Math.max(b.vy,-b.vy0*1.2); /* 위로 지나치게 역주행 방지 */
+    fxList.push({type:'gust',x:b.x,y:b.y,t:0,rot:Math.atan2(dirY,dirX)});
+    wbeep(520,0.09,'sine',0.14);
+  }
+
+  /* ---- 판정 ---- */
+  function resolveBasket(){
+    var b=basket,d=dests[b.tIdx];
+    var hit=Math.abs(b.x-d.x)<=d.w/2;
+    var bigWindOn=elapsed>=C.bigWindStart&&elapsed<C.bigWindStart+C.bigWindDur;
+    if(hit){
+      if(!isPractice){
+        combo++;if(combo>bestCombo)bestCombo=combo;
+        var base=100+(combo>1?20*Math.min(combo-1,5):0);
+        var add=bigWindOn?base*2:base;
+        deliveries++;score+=add;
+        popups.push({txt:'+'+add,x:b.x,y:destY-40*U,vy:-0.35,life:1});
       }
+      wsfx('pop',0.55);vib(30);
+    } else {
+      if(!isPractice)combo=0;
+      wbeep(220,0.16,'sine',0.1);
     }
-    openPick(el);
-  }
-  function prestigeFlash(el){
-    prestige++;
-    shake(10); zoomTo(1.15); setTimeout(function(){zoomTo(1)},480);
-    sfx('fanfare',0.6);
-    toast('🐉 용선 초월 Lv.'+lv+'! 위력이 더 강해졌다');
+    fxList.push({type:hit?'combo_star':'water_splash',x:b.x,y:destY,t:0});
+    b.resolved=true;
+    nextSpawnAt=elapsed+C.fxDur;
   }
 
-  /* 조작: 탭/드래그 둘 다 "그 지점으로 배를 이동"으로 통일 — 반응이 즉각적이어야 하므로.
-     단, 선택 카드가 떠 있을 때는 탭 좌표로 카드를 고르는 용도로 쓴다. */
-  var dragging=false, dragX=px;
-  function evX(e){ var r=cv.getBoundingClientRect(); return (e.clientX-r.left)*(W/r.width); }
-  function evY(e){ var r=cv.getBoundingClientRect(); return (e.clientY-r.top)*(H/r.height); }
+  /* ---- 결과 ---- */
+  function enterResult(){ phase='result';resultT=0;resultReady=false; }
+  function finishWind(){
+    stopGame();
+    var isBest=score>(S.best.wind||0);
+    if(isBest)S.best.wind=score;
+    sfx(isBest?'fanfare':'bonus',0.7);
+    reward(Math.round(score/3),'영등할망의 바람배달 · 배달 '+deliveries+'개 · 최고 콤보 '+bestCombo+' · 총점 '+score+'점'+(isBest?' · 신기록!':''));
+  }
+
+  /* ---- 입력 ---- */
   cv.onpointerdown=function(e){
-    var x=evX(e);
-    if(ending && endingWon){
-      var elNow=(performance.now()-t0)/1000;
-      if(elNow-endingT0>1.5){
-        var y=evY(e);
-        var ebY=H*0.28+48+5*36+30, ebW=W*0.42, ebH=52, ebGap=14;
-        var eb1X=W/2-ebW-ebGap/2, eb2X=W/2+ebGap/2;
-        if(y>=ebY && y<=ebY+ebH){
-          if(x>=eb1X && x<=eb1X+ebW){ alive=false; finishSail(elNow,kills); return; }
-          if(x>=eb2X && x<=eb2X+ebW){
-            transcended=true; ending=false; finalBoss.state='idle';
-            hearts=Math.max(hearts,1); invulnUntil=elNow+1.2;
-            toast('🌊 초월 항해 시작 — 기록에 도전하라!'); sfx('fanfare',0.7);
-            return;
-          }
-        }
-      }
-      return; /* 승리 결과 화면이 떠 있는 동안엔 탭해도 배가 움직이지 않는다 */
-    }
-    if(pick.open){
-      var cwp=W/pick.options.length;
-      var idx=Math.min(pick.options.length-1,Math.max(0,Math.floor(x/cwp)));
-      closePick(pick.options[idx], (performance.now()-t0)/1000);
-      return;
-    }
-    dragging=true; dragX=Math.max(50,Math.min(W-50,x)); dragY=Math.max(shipYMin,Math.min(shipYMax,evY(e)));
+    if(phase==='result')return;
+    if(activePointerId!=null)return;
+    activePointerId=e.pointerId;
+    var q=pt(e);dragStart={x:q.x,y:q.y};dragCur=q;
   };
-  cv.onpointermove=function(e){ if(dragging){ dragX=Math.max(50,Math.min(W-50,evX(e))); dragY=Math.max(shipYMin,Math.min(shipYMax,evY(e))); } };
-  cv.onpointerup=function(){dragging=false};
-  cv.onpointercancel=function(){dragging=false};
+  cv.onpointermove=function(e){
+    if(phase!=='play'||e.pointerId!==activePointerId||!dragStart)return;
+    dragCur=pt(e);
+  };
+  cv.onpointerup=function(e){
+    if(phase==='result'){ if(resultReady)finishWind(); return; }
+    if(e.pointerId!==activePointerId||!dragStart){activePointerId=null;return}
+    var q=pt(e);var dx=q.x-dragStart.x,dy=q.y-dragStart.y,dist=Math.hypot(dx,dy);
+    activePointerId=null;dragStart=null;dragCur=null;
+    var minPx=C.minSwipe*pxScale,maxPx=C.maxSwipe*pxScale;
+    if(dist<minPx||dist>maxPx)return; /* 짧은 탭·과도한 드래그는 무시, 바람 소모 없음 */
+    applyGust(dx/dist,dy/dist);
+  };
+  cv.onpointercancel=function(){activePointerId=null;dragStart=null;dragCur=null};
 
-  /* ---- 페이즈 트리거 ---- */
-  var tutorialDone=false;
-  var boss={state:'idle',announceUntil:0,hp:0,maxHp:5,x:0,y:0,r:92,v:1.15,asset:null,nextAt:34,
-    flashUntil:0,shotTimer:0,patternStep:0,moveTimer:0,targetX:0,targetY:0,spiral:0};
-  var awakened=false;
-  var ending=false,endingT0=0,endingWon=false;
-  /* Lv30 최종 보스 — 별도 단계 연출 없이 평소 스웜 속에서 아주 강한 적 하나를
-     잡는 "기본 뱀서류" 느낌으로 간다(예전의 폭풍/바람구슬/약점노출 단계극 폐기) */
-  var finalBoss={state:'idle',announceUntil:0,hp:0,maxHp:0,x:0,y:0,r:170,restY:0,shotTimer:0,flashUntil:0,
-    patternStep:0,moveTimer:0,targetX:0,targetY:0,spiral:0};
-  var transcended=false;
-  var lightningTimer=2000, windpushTimer=4000, shieldTimer=8000, shieldCharge=0;
-  var bombTimer=3200, homingTimer=3000, missileTimer=4200, pierceTimer=2600;
-  var lightningBolts=[], bombShots=[], windGusts=[], windFishShots=[], stormHarpoons=[], pierceWaves=[];
-  /* 좌측 하단 스킬 레벨 HUD용 — 각 스킬의 "이번 주기 전체 쿨타임"과 "방금 발동
-     펄스" 시각만 기록한다(실제 쿨타임 로직은 위 XxxTimer 그대로) */
-  var skillFull={fire:1000,pierce:2600,windpush:2800,lightning:2000,missile:3400,homing:2700,bomb:2500,shield:14800};
-  var skillPulseUntil={fire:0,pierce:0,windpush:0,lightning:0,missile:0,homing:0,bomb:0,shield:0};
-  var muzzleFlashes=[], hitFlashes=[], splashes=[];
-  var dmgNumbers=[]; /* 데미지 숫자 — 0.5~0.7초 표시, 개수 제한(가시성 패치) */
-  var recentDmg=[]; /* 최근 8초 딜량 로그 — 보스 체력 스케일링(난이도 패치)용 */
-  function showDmgNumber(x,y,val,el){
-    if(dmgNumbers.length>=20) dmgNumbers.shift();
-    dmgNumbers.push({x:x,y:y-10,val:val,from:el,until:el+0.6});
-    recentDmg.push({t:el,v:val});
-    if(recentDmg.length>400) recentDmg=recentDmg.filter(function(d){return el-d.t<8;}); /* 무한 누적 방지 */
-  }
-  function currentDps(el){
-    recentDmg=recentDmg.filter(function(d){return el-d.t<8;});
-    var sum=0; recentDmg.forEach(function(d){sum+=d.v;});
-    return sum/8;
-  }
-  var lastBossHp=0; /* 보스마다 이전 보스의 약 1.35배 이상이 되도록 하는 바닥값 */
-  var skillFx=[]; /* 새 4x2 스킬 시트의 일회성 애니메이션 */
-  var xpPouches=[]; /* 바위를 부수면 떨어지는 경험치 복주머니 — 직접 날아가서 먹어야 경험치가 들어온다 */
-  var rockIdCounter=0;
-  function cdrMul(){ return 1 - Math.min(0.55, upgLevel.cdr*0.12); } /* ⏱ 재빠른 손놀림 — 모든 스킬 쿨타임에 공통 적용 */
-
-  /* 화면 밖·갓 스폰된 적은 타깃·피격 불가(가시성 패치) — 화면 안쪽 80px 여백 안에
-     있고, 스폰 후 0.4초가 지난 적만 진짜 "보이는 위협"으로 취급한다 */
-  var TARGET_MARGIN=80, TARGET_GRACE=0.4;
-  function onScreenMargin(x,y,m){ return x>=m && x<=W-m && y>=m && y<=H-m; }
-  function isTargetable(o,el){
-    if(!o || o.dead) return false;
-    if(o.spawnedAt!=null && el-o.spawnedAt<TARGET_GRACE) return false;
-    return onScreenMargin(o.x,o.y,TARGET_MARGIN);
-  }
-  /* 자동 공격 사거리 — 화면 너비의 약 35% 안에 있는 적만 조준한다(무한 사거리 저격 방지) */
-  function nearestEnemy(x,y,el){
-    var best=null,bestD=Infinity, maxR=W*0.35;
-    function consider(o){
-      if(!isTargetable(o,el)) return;
-      var d0=Math.hypot(o.x-x,o.y-y);
-      if(d0<=maxR && d0<bestD){bestD=d0;best=o;}
-    }
-    rocks.forEach(consider);
-    debris.forEach(consider);
-    if(boss.state==='alive') consider(boss);
-    if(finalBoss.state==='alive') consider(finalBoss);
-    return best;
-  }
-  function aimAngle(x,y,fallback,el){var t=nearestEnemy(x,y,el);return t?Math.atan2(t.y-y,t.x-x):fallback;}
-  function angleDelta(a,b){var d=b-a;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;return d;}
-
-  function addSkillFx(key,x,y,size,rot,anchor){
-    skillFx.push({key:key,x:x,y:y,size:size||160,rot:rot||0,anchor:anchor||null,started:performance.now(),duration:980}); /* 가시성 패치 — 유지시간 36% 증가 */
-  }
-  function paintSkillFx(now){
-    skillFx.forEach(function(f){
-      var x=f.anchor&&!f.anchor.dead?f.anchor.x:f.x;
-      var y=f.anchor&&!f.anchor.dead?f.anchor.y:f.y;
-      if(!drawSkillFrame(SKILL_SHEETS[f.key],x,y,f.size,f.started,now,false,f.rot)){
-        drawSkillFxFallback(f.key,x,y,f.size,f.rot);
-      }
-    });
-    skillFx=skillFx.filter(function(f){return now-f.started<f.duration;});
+  /* ---- 보조 조작 ◀ / ▶ ---- */
+  var assistWrap=null;
+  if(assist){
+    assistWrap=document.createElement('div');assistWrap.id='windAssistBtns';
+    assistWrap.innerHTML='<button id="windL" aria-label="왼쪽으로 바람">◀</button><button id="windR" aria-label="오른쪽으로 바람">▶</button>';
+    $('#canvasWrap').appendChild(assistWrap);
+    assistWrap.querySelector('#windL').onclick=function(){applyGust(-1,0)};
+    assistWrap.querySelector('#windR').onclick=function(){applyGust(1,0)};
   }
 
-  function showCutin(text,dur,freeze){ cutin.text=text; cutin.from=performance.now(); cutin.until=cutin.from+dur; cutin.freeze=!!freeze; }
-  function showBig(a,b,dur,kind,c){ bigText={a:a,b:b,c:c,from:performance.now(),until:performance.now()+dur,kind:kind}; }
-  function shake(v){ cam.shake=Math.max(cam.shake,v); }
-  function zoomTo(v){ cam.zoomTo=v; }
-  function triggerEnding(el,won){
-    if(ending) return;
-    ending=true; endingT0=el; endingWon=!!won;
-    showCutin(pickRandom(won?WIN_LINES:END_LINES),2000);
-  }
-  /* 페이즈 전환(70%/35% 체력) 진입 시 0.6초 전환 연출 + 그 동안 연속 피해 50%만
-     적용, 한 번의 공격은 최대체력의 10%를 넘게 못 깎는다(난이도 패치) */
-  function applyBossHit(target,damage,el){
-    damage=Math.min(damage,target.maxHp*0.1);
-    if(target.dmgReduceUntil && el<target.dmgReduceUntil) damage*=0.5;
-    target.hp-=damage; target.flashUntil=el+0.08;
-    showDmgNumber(target.x,target.y-target.r,Math.round(damage),el);
-    var p=target.hp/target.maxHp;
-    if(!target.phase2Done && p<=0.7){
-      target.phase2Done=true; target.transitionUntil=el+0.6; target.dmgReduceUntil=el+0.6;
-      target.v=(target.v||1)*1.15; shake(8);
-      showBig(target===finalBoss?'크라켄이 분노한다!':'적이 거칠어진다!','',900,'break');
-    } else if(!target.phase3Done && p<=0.35){
-      target.phase3Done=true; target.transitionUntil=el+0.6; target.dmgReduceUntil=el+0.6;
-      target.v=(target.v||1)*1.15; shake(10);
-      showBig(target===finalBoss?'크라켄이 최후의 발악!':'적이 최후의 발악!','',900,'break');
-    }
-  }
-  function damageBossTarget(target,damage,el){
-    if(target===boss&&boss.state==='alive'){
-      applyBossHit(boss,damage,el);shake(2);
-      if(boss.hp<=0){
-        explodeRock(boss.x,boss.y,boss.r,true);sfx('boom',0.7);shake(12);kills+=3;bossKillCount++;
-        gainXp(30,el);giveBok(20);showBig('BREAK ×보스!','',1000,'break');toast('👹 엘리트 몬스터 격파!');
-        boss.state='idle';boss.nextAt=el+Math.max(20,45-lv*0.6);
-      }
-      return true;
-    }
-    if(target===finalBoss&&finalBoss.state==='alive'){
-      applyBossHit(finalBoss,damage,el);shake(2);
-      if(finalBoss.hp<=0){
-        finalBoss.state='idle';explodeRock(finalBoss.x,finalBoss.y,finalBoss.r,true);sfx('boom',0.85);shake(18);triggerEnding(el,true);
-      }
-      return true;
-    }
-    return false;
-  }
-  function startFinalBoss(el){
-    /* Lv30 — 영등할망이 내는 마지막 시련. 적대적인 존재가 아니라 통과해야 할
-       거대한 폭풍이라는 설정이라, 이겨내면 영등할망이 인정해주는 흐름으로 이어진다 */
-    finalBoss.state='announce'; finalBoss.announceUntil=el+2.2;
-    showCutin(pickRandom(FINALBOSS_LINES),2200,true);
+  /* ---- 연습 중 실전 시작 버튼 ---- */
+  var practiceCta=null;
+  if(isPractice){
+    practiceCta=document.createElement('button');
+    practiceCta.id='windPracticeCta';practiceCta.className='btn btn--primary';
+    practiceCta.textContent='실전 시작 →';
+    practiceCta.style.cssText='position:absolute;left:50%;bottom:calc(var(--space-5) + var(--safe-b));transform:translateX(-50%);min-height:48px;z-index:6;box-shadow:var(--shadow-md)';
+    $('#canvasWrap').appendChild(practiceCta);
+    practiceCta.onclick=function(){ windCleanup(); windRound(false,assist); };
   }
 
-  var lightningFlashEl=$('#lightningFlash');
-  function flashLightning(){
-    if(!lightningFlashEl) return;
-    lightningFlashEl.classList.remove('on');
-    void lightningFlashEl.offsetWidth; /* 리플로우를 강제해서 연속으로 쳐도 애니메이션이 다시 재생되게 */
-    lightningFlashEl.classList.add('on');
-  }
-  function explodeRock(x,y,r,big){
-    flashes.push({x:x,y:y,t:0,r0:r*0.3,r1:r*(big?2.3:1.8),frame:Math.floor(Math.random()*ASSETS.explosionFrames.length)});
-    var n=big?18:12;
-    for(var i=0;i<n;i++){var a=Math.random()*Math.PI*2,sp=2+Math.random()*5;
-      fx.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,l:1,c:i%2?'#4FC3A1':'#F2F0EA',sz:3+Math.random()*3});}
-  }
-  /* 경험치는 즉시 들어오지 않고, 바위가 있던 자리에 복주머니가 떨어진다 —
-     플레이어가 직접 날아가서 먹어야만 gainXp가 호출된다(뱀서라이크 코어 루프) */
-  function dropXpPouch(x,y,amount,el){
-    xpPouches.push({x:x,y:y,vy:0.6+Math.random()*0.4,amount:amount,until:el+5.5});
+  /* ---- 소리 켬/끔 ---- */
+  var soundBtn=document.createElement('button');
+  soundBtn.id='windSoundBtn';soundBtn.className='btn btn--secondary btn--sm';
+  soundBtn.textContent='소리 켬';
+  soundBtn.style.cssText='position:absolute;right:var(--space-3);top:50%;transform:translateY(-50%);z-index:6;opacity:.85';
+  $('#canvasWrap').appendChild(soundBtn);
+  soundBtn.onclick=function(){soundOn=!soundOn;soundBtn.textContent=soundOn?'소리 켬':'소리 끔'};
+
+  function windCleanup(){
+    if(assistWrap){assistWrap.remove();assistWrap=null}
+    if(practiceCta){practiceCta.remove();practiceCta=null}
+    if(soundBtn){soundBtn.remove()}
   }
 
-  function playEvoBanner(el){
-    var T=SHIP_TIERS[shipTier];
-    evoFlashUntil=el+1.4;
-    sfx('evolve',0.8);
-    slowmoUntil=el+0.38; zoomTo(1.16); shake(6);
-    showBig('바람이 모인다...', T.name+'(으)로 진화!', 1300, 'evo'+shipTier);
-    toast('⚓ Lv.'+lv+' — '+T.name+'(으)로 진화! '+(T.missiles>0?'자동 포격 시작':''));
-    setTimeout(function(){zoomTo(1)},420);
-  }
-  function evolveTo(newTier,el){
-    shipTier=newTier;
-    var T=SHIP_TIERS[shipTier];
-    if(shipTier===2){
-      /* Lv10 — "2막 시작": 대사가 먼저 뜨고(그동안 완전 정지), 끝나야 진화 배너가 이어진다.
-         이 순간부터 미니보스가 등장할 수 있고 호밍 바위도 섞이기 시작한다 */
-      showCutin(LV10_LINE,1900,true);
-      setTimeout(function(){ playEvoBanner((performance.now()-t0)/1000); },1900);
-    } else if(shipTier<SHIP_TIERS.length-1){
-      playEvoBanner(el);
-    } else {
-      /* 최종 각성 — 용선(龍船). 배가 가장 강해지는 순간이라 연출은 크게 주되,
-         스폰 정지·무적·연사강화 같은 "다른 게임처럼 바뀌는" 특수 구간은 넣지
-         않는다 — 뱀서라이크 스웜 진행은 그대로 유지하고 배만 최종형태가 된다 */
-      awakened=true;
-      pauseUntil=el+0.5; zoomTo(1.3); shake(14);
-      sfx('fanfare',0.85);
-      showCutin(AWAKEN_LINE,1900,true); /* 8. 용선 각성·피버타임 */
-      showBig('영등의 바람이 깃들었다','용선(龍船) 각성',2200,'awaken');
-      toast('🐉 Lv.'+lv+' — 용선 각성! 화력이 최고조에 달했습니다');
-      setTimeout(function(){zoomTo(1.08)},700);
-    }
-  }
-
-  /* 시작하자마자 영등할망이 큰 글씨로 한 마디 — 이 동안은 게임이 완전히 멈춰 있다 */
-  showCutin(OPEN_LINE,2200,true);
-
-  var wave=0;
+  /* ---- 메인 루프 ---- */
+  spawnBasket();
   function loop(now){
-    if(!alive)return;
-    var dt=Math.min(48,now-lastNow); lastNow=now;
-    var el=(now-t0)/1000;
-    /* 슬로모/완전정지 연출 구간에서는 dt를 줄여 시간 자체를 늘어뜨린다 */
-    var dtScale=1;
-    if(el<pauseUntil) dtScale=0.02;
-    else if(el<slowmoUntil) dtScale=0.22;
-    var sdt=dt*dtScale;
-    var frameK=sdt/16.67;
+    if(last==null)last=now;
+    var dt=Math.min(33,now-last);last=now;
 
-    /* 카드 선택/이벤트 알림/대사가 떠 있는 동안은 게임이 완전히 멈춰야 한다는
-       요청 반영 — 배 이동부터 바위·먹거리·포격까지 전부 이 플래그로 묶는다 */
-    var frozen = pick.open || boss.state==='announce' || (cutin.freeze && cutin.until>performance.now());
-
-    /* ---- 조작 입력 ---- (얼어있는 동안엔 배가 움직이지 않는다)
-       드래그가 우선이고, 손을 안 대고 있을 땐 자이로로 기울이는 쪽으로 움직인다 */
-    if(!frozen){
-      if(dragging){
-        var followK=Math.min(1,(0.14+upgLevel.speed*0.025)*frameK);
-        px += (dragX-px)*followK;
-        shipY += (dragY-shipY)*followK;
-      } else {
-        var tiltPow=(5+upgLevel.speed*0.8)*frameK;
-        if(Math.abs(tiltX)>0.02) px += tiltX*tiltPow;
-        if(Math.abs(tiltY)>0.02) shipY += tiltY*tiltPow;
+    if(phase==='play'){
+      elapsed+=dt;
+      if(!isPractice && elapsed>=C.duration) noMoreSpawn=true;
+      var bigWindOn=!isPractice&&elapsed>=C.bigWindStart&&elapsed<C.bigWindStart+C.bigWindDur;
+      if(bigWindOn && !fxList.some(function(f){return f.type==='bigwind'})){
+        fxList.push({type:'bigwind',t:0});wsfx('evolve',0.5);
       }
-    }
-    /* 배 이미지 폭이 진화할수록 커지므로(특히 용선) 화면 가장자리에서 잘리지 않게 여백도 같이 늘린다 */
-    var shipMargin=Math.max(50,(40+shipTier*10)*1.15+8);
-    px=Math.max(shipMargin,Math.min(W-shipMargin,px));
-    shipY=Math.max(shipYMin,Math.min(shipYMax,shipY));
+      if(!isPractice && !dokShown && elapsed>=C.dokAt){dokShown=true;fxList.push({type:'dok',t:0})}
+      if(!isPractice){
+        C.seagullTimes.forEach(function(t,i){
+          if(!seagullSpawned[i] && elapsed>=t){seagullSpawned[i]=true;seagulls.push({x:-80,y:H*(0.2+i*0.08),t:0})}
+        });
+      }
 
-    /* 프레임 정규화 실제 이동 속도 — 항해감(기울기·물살 연출)에 쓴다 */
-    var fkSafe=Math.max(0.1,frameK);
-    var newVX=(px-prevPx)/fkSafe, newVY=(shipY-prevShipY)/fkSafe;
-    if(newVX*shipVX<0 && Math.abs(newVX)>1.4 && el>=turnSprayUntil-1.2){
-      turnSprayUntil=el+0.32; turnSprayDir=newVX>0?1:-1;
-    }
-    shipVX=newVX; shipVY=newVY;
-    prevPx=px; prevShipY=shipY;
-
-    var T=SHIP_TIERS[shipTier];
-
-    /* ================= 페이즈 트리거 ================= */
-    if(!tutorialDone && (el>=5 || rocks.some(function(r){return r.passed}))) tutorialDone=true;
-
-    if(pick.open && el>=pick.until){
-      /* 방치 시 자동으로 하나 골라준다(행사장에서 멈춰있지 않게) */
-      closePick(pickRandom(pick.options), el);
+      if(basket){
+        var b=basket;
+        if(!b.resolved){
+          var decay=Math.exp(-dt/1000/C.tau);
+          b.vx*=decay;b.vy*=decay;
+          b.x+=b.vx*dt/1000;
+          b.y+=(b.vy0+b.vy)*dt/1000;
+          b.x=Math.max(W*0.06,Math.min(W*0.94,b.x));
+          b.rot=Math.max(-0.3,Math.min(0.3,b.vx/(W*0.6)));
+          if(b.y>=judgeY) resolveBasket();
+        } else if(elapsed>=nextSpawnAt){
+          if(noMoreSpawn){ basket=null; enterResult(); }
+          else spawnBasket();
+        }
+      }
+    } else if(phase==='result'){
+      resultT+=dt;if(resultT>900)resultReady=true;
     }
 
-    /* 미니보스 — 알림 문구가 뜨는 동안 완전히 멈춘 뒤 등장한다. 레벨이 오를수록 더 자주 나온다 */
-    /* 미니보스는 "레벨 10 찍어야 나옴"이 아니라 순수 경과시간(boss.nextAt, 처음엔
-       34초)으로만 나온다 — 사장님 피드백: 레벨업 속도에 매여 들쭉날쭉하지 않고
-       항상 "시간이 지나면 보스가 온다" 느낌이어야 함 */
-    if(boss.state==='idle' && el>=boss.nextAt && !frozen && finalBoss.state==='idle'){
-      boss.state='announce'; boss.announceUntil=el+1.5;
-      /* 4. 첫 엘리트 몬스터(미니보스) 출현은 전용 대사, 그 다음부터는 BOSS_LINES */
-      if(!firstBossShown){ firstBossShown=true; showCutin(FIRST_BOSS_LINE,1500,true); }
-      else showCutin(pickRandom(BOSS_LINES),1500,true);
-    }
-    if(boss.state==='announce' && el>=boss.announceUntil){
-      /* 보스 체력 = max(레벨 기반 기본치, 최근 8초 DPS×25초), 그리고 항상 이전
-         보스의 1.35배 이상 — "2~3방에 죽는다"는 문제를 레벨만이 아니라 실제
-         화력에 맞춰 잡는다(난이도 패치) */
-      var bossBaseHp=14+Math.floor(lv*0.8);
-      var bossScaledHp=Math.max(bossBaseHp, currentDps(el)*25, lastBossHp*1.35);
-      boss.state='alive'; boss.maxHp=Math.round(bossScaledHp); boss.hp=boss.maxHp;
-      boss.phase2Done=false; boss.phase3Done=false; boss.transitionUntil=0; boss.dmgReduceUntil=0;
-      lastBossHp=boss.maxHp;
-      boss.x=Math.max(shipMargin,Math.min(W-shipMargin,W/2)); boss.y=-160; boss.r=130;
-      boss.restY=H*0.26; boss.v=1.0+Math.min(1.2,lv*0.03);
-      boss.shotTimer=900;boss.patternStep=0;boss.moveTimer=900;boss.targetX=W/2;boss.targetY=boss.restY;
-      boss.asset=pickRandom(ASSETS.elitePool);
-      toast('👹 강력한 존재 출현! 대포로 부숴라');
-      sfx('boom',0.5);
-    }
-
-    /* 죽어야만 끝난다 — 시간 강제종료 안전장치 없음(개인용 앱이라 대기열 문제 없음).
-       단, 완주(승리) 시에는 "항해 완료" 또는 "초월 항해"를 직접 탭해서 골라야 하므로
-       자동 종료하지 않고, 방치될 때만을 위한 넉넉한 대기열 타임아웃만 둔다 */
-    if(ending && !endingWon && el-endingT0>3.6 && alive){
-      alive=false; finishSail(el,kills); return;
-    }
-    if(ending && endingWon && el-endingT0>20 && alive){
-      alive=false; finishSail(el,kills); return;
-    }
-
-    var suspendSpawn = frozen;
-
-    if(!suspendSpawn && !ending){
-      /* Lv8→Lv12 사이에 서서히 올려서, 첫 미니보스(대략 Lv10 근방에서 시간상
-         마주치게 됨)를 잡고 나서 난이도가 한 프레임에 확 뛰는 절벽을 없앤다
-         (사장님 피드백: "보스 잡고 갑자기 너무 확 어려운 느낌") */
-      var diffRamp = Math.max(0,Math.min(1,(lv-8)/4));
-      var diffEase = 0.1 + diffRamp*0.9;
-      var spawnRate = tutorialDone ? (0.45 + diffRamp*0.55) : 0.45;
-      /* 지금 웨이브의 몬스터 종류 — 한동안은 같은 종류만 몰려오다가 주기적으로 바뀐다.
-         활성 풀은 배 단계에 맞춰 자동으로 넓어졌다 좁아진다(activeMonsterPool 참고) */
-      waveTimer-=sdt;
-      if(waveTimer<=0){ waveType=pickRandom(activeMonsterPool()); waveTimer=8000+Math.random()*6000; }
-      spawn-=sdt;
-      if(spawn<=0){
-        /* "피하기 게임인데 못 피한다"는 피드백 반영 — 스폰 간격 최저치와 낙하속도 상한을
-           크게 올려서 레벨/시간이 아무리 쌓여도 실제로 빠져나갈 틈이 남게 한다 */
-        spawn=Math.max(620,(880-el*6*diffEase-lv*3*diffEase)/spawnRate);
-        /* 뱀서라이크 스웜 느낌 — "지나가는" 바위가 아니라 사방(상하좌우) 화면 밖에서
-           나타나 배 쪽으로 아주 천천히 끌려오는 몬스터떼로 바꿨다. 몬스터는 정말 작게,
-           바위(무생물)와 섞여서 나온다. 일부만 지그재그가 섞인다 */
-        var bossActive=boss.state!=='idle'||finalBoss.state!=='idle';
-        /* 몬스터 수 증가 시점을 Lv10→Lv8로 당김(사장님 피드백: "8레벨 부분에
-           몬스터 갯수를 늘려야겠음") — 보스전 직후가 아니라 그 전부터 이미
-           2마리씩 나와 있어서 보스를 깨도 새삼스럽게 확 늘지 않는다 */
-        var batchCount=lv<8?1:(lv<20?2:(lv<30?3:4));
-        if(bossActive) batchCount=Math.max(1,Math.round(batchCount*0.7)); /* 보스전 중 일반 몬스터 30% 감소 */
-        for(var spi=0;spi<batchCount;spi++){
-          var useMonster=Math.random()<(lv<8?0.65:0.82);
-          var spawnAsset=useMonster ? waveType : pickRandom(ASSETS.rockShapePool);
-          var tier=Math.min(3,Math.floor(lv/10));
-          var zz=useMonster&&(tier>=1||Math.random()<0.25);
-          var sp=spawnEdgePoint(60+spi*12);
-          var ranged=useMonster&&lv>=12&&Math.random()<(tier===1?0.12:(tier===2?0.22:0.32));
-          rocks.push({x:sp.x,y:sp.y,r:14+tier*2+Math.random()*7,
-            v:0.26+tier*0.09+Math.random()*0.08,asset:spawnAsset,passed:false,dead:false,
-            zigzag:zz,zzPhase:Math.random()*Math.PI*2,homing:true,id:++rockIdCounter,
-            hp:useMonster?1+tier:1,maxHp:useMonster?1+tier:1,tier:tier,ranged:ranged,
-            shotTimer:900+Math.random()*1600,dashTimer:tier>=3?1800+Math.random()*1800:999999,spawnedAt:el});
-        }
-      }
-      foodSpawn-=sdt;
-      if(foodSpawn<=0){
-        foodSpawn=(el<12?3200:4800)+Math.random()*2200;
-        var roll=Math.random(),kind='rice',asset=ASSETS.foodRice;
-        if(roll<0.02){kind='gold';asset=ASSETS.foodGold;} /* 아주 드물게 나오는 황금귤 — 보상이 훨씬 크다 */
-        else if(roll<0.14){kind='bag';asset=ASSETS.foodBag;}
-        else if(roll<0.44){kind='tangerine';asset=ASSETS.foodTangerine;}
-        foods.push({x:60+Math.random()*(W-120),y:-40,r:26,v:2.4+el*0.04,kind:kind,asset:asset});
-      }
-      /* 🗑 해양쓰레기 원거리 몬스터 — Lv18부터 등장하고 후반에는 두 마리씩 나온다. 좌우로 흔들리며
-         내려오다 주기적으로 배를 향해 파편을 쏜다 */
-      if(lv>=18){
-        debrisSpawn-=sdt;
-        if(debrisSpawn<=0){
-          debrisSpawn=Math.max(2100,5600-lv*70);
-          var debrisCount=lv>=28?2:1;
-          for(var dsi=0;dsi<debrisCount;dsi++){
-            var dk=Math.floor(Math.random()*ASSETS.debrisPool.length);
-            var dsp=spawnEdgePoint(70+dsi*20);
-            debris.push({x:dsp.x,y:dsp.y,r:32+Math.random()*6,v:0.72+Math.min(0.7,(lv-18)*0.025),
-              swayPhase:Math.random()*Math.PI*2,asset:ASSETS.debrisPool[dk],hp:3+Math.floor(lv/15),
-              shotTimer:1000+Math.random()*900,dead:false,spawnedAt:el});
-          }
-        }
-      }
-
-      /* 조각배(1단계)도 맨 처음부터 자동으로 포탄 1개가 나간다(예전엔 Lv2부터였음).
-         다연장 확장 카드를 고르면 그 즉시 1개씩 더 늘어난다(1→2→3개) */
-      var baseShot = (shipTier===0) ? 1 : 0;
-      var mc=T.missiles+baseShot+upgLevel.spread;
-      if(mc>0){
-        fireTimer-=sdt;
-        if(fireTimer<=0){
-          var baseFireEvery = T.fireEvery>0 ? T.fireEvery : 1.4;
-          fireTimer=baseFireEvery*1000*Math.pow(0.85,upgLevel.fire);
-          skillFull.fire=fireTimer; skillPulseUntil.fire=el+0.25;
-          beep(880,0.06,'sawtooth',0.09);
-          muzzleFlashes.push({x:px,y:shipY-30,until:el+0.16,big:mc>=3});
-          var pierceHp=1+(fusion.typhoon?3:0)+(fusion.tsunami?3:0);
-          /* 몬스터가 사방에서 몰려오므로 포격도 위쪽 고정이 아니라 가장 가까운
-             위협을 자동 조준해서 그쪽으로 나간다(뱀서라이크 오토에임).
-             주변에 적이 하나도 없을 때만(초반 등) 사방을 훑는 스윕으로 대체 */
-          var fireSpeed=(9+shipTier)*0.83; /* 가시성 패치 — 투사체 속도 17% 감소 */
-          var targetNow=nearestEnemy(px,shipY,el);
-          var baseAng=targetNow?Math.atan2(targetNow.y-shipY,targetNow.x-px):fireRotation;
-          if(!targetNow)fireRotation+=Math.PI/6;
-          /* 포탄이 2발 이상인데 spread각이 0이면 전부 같은 궤적에 겹쳐 보여서
-             "늘어나도 안 늘어난 것처럼" 보이는 문제가 있었다 — 최소 각도를 보장하고,
-             📐 확산 사격 카드로 더 넓게 벌릴 수 있게 한다 */
-          var spreadDeg=Math.max(T.spread,10)+upgLevel.angle*10+(fusion.gale?20:0);
-          for(var mi=0;mi<mc;mi++){
-            var ang=baseAng+(mi-(mc-1)/2)*(spreadDeg*Math.PI/180);
-            missiles.push({x:px,y:shipY-30,vx:Math.cos(ang)*fireSpeed,vy:Math.sin(ang)*fireSpeed,hp:pierceHp});
-          }
-        }
-      }
-
-      /* 🌊 관통 해일 — 명중 효과로만 숨어있지 않고 화면을 가로지르는 독립 파도
-         무기로 발사한다(V4 패치). 진화(대해일)하면 세 갈래로 동시 발사된다 */
-      if(upgLevel.pierce>0){
-        pierceTimer-=sdt;
-        if(pierceTimer<=0){
-          pierceTimer=Math.max(1000,2600-upgLevel.pierce*320)*cdrMul();
-          skillFull.pierce=pierceTimer; skillPulseUntil.pierce=el+0.25;
-          var waveCount=fusion.tsunami?3:1;
-          for(var pwi=0;pwi<waveCount;pwi++){
-            var pa=aimAngle(px,shipY,fireRotation,el)+(waveCount>1?(pwi-(waveCount-1)/2)*0.36:0);
-            pierceWaves.push({x:px,y:shipY,ang:pa,vx:Math.cos(pa)*7,vy:Math.sin(pa)*7,life:950,maxLife:950,hit:[],spawnedAt:now});
-          }
-          sfx('pop',0.35);
-        }
-      }
-      /* ⚡ 벼락 — 조준 없이 주기적으로 바위 하나에 벼락을 내린다. 타겟 위치까지
-         지그재그 번개 볼트가 실제로 그려지고, 화면 전체는 CSS 플래시로 번쩍인다 */
-      if(upgLevel.lightning>0){
-        lightningTimer-=sdt;
-        if(lightningTimer<=0){
-          lightningTimer=Math.max(500,2000-upgLevel.lightning*300)*cdrMul()*(fusion.thunderstorm?0.55:1);
-          skillFull.lightning=lightningTimer; skillPulseUntil.lightning=el+0.25;
-          var aliveRocks=rocks.filter(function(r){return isTargetable(r,el);});
-          if(aliveRocks.length>0){
-            var target=pickRandom(aliveRocks);
-            var boltHits=[target];
-            /* ⚡ 뇌우 진화 — 주변 적에게 연쇄로 두 번 더 옮겨붙는다 */
-            if(fusion.thunderstorm){
-              aliveRocks.filter(function(r){return r!==target && Math.hypot(r.x-target.x,r.y-target.y)<160;})
-                .slice(0,2).forEach(function(r){ boltHits.push(r); });
-            }
-            boltHits.forEach(function(t){
-              t.dead=true; explodeRock(t.x,t.y,t.r);
-              kills++; gainXp(ROCK_XP,el);
-              lightningBolts.push({x:t.x,y:t.y,until:el+0.32});
-              addSkillFx(fusion.thunderstorm?'thunderstorm':'lightning',t.x,t.y,fusion.thunderstorm?230:150,0);
-            });
-            sfx('pop',0.4);
-            flashLightning();
-          }
-        }
-      }
-      /* 🌪 영등바람(회오리) — 적이 모인 위치까지 천천히 이동한 뒤 그 자리에서
-         1.5~2초 머무르며 0.35~0.5초마다 주변 적을 밀어내고 조금씩 깎는다.
-         목표가 죽어 사라지면 마지막 위치에서 남은 시간을 그대로 채운다(가시성 패치) */
-      if(upgLevel.windpush>0){
-        windpushTimer-=sdt;
-        if(windpushTimer<=0){
-          windpushTimer=Math.max(1000,2800-upgLevel.windpush*360)*cdrMul();
-          skillFull.windpush=windpushTimer; skillPulseUntil.windpush=el+0.25;
-          var gw=(70+upgLevel.windpush*26)*(fusion.gale?1.6:1);
-          var wt=nearestEnemy(px,shipY,el);
-          var tgx=wt?wt.x:(px+Math.cos(fireRotation)*160), tgy=wt?wt.y:(shipY+Math.sin(fireRotation)*160);
-          var gwa=Math.atan2(tgy-shipY,tgx-px);
-          windGusts.push({x:px,y:shipY,w:gw,ang:gwa,tx:tgx,ty:tgy,phase:'travel',tickTimer:0,settleUntil:0});
-          addSkillFx(fusion.gale?'gale':'wind',px+Math.cos(gwa)*55,shipY+Math.sin(gwa)*55,fusion.gale?250:170,gwa+Math.PI/2);
-          sfx('evolve',0.35);
-        }
-      }
-      /* 💣 폭발탄 — 전용 투사체를 주기적으로 쏘아 명중 지점에서 실제로 폭발한다.
-         발사 순간에도 이펙트를 띄워 "쐈다"는 게 바로 보이게 한다(V4 패치) */
-      if(upgLevel.bomb>0){
-        bombTimer-=sdt;
-        if(bombTimer<=0){
-          bombTimer=Math.max(1100,2500-upgLevel.bomb*280)*cdrMul();
-          skillFull.bomb=bombTimer; skillPulseUntil.bomb=el+0.25;
-          var bombCount=fusion.goldstorm?3:1;
-          for(var bi=0;bi<bombCount;bi++){
-            var ba=aimAngle(px,shipY,fireRotation,el)+(bi-(bombCount-1)/2)*0.18;
-            var bs=3.5+(bi%2)*0.25;
-            bombShots.push({x:px,y:shipY,vx:Math.cos(ba)*bs,vy:Math.sin(ba)*bs,life:2400});
-            addSkillFx(fusion.goldstorm?'goldstorm':'tangerine',px,shipY,fusion.goldstorm?140:100,ba+Math.PI/2);
-          }
-        }
-      }
-      /* 🐟 바람 물고기 — 가속 누적으로 적 주위를 도는 방식이 아니라 회전각을 제한해 직선에 가깝게 추적한다. */
-      if(upgLevel.homing>0){
-        homingTimer-=sdt;
-        if(homingTimer<=0){
-          homingTimer=Math.max(1200,2700-upgLevel.homing*300)*cdrMul();
-          skillFull.homing=homingTimer; skillPulseUntil.homing=el+0.25;
-          var fishCount=fusion.dragonfish?3:1;
-          for(var fi=0;fi<fishCount;fi++){
-            var fa=aimAngle(px,shipY,fireRotation,el)+(fi-(fishCount-1)/2)*0.12;
-            var fish={x:px,y:shipY,ang:fa,vx:Math.cos(fa)*6.4,vy:Math.sin(fa)*6.4,life:2600,target:null,dead:false};
-            windFishShots.push(fish);
-            addSkillFx(fusion.dragonfish?'dragonfish':'fish',fish.x,fish.y,fusion.dragonfish?176:104,0,fish);
-          }
-        }
-      }
-      /* 🔱 폭풍 작살 — 주변 적을 실제로 조준한다. 진화하면 서로 다른 적에게 360도 동시 발사한다. */
-      if(upgLevel.missile>0){
-        missileTimer-=sdt;
-        if(missileTimer<=0){
-          missileTimer=Math.max(1450,3400-upgLevel.missile*390)*cdrMul();
-          skillFull.missile=missileTimer; skillPulseUntil.missile=el+0.25;
-          var targets=rocks.filter(function(r){return isTargetable(r,el);}).concat(debris.filter(function(r){return isTargetable(r,el);}));
-          if(isTargetable(boss,el)&&boss.state==='alive')targets.push(boss);if(isTargetable(finalBoss,el)&&finalBoss.state==='alive')targets.push(finalBoss);
-          targets.sort(function(a,b){return Math.hypot(a.x-px,a.y-shipY)-Math.hypot(b.x-px,b.y-shipY);});
-          var hc=fusion.harpoonstorm?Math.min(8,Math.max(4,targets.length)):Math.min(1+Math.floor(upgLevel.rear/2),3);
-          if(fusion.harpoonstorm)addSkillFx('harpoonstorm',px,shipY,290,0);
-          for(var hsi=0;hsi<hc;hsi++){
-            var ht=targets.length?targets[hsi%targets.length]:null;
-            var ha=ht?Math.atan2(ht.y-shipY,ht.x-px):(fireRotation+(hsi/hc)*Math.PI*2);
-            /* 진화 전(기본 작살)에도 발사 이펙트가 있어야 처음부터 눈에 보인다 —
-               융합(소용돌이 작살진) 때만 뜨던 걸 기본 발사에도 추가 */
-            if(!fusion.harpoonstorm) addSkillFx('harpoon',px,shipY,130,ha+Math.PI/2);
-            stormHarpoons.push({x:px,y:shipY,vx:Math.cos(ha)*(6.3+upgLevel.missile*0.25),vy:Math.sin(ha)*(6.3+upgLevel.missile*0.25),
-              ang:ha,hp:fusion.harpoonstorm?2:1,life:2200,dead:false});
-          }
-        }
-      }
-      /* 🛡 바람막이 — 주기적으로 보호막 1회분을 충전한다 */
-      if(upgLevel.shield>0 && shieldCharge<1){
-        shieldTimer-=sdt;
-        if(shieldTimer<=0){
-          shieldTimer=Math.max(6500,14800-upgLevel.shield*1660)*cdrMul();
-          skillFull.shield=shieldTimer; skillPulseUntil.shield=el+0.25;
-          shieldCharge=fusion.seabarrier?3:1;
-          toast('🛡 바람막이 준비됨');
-        }
-      }
-    }
-    /* ================= 배경 ================= */
-    ctx.save();
-    /* 카메라 흔들림/줌 */
-    cam.zoom += (cam.zoomTo-cam.zoom)*0.16;
-    cam.shake *= 0.90; if(cam.shake<0.05) cam.shake=0;
-    var shx=(Math.random()*2-1)*cam.shake, shy=(Math.random()*2-1)*cam.shake;
-    /* 화면 중앙이 아니라 배 위치를 기준으로 확대해야 한다 — 배가 화면 아래쪽에
-       있는 상태로 중앙 기준 줌을 걸면 확대할수록 배가 화면 밖으로 밀려나 잘려 보였다 */
-    ctx.translate(px,shipY);
-    ctx.scale(cam.zoom,cam.zoom);
-    ctx.translate(-px+shx,-shipY+shy);
-
-    ctx.clearRect(-40,-40,W+80,H+80);
-    var g=ctx.createLinearGradient(0,0,0,H);
-    g.addColorStop(0,'#181B2E');g.addColorStop(1,'#0F1120');
-    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-
-    /* 먼 바다 안개 */
-    ctx.fillStyle='rgba(150,190,210,0.05)';
-    ctx.fillRect(0,0,W,H*0.35);
-
-    /* 파도 레이어(속도 다른 3겹) + 배 진행감 */
-    var speedFeel=1;
-    wave+=.035*frameK*speedFeel;
-    [ [0.12,7,24,9], [0.08,5,34,13], [0.05,4,46,19] ].forEach(function(cfg,li){
-      ctx.strokeStyle='rgba(79,195,161,'+cfg[0]+')';ctx.lineWidth=2.4;
-      var rows=cfg[1];
-      for(var i=0;i<rows;i++){ctx.beginPath();
-        for(var x=0;x<=W;x+=26)ctx.lineTo(x,i*H/rows+Math.sin(x/cfg[2]+wave*(1+li*0.3)+i)*cfg[3]);ctx.stroke();}
+    fxList.forEach(function(f){f.t+=dt});
+    fxList=fxList.filter(function(f){
+      if(f.type==='gust')return f.t<260;
+      if(f.type==='combo_star'||f.type==='water_splash')return f.t<420;
+      if(f.type==='bigwind')return f.t<C.bigWindDur+300;
+      if(f.type==='dok')return f.t<C.dokDur;
+      return false;
     });
+    seagulls.forEach(function(s){s.t+=dt;s.x=(-80)+(W+160)*Math.min(1,s.t/C.seagullDur)});
+    seagulls=seagulls.filter(function(s){return s.t<C.seagullDur});
+    popups.forEach(function(p){p.y+=p.vy*dt*0.06;p.life-=dt/700});
+    popups=popups.filter(function(p){return p.life>0});
 
-    /* 배경 파티클 — 물보라/바람 방향 미세 입자, 최대 개수 제한 */
-    if(bgParticles.length<46 && Math.random()<0.55*frameK){
-      bgParticles.push({x:Math.random()*W,y:H+10,vy:-(1.2+Math.random()*1.6)*speedFeel,vx:(Math.random()*0.6-0.3),l:1,sz:2+Math.random()*3});
-    }
-    bgParticles.forEach(function(p){p.x+=p.vx*frameK;p.y+=p.vy*frameK;p.l-=0.006*frameK;});
-    bgParticles=bgParticles.filter(function(p){return p.l>0 && p.y>-20});
-    bgParticles.forEach(function(p){
-      ctx.globalAlpha=Math.max(0,p.l)*0.5;
-      if(!drawImgFit(ASSETS.windParticle,p.x,p.y,p.sz*3,p.sz*3,0)){
-        ctx.fillStyle='#BFEEDC';ctx.beginPath();ctx.arc(p.x,p.y,p.sz,0,7);ctx.fill();
-      }
-      ctx.globalAlpha=1;
-    });
+    /* ---- 렌더 ---- */
+    ctx.clearRect(0,0,W,H);
+    ctx.drawImage(bg,0,0);
 
-    var hit=false;
-
-    /* ---- 미니보스 ---- (그냥 지나가는 장애물이 아니라 한 자리에 버티고 서서
-       패턴 공격을 반복하는 진짜 보스전 — 격파해야만 물러간다) */
-    if(boss.state==='alive'){
-      if(!frozen){
-        if(boss.y<boss.restY) boss.y+=boss.v*frameK*2.6;
-        else {
-          boss.moveTimer-=sdt;
-          if(boss.moveTimer<=0){
-            var bmoves=[
-              {x:W*0.2,y:H*0.22},{x:W*0.8,y:H*0.24},{x:W*0.3,y:H*0.48},{x:W*0.7,y:H*0.44},{x:W/2,y:H*0.18}
-            ];
-            var bmv=pickRandom(bmoves);boss.targetX=bmv.x;boss.targetY=bmv.y;boss.moveTimer=900+Math.random()*900;
-          }
-          boss.x+=(boss.targetX-boss.x)*0.025*(boss.v||1)*frameK;boss.y+=(boss.targetY-boss.y)*0.025*(boss.v||1)*frameK;
-        }
-      }
-      if(!drawImgFit(boss.asset,boss.x,boss.y,boss.r*2.3,boss.r*2.4,0)){
-        ctx.fillStyle='#2A2F4A';ctx.beginPath();
-        ctx.moveTo(boss.x-boss.r,boss.y+boss.r);ctx.lineTo(boss.x,boss.y-boss.r);ctx.lineTo(boss.x+boss.r,boss.y+boss.r);ctx.closePath();ctx.fill();
-      }
-      /* 체력바 */
-      var bbw=140;
-      ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(boss.x-bbw/2,boss.y-boss.r-26,bbw,10);
-      ctx.fillStyle='#F0605A';ctx.fillRect(boss.x-bbw/2+2,boss.y-boss.r-24,(bbw-4)*Math.max(0,boss.hp/boss.maxHp),6);
-      if(el<boss.flashUntil){ ctx.globalAlpha=0.5; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(boss.x,boss.y,boss.r*1.1,0,7); ctx.fill(); ctx.globalAlpha=1; }
-      for(var bmi=missiles.length-1;bmi>=0;bmi--){
-        var bm=missiles[bmi];
-        if(isTargetable(boss,el) && Math.hypot(bm.x-boss.x,bm.y-boss.y)<boss.r+8){
-          /* 🔥 화력 집중 — 보스에게는 한 발당 데미지가 더 크다. 모든 보스 피해는
-             damageBossTarget 한 곳으로만 통과시켜 단일피해 상한·페이즈 전환을
-             빠짐없이 적용한다(난이도 패치, 중복 코드 정리) */
-          missiles.splice(bmi,1); shake(3); sfx('pop',0.4);
-          damageBossTarget(boss,1+upgLevel.focus,el);
-          if(boss.state!=='alive') break;
-        }
-      }
-      if(boss.state==='alive'){
-        var bdx=Math.abs(boss.x-px), bdy=Math.abs(boss.y-shipY);
-        if(bdx<boss.r+30 && bdy<boss.r+34){ hit=true; }
-      }
-      /* 미니보스 패턴: 조준탄·원형탄·회전탄·지원 몬스터 소환을 순환한다. */
-      if(boss.state==='alive' && !frozen && boss.y>=boss.restY && el>=(boss.transitionUntil||0)){
-        boss.shotTimer-=sdt;
-        if(boss.shotTimer<=0){
-          boss.patternStep=(boss.patternStep+1)%4;
-          var baang=Math.atan2(shipY-boss.y,px-boss.x);
-          if(boss.patternStep===0){
-            for(var bri=0;bri<12;bri++){
-              var brang=(bri/12)*Math.PI*2+boss.spiral;
-              enemyShots.push({x:boss.x,y:boss.y,vx:Math.cos(brang)*3.0,vy:Math.sin(brang)*3.0,kind:'orb',dead:false});
-            }
-            boss.spiral+=0.22;boss.shotTimer=2100;
-          } else if(boss.patternStep===1){
-            [-0.26,0,0.26].forEach(function(boff){
-              enemyShots.push({x:boss.x,y:boss.y,vx:Math.cos(baang+boff)*3.6,vy:Math.sin(baang+boff)*3.6,kind:'spike',dead:false});
-            });
-            boss.shotTimer=950;
-          } else if(boss.patternStep===2){
-            for(var bsi=0;bsi<8;bsi++){
-              var bsa=baang+bsi*0.42;
-              enemyShots.push({x:boss.x,y:boss.y,vx:Math.cos(bsa)*3.35,vy:Math.sin(bsa)*3.35,kind:'wave',dead:false});
-            }
-            boss.targetX=Math.max(boss.r,Math.min(W-boss.r,px+(Math.random()-.5)*180));
-            boss.targetY=Math.max(boss.r,Math.min(H*0.58,shipY-140));boss.moveTimer=520;boss.shotTimer=1500;
-          } else {
-            var bossSummonN=boss.phase3Done?6:(boss.phase2Done?5:4); /* 페이즈 전환마다 소환량 강화 */
-            for(var bsm=0;bsm<bossSummonN;bsm++){
-              var bsp=spawnEdgePoint(50+bsm*8);
-              rocks.push({x:bsp.x,y:bsp.y,r:20,v:0.55,asset:pickRandom(activeMonsterPool()),passed:false,dead:false,
-                zigzag:true,zzPhase:Math.random()*6.28,homing:true,id:++rockIdCounter,hp:2,maxHp:2,tier:2,
-                ranged:bsm%2===0,shotTimer:900+Math.random()*700,dashTimer:999999,spawnedAt:el});
-            }
-            boss.shotTimer=2400;
-          }
-        }
-      }
-    }
-
-    /* ---- ⚡ 번개 볼트 — 타겟까지 실제 번개 그림이 위에서부터 내리꽂힌다(그림 없으면 지그재그 선) ---- */
-    lightningBolts=lightningBolts.filter(function(b){ return b.until>el; });
-    lightningBolts.forEach(function(b){
-      var boltImg=ASSETS.lightningPool[Math.floor(Math.random()*ASSETS.lightningPool.length)];
-      if(!drawImgFit(boltImg,b.x,b.y/2,46,b.y,0)){
+    /* 목적지 */
+    dests.forEach(function(d,i){
+      var im=wimg(d.img);
+      var active=basket && !basket.resolved && phase==='play' && basket.tIdx===i;
+      if(active){
         ctx.save();
-        ctx.strokeStyle='rgba(220,235,255,.95)'; ctx.lineWidth=3;
-        ctx.shadowColor='#9fd8ff'; ctx.shadowBlur=14;
-        ctx.beginPath(); ctx.moveTo(b.x,0);
-        var segs=6;
-        for(var lbi=1;lbi<segs;lbi++){ ctx.lineTo(b.x+(Math.random()-0.5)*36, b.y*(lbi/segs)); }
-        ctx.lineTo(b.x,b.y);
-        ctx.stroke();
+        var glow=ctx.createRadialGradient(d.x,destY,10*U,d.x,destY,d.w*0.55);
+        glow.addColorStop(0,'rgba(245,179,49,.45)');glow.addColorStop(1,'rgba(245,179,49,0)');
+        ctx.fillStyle=glow;ctx.beginPath();ctx.arc(d.x,destY,d.w*0.55,0,7);ctx.fill();
+        ctx.restore();
+      }
+      if(im)drawWImgC(im,d.x,destY,d.w*0.66);
+      else{ctx.fillStyle='#5C4A34';ctx.beginPath();ctx.arc(d.x,destY,60*U,0,7);ctx.fill()}
+      drawText(d.label,d.x,destY+d.w*0.30,17,'#F2F0EA','rgba(20,20,20,.6)');
+      if(active){
+        ctx.save();ctx.globalAlpha=0.85+Math.sin(elapsed/160)*0.15;
+        drawText('여기로!',d.x,destY-d.w*0.42,18,'#1A1204','rgba(255,255,255,.85)');
         ctx.restore();
       }
     });
 
-    /* ---- 🌪 회오리(영등바람) — 적이 모인 곳까지 이동한 뒤 그 자리에 자리잡고
-       주기적으로 밀어내며 깎는다. 흐린 원형 바닥 효과로 실제 판정 범위를 보여준다 ---- */
-    windGusts.forEach(function(g2){
-      if(!frozen){
-        if(g2.phase==='travel'){
-          var gdx=g2.tx-g2.x, gdy=g2.ty-g2.y, gdd=Math.hypot(gdx,gdy)||1;
-          if(gdd<28){ g2.phase='settle'; g2.settleUntil=el+1.8; g2.tickTimer=0; }
-          else { g2.x+=(gdx/gdd)*5.8*frameK*2.6; g2.y+=(gdy/gdd)*5.8*frameK*2.6; }
-        } else {
-          g2.tickTimer-=sdt;
-          if(g2.tickTimer<=0){
-            g2.tickTimer=400+Math.random()*100; /* 0.35~0.5초마다 한 번씩 */
-            var tickDmg=1+Math.floor(upgLevel.windpush/2);
-            rocks.forEach(function(r){
-              if(isTargetable(r,el) && Math.hypot(r.x-g2.x,r.y-g2.y)<g2.w*0.55){
-                var gd2=Math.hypot(r.x-g2.x,r.y-g2.y)||1;
-                r.x+=(r.x-g2.x)/gd2*10;r.y+=(r.y-g2.y)/gd2*10; /* 살짝 밀어냄 */
-                r.hp=(r.hp||1)-tickDmg;
-                if(r.hp<=0){ r.dead=true; explodeRock(r.x,r.y,r.r); kills++; dropXpPouch(r.x,r.y,ROCK_XP,el); }
-              }
-            });
-            debris.forEach(function(dm){
-              if(isTargetable(dm,el) && Math.hypot(dm.x-g2.x,dm.y-g2.y)<g2.w*0.55){
-                dm.hp-=tickDmg;
-                if(dm.hp<=0){ dm.dead=true; kills++; dropXpPouch(dm.x,dm.y,ROCK_XP*2,el); }
-              }
-            });
-            if(isTargetable(boss,el)&&boss.state==='alive'&&Math.hypot(boss.x-g2.x,boss.y-g2.y)<g2.w*0.55+boss.r) damageBossTarget(boss,tickDmg,el);
-            if(isTargetable(finalBoss,el)&&finalBoss.state==='alive'&&Math.hypot(finalBoss.x-g2.x,finalBoss.y-g2.y)<g2.w*0.55+finalBoss.r) damageBossTarget(finalBoss,tickDmg,el);
-            sfx('pop',0.25);
-          }
-        }
-      }
-      /* 흐린 원형 바닥 효과 — 실제 판정 반지름(w*0.55)과 일치시킨다 */
-      var gRad=g2.w*0.55;
-      var gGrad=ctx.createRadialGradient(g2.x,g2.y,gRad*0.2,g2.x,g2.y,gRad);
-      gGrad.addColorStop(0,'rgba(79,195,161,.28)');gGrad.addColorStop(1,'rgba(79,195,161,0)');
-      ctx.fillStyle=gGrad;ctx.beginPath();ctx.arc(g2.x,g2.y,gRad,0,Math.PI*2);ctx.fill();
-      ctx.save();ctx.globalAlpha=0.55;
-      var gustTier=Math.min(3,Math.round(g2.w/40)-1);
-      if(!drawImgFit(ASSETS.windpushPool[Math.max(0,gustTier)],g2.x,g2.y,g2.w,g2.w,g2.ang+Math.PI/2+el*(g2.phase==='settle'?2.4:0))){
-        ctx.save();ctx.translate(g2.x,g2.y);ctx.rotate(g2.ang+(g2.phase==='settle'?el*2.4:0));
-        ctx.strokeStyle='rgba(79,195,161,.85)';ctx.lineWidth=5;
-        ctx.beginPath();ctx.arc(0,0,g2.w*0.22,0.3,2.6);ctx.stroke();
-        ctx.beginPath();ctx.arc(8,0,g2.w*0.14,0.5,2.4);ctx.stroke();
-        ctx.restore();
-      }
-      ctx.restore();
-    });
-    windGusts=windGusts.filter(function(g2){return (g2.phase==='travel'||el<g2.settleUntil)&&g2.x>-180&&g2.x<W+180&&g2.y>-180&&g2.y<H+180;});
+    /* 갈매기 */
+    seagulls.forEach(function(s){var im=wimg('seagull');if(im)drawWImgC(im,s.x,s.y,70*U,0,0.9)});
 
-    /* ---- 💣 폭발탄(전용 투사체) — 바위에 닿거나 화면 위쪽에 닿으면 실제로 폭발한다 ---- */
-    bombShots.forEach(function(b){
-      if(b.dead) return;
-      if(!frozen){b.life-=sdt;b.x+=b.vx*frameK*2.6;b.y+=b.vy*frameK*2.6;}
-      if(!drawImgFit(ASSETS.shotLarge,b.x,b.y,40,40,Math.atan2(b.vy,b.vx)+Math.PI/2)){
-        ctx.fillStyle='#F5B331'; ctx.beginPath(); ctx.arc(b.x,b.y,13,0,7); ctx.fill();
-      }
-      if(!frozen){
-        var hitRock=null;
-        rocks.forEach(function(r){ if(!hitRock && isTargetable(r,el) && Math.hypot(r.x-b.x,r.y-b.y)<r.r+14) hitRock=r; });
-        if(hitRock || b.life<=0 || b.x<-40 || b.x>W+40 || b.y<-40 || b.y>H+40){
-          b.dead=true;
-          var ex=hitRock?hitRock.x:b.x, ey=hitRock?hitRock.y:b.y;
-          var radius=(70+upgLevel.bomb*36)*(fusion.tsunami?1.8:1);
-          addSkillFx(fusion.goldstorm?'goldstorm':'tangerine',ex,ey,fusion.goldstorm?270:170,0);
-          if(fusion.tsunami) addSkillFx('tsunami',ex,ey,280,0);
-          explodeRock(ex,ey,radius*0.5,true);
-          sfx('boom',0.55); shake(fusion.tsunami?8:5); pauseUntil=Math.max(pauseUntil,el+0.06);
-          var bombHitN=0;
-          rocks.forEach(function(r){
-            if(isTargetable(r,el) && Math.hypot(r.x-ex,r.y-ey)<radius){ r.dead=true; bombHitN++; }
-          });
-          debris.forEach(function(dm){if(isTargetable(dm,el)&&Math.hypot(dm.x-ex,dm.y-ey)<radius){dm.hp-=2+upgLevel.bomb;if(dm.hp<=0){dm.dead=true;bombHitN++;}}});
-          if(isTargetable(boss,el)&&Math.hypot(boss.x-ex,boss.y-ey)<radius+boss.r)damageBossTarget(boss,2+upgLevel.bomb,el);
-          if(isTargetable(finalBoss,el)&&Math.hypot(finalBoss.x-ex,finalBoss.y-ey)<radius+finalBoss.r)damageBossTarget(finalBoss,2+upgLevel.bomb,el);
-          if(bombHitN>0){ kills+=bombHitN; gainXp(bombHitN*ROCK_XP,el); }
-        }
-      }
-    });
-    bombShots=bombShots.filter(function(b){return !b.dead;});
-
-    /* ---- 🌊 관통 해일 — 배 앞으로 넓게 퍼지는 중거리 파도. 지나가는 길의 적을
-       한 번씩만 때리고(같은 적 중복 타격 없음) 죽이지 못한 적은 살짝 밀어낸다.
-       수명이 짧아(0.8~1.1초) 화면을 끝까지 가로지르기보다 중거리에서 넓어지다
-       사라진다(가시성 패치) ---- */
-    pierceWaves.forEach(function(pw){
-      if(!frozen){ pw.life-=sdt; pw.x+=pw.vx*frameK*2.6; pw.y+=pw.vy*frameK*2.6; }
-      var lifeP=1-Math.max(0,pw.life)/pw.maxLife; /* 0=막 생성 → 1=소멸 직전, 갈수록 넓어진다 */
-      var waveSize=(80+upgLevel.pierce*12+(fusion.tsunami?50:0))*(0.7+lifeP*0.6);
-      if(!drawSkillFrame(SKILL_SHEETS[fusion.tsunami?'tsunami':'tidal'],pw.x,pw.y,waveSize,pw.spawnedAt,now,true,pw.ang+Math.PI/2)){
-        ctx.save();ctx.translate(pw.x,pw.y);ctx.rotate(pw.ang);ctx.globalAlpha=1-lifeP*0.4;
-        ctx.strokeStyle='rgba(120,200,255,.85)';ctx.lineWidth=6;ctx.lineCap='round';
-        ctx.beginPath();ctx.moveTo(-waveSize*0.3,6);ctx.quadraticCurveTo(0,-waveSize*0.3,waveSize*0.3,6);ctx.stroke();
-        ctx.beginPath();ctx.moveTo(-waveSize*0.18,16);ctx.quadraticCurveTo(0,-waveSize*0.14,waveSize*0.18,16);ctx.stroke();
-        ctx.restore();
-      }
-      if(!frozen){
-        var pierceDmg=2+upgLevel.focus;
-        rocks.forEach(function(r){
-          if(isTargetable(r,el) && pw.hit.indexOf(r)<0 && Math.hypot(r.x-pw.x,r.y-pw.y)<r.r+waveSize*0.32){
-            pw.hit.push(r); r.dead=true; explodeRock(r.x,r.y,r.r); kills++; dropXpPouch(r.x,r.y,ROCK_XP,el);
-          }
-        });
-        debris.forEach(function(dm){
-          if(isTargetable(dm,el) && pw.hit.indexOf(dm)<0 && Math.hypot(dm.x-pw.x,dm.y-pw.y)<dm.r+waveSize*0.32){
-            pw.hit.push(dm); dm.hp-=pierceDmg;
-            if(dm.hp<=0){ dm.dead=true; kills++; dropXpPouch(dm.x,dm.y,ROCK_XP*2,el); }
-            else { dm.x+=pw.vx*3; dm.y+=pw.vy*3; } /* 죽지 않은 적은 살짝 밀려난다 */
-          }
-        });
-        if(boss.state==='alive' && isTargetable(boss,el) && pw.hit.indexOf(boss)<0 && Math.hypot(boss.x-pw.x,boss.y-pw.y)<boss.r+waveSize*0.32){
-          pw.hit.push(boss); damageBossTarget(boss,pierceDmg,el);
-        }
-        if(finalBoss.state==='alive' && isTargetable(finalBoss,el) && pw.hit.indexOf(finalBoss)<0 && Math.hypot(finalBoss.x-pw.x,finalBoss.y-pw.y)<finalBoss.r+waveSize*0.32){
-          pw.hit.push(finalBoss); damageBossTarget(finalBoss,pierceDmg,el);
-        }
-      }
-      if(pw.life<=0 && !pw.popped){
-        pw.popped=true;
-        for(var pdi=0;pdi<6;pdi++){
-          var pda=Math.random()*Math.PI*2;
-          fx.push({x:pw.x,y:pw.y,vx:Math.cos(pda)*2.2,vy:Math.sin(pda)*2.2,l:1,c:'#9fd8ff',sz:2+Math.random()*2});
-        }
-      }
-    });
-    pierceWaves=pierceWaves.filter(function(pw){return pw.life>0 && pw.x>-150 && pw.x<W+150 && pw.y>-150 && pw.y<H+150;});
-
-    /* ---- 🐟 바람 물고기 — 목표 방향으로 완만하게 꺾되, 선회 누적으로 주위를 도는 현상을 막는다 ---- */
-    windFishShots.forEach(function(hm){
-      if(hm.dead) return;
-      if(!frozen){
-        hm.life-=sdt;
-        if(!hm.target||hm.target.dead||!isTargetable(hm.target,el)) hm.target=nearestEnemy(hm.x,hm.y,el);
-        if(hm.target){
-          var hang=Math.atan2(hm.target.y-hm.y,hm.target.x-hm.x);
-          var turn=Math.max(-0.11*frameK,Math.min(0.11*frameK,angleDelta(hm.ang,hang)));
-          hm.ang+=turn;
-        } else if(hm.everHadTarget){
-          /* 화면 안 목표를 잃고 재조준할 곳도 없으면 자연 소멸한다(가시성 패치) */
-          hm.dead=true;
-        }
-        if(hm.target) hm.everHadTarget=true;
-        var hsp=5.3+upgLevel.speed*0.4+(fusion.dragonfish?1.1:0);
-        hm.vx=Math.cos(hm.ang)*hsp;hm.vy=Math.sin(hm.ang)*hsp;
-        hm.x+=hm.vx*frameK*2.6; hm.y+=hm.vy*frameK*2.6;
-        rocks.forEach(function(r){
-          if(!hm.dead && isTargetable(r,el) && Math.hypot(r.x-hm.x,r.y-hm.y)<r.r+13){
-            hm.dead=true;r.hp=(r.hp||1)-(fusion.dragonfish?3:2);
-            if(r.hp<=0){r.dead=true;explodeRock(r.x,r.y,r.r);kills++;dropXpPouch(r.x,r.y,ROCK_XP,el);}
-            sfx('pop',0.4);
-            if(fusion.dragonfish){
-              addSkillFx('dragonfish',r.x,r.y,190,0);
-              rocks.forEach(function(r2){
-                if(!r2.dead && Math.hypot(r2.x-r.x,r2.y-r.y)<100){r2.dead=true;kills++;dropXpPouch(r2.x,r2.y,ROCK_XP,el);}
-              });
-            }
-          }
-        });
-        if(!hm.dead&&hm.target&&rocks.indexOf(hm.target)<0&&Math.hypot(hm.target.x-hm.x,hm.target.y-hm.y)<(hm.target.r||30)+16){
-          hm.dead=true;
-          if(!damageBossTarget(hm.target,fusion.dragonfish?4:2,el)){
-            hm.target.hp-=(fusion.dragonfish?4:2);
-            if(hm.target.hp<=0){hm.target.dead=true;explodeRock(hm.target.x,hm.target.y,hm.target.r);kills++;dropXpPouch(hm.target.x,hm.target.y,ROCK_XP*2,el);}
-          }
-        }
-        if(hm.life<=0) hm.dead=true;
-      }
-      if(!drawImgFit(ASSETS.windFish,hm.x,hm.y,94,62,hm.ang)){
-        ctx.save();ctx.translate(hm.x,hm.y);ctx.rotate(hm.ang);
-        ctx.fillStyle='#9fd8ff';
-        ctx.beginPath();ctx.ellipse(0,0,21,9,0,0,Math.PI*2);ctx.fill();
-        ctx.beginPath();ctx.moveTo(-19,0);ctx.lineTo(-31,-8);ctx.lineTo(-31,8);ctx.closePath();ctx.fill();
-        ctx.restore();
-      }
-    });
-    windFishShots=windFishShots.filter(function(hm){return !hm.dead&&hm.x>-100&&hm.x<W+100&&hm.y>-100&&hm.y<H+100;});
-
-    /* ---- 🔱 폭풍 작살 — 발사 때 정한 적 방향으로 곧게 나가며 절대 위쪽으로 고정되지 않는다 ---- */
-    stormHarpoons.forEach(function(bg){
-      if(bg.dead) return;
-      if(!frozen){bg.life-=sdt;bg.x+=bg.vx*frameK*2.6;bg.y+=bg.vy*frameK*2.6;}
-      if(!drawImgFit(ASSETS.stormHarpoon,bg.x,bg.y,113,56,bg.ang)){
-        ctx.save();ctx.translate(bg.x,bg.y);ctx.rotate(bg.ang);
-        ctx.strokeStyle='#F0605A';ctx.lineWidth=5;
-        ctx.beginPath();ctx.moveTo(-26,0);ctx.lineTo(22,0);ctx.stroke();
-        ctx.fillStyle='#F0605A';
-        ctx.beginPath();ctx.moveTo(29,0);ctx.lineTo(14,-10);ctx.lineTo(14,10);ctx.closePath();ctx.fill();
-        ctx.restore();
-      }
-      if(!frozen){
-        rocks.forEach(function(r){
-          if(!bg.dead && isTargetable(r,el) && Math.hypot(r.x-bg.x,r.y-bg.y)<r.r+46){
-            bg.hp--; r.dead=true; explodeRock(r.x,r.y,r.r*1.4,true); kills++; gainXp(ROCK_XP*2,el); sfx('boom',0.4); shake(3);
-            pauseUntil=Math.max(pauseUntil,el+0.05); /* 강한 공격 — 짧은 히트스톱(가시성 패치) */
-            if(bg.hp<=0) bg.dead=true;
-          }
-        });
-        debris.forEach(function(dm){
-          if(!bg.dead&&isTargetable(dm,el)&&Math.hypot(dm.x-bg.x,dm.y-bg.y)<dm.r+28){
-            dm.hp-=3+upgLevel.missile;bg.hp--;if(dm.hp<=0){dm.dead=true;kills++;dropXpPouch(dm.x,dm.y,ROCK_XP*2,el);}if(bg.hp<=0)bg.dead=true;
-          }
-        });
-        if(!bg.dead&&isTargetable(boss,el)&&boss.state==='alive'&&Math.hypot(boss.x-bg.x,boss.y-bg.y)<boss.r+28){damageBossTarget(boss,4+upgLevel.missile,el);bg.dead=true;}
-        if(!bg.dead&&isTargetable(finalBoss,el)&&finalBoss.state==='alive'&&Math.hypot(finalBoss.x-bg.x,finalBoss.y-bg.y)<finalBoss.r+28){damageBossTarget(finalBoss,4+upgLevel.missile,el);bg.dead=true;}
-        if(bg.life<=0||bg.x<-100||bg.x>W+100||bg.y<-100||bg.y>H+100)bg.dead=true;
-      }
-    });
-    stormHarpoons=stormHarpoons.filter(function(bg){return !bg.dead;});
-
-    /* ---- 최종 보스 (Lv30) — 단계 연출극 없이 "기본 뱀서류" 느낌 그대로,
-       평소 스웜(바위·해양쓰레기) 속에서 훨씬 강한 적 한 마리를 잡는다.
-       화면에 내려와 자리잡고 버티면서 파편을 쏘고, 체력을 다 깎으면 승리 */
-    if(finalBoss.state==='announce' && el>=finalBoss.announceUntil){
-      /* 목표 전투시간이 미니보스보다 길어(25~35초) 30초 기준 DPS로 스케일한다(난이도 패치) */
-      var fbScaledHp=Math.max(90, currentDps(el)*30, lastBossHp*1.35);
-      finalBoss.state='alive';
-      finalBoss.maxHp=Math.round(fbScaledHp); finalBoss.hp=finalBoss.maxHp;
-      finalBoss.phase2Done=false; finalBoss.phase3Done=false; finalBoss.transitionUntil=0; finalBoss.dmgReduceUntil=0;
-      lastBossHp=finalBoss.maxHp;
-      finalBoss.x=W/2;finalBoss.y=-180;finalBoss.restY=H*0.22;finalBoss.shotTimer=1200;finalBoss.patternStep=0;
-      finalBoss.moveTimer=800;finalBoss.targetX=W/2;finalBoss.targetY=finalBoss.restY;finalBoss.spiral=0;
-      finalBoss.asset=ASSETS.krakenBoss; /* 대사집에서 "크라켄"으로 특정된 최종보스 */
-      toast('영등할망의 마지막 시련 — 강력한 존재가 나타났다!');
-      sfx('boom',0.6);
-    }
-    if(finalBoss.state==='alive'){
-      if(!frozen){
-        if(finalBoss.y<finalBoss.restY) finalBoss.y+=1.6*(finalBoss.v||1)*frameK*2.6;
-        else {
-          finalBoss.moveTimer-=sdt;
-          if(finalBoss.moveTimer<=0){
-            var fmoves=[
-              {x:W*0.18,y:H*0.2},{x:W*0.82,y:H*0.2},{x:W*0.25,y:H*0.5},
-              {x:W*0.75,y:H*0.5},{x:W/2,y:H*0.15},{x:px,y:Math.max(H*0.2,shipY-170)}
-            ];
-            var fmv=pickRandom(fmoves);finalBoss.targetX=fmv.x;finalBoss.targetY=fmv.y;finalBoss.moveTimer=700+Math.random()*850;
-          }
-          finalBoss.x+=(finalBoss.targetX-finalBoss.x)*0.022*(finalBoss.v||1)*frameK;
-          finalBoss.y+=(finalBoss.targetY-finalBoss.y)*0.022*(finalBoss.v||1)*frameK;
-        }
-      }
-      if(!drawImgFit(finalBoss.asset,finalBoss.x,finalBoss.y,finalBoss.r*2.1,finalBoss.r*2.1,0)){
-        ctx.fillStyle='rgba(150,90,220,.9)';ctx.beginPath();ctx.arc(finalBoss.x,finalBoss.y,finalBoss.r,0,7);ctx.fill();
-      }
-      var fbw=200;
-      ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(finalBoss.x-fbw/2,finalBoss.y-finalBoss.r-30,fbw,12);
-      ctx.fillStyle='#C77DFF';ctx.fillRect(finalBoss.x-fbw/2+2,finalBoss.y-finalBoss.r-28,(fbw-4)*Math.max(0,finalBoss.hp/finalBoss.maxHp),8);
-      if(el<finalBoss.flashUntil){ ctx.globalAlpha=0.5; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(finalBoss.x,finalBoss.y,finalBoss.r*1.05,0,7); ctx.fill(); ctx.globalAlpha=1; }
-      for(var fbi=missiles.length-1;fbi>=0;fbi--){
-        var fbm=missiles[fbi];
-        if(isTargetable(finalBoss,el) && Math.hypot(fbm.x-finalBoss.x,fbm.y-finalBoss.y)<finalBoss.r+10){
-          missiles.splice(fbi,1); shake(2); sfx('pop',0.4);
-          damageBossTarget(finalBoss,1+upgLevel.focus,el);
-          if(finalBoss.state!=='alive') break;
-        }
-      }
-      /* 크라켄 5패턴: 이중 원형탄·5way 조준·회전 나선·소환·돌진 십자탄. */
-      if(finalBoss.state==='alive' && !frozen && finalBoss.y>=finalBoss.restY && el>=(finalBoss.transitionUntil||0)){
-        finalBoss.shotTimer-=sdt;
-        if(finalBoss.shotTimer<=0){
-          finalBoss.patternStep=(finalBoss.patternStep+1)%5;
-          var fang=Math.atan2(shipY-finalBoss.y,px-finalBoss.x);
-          if(finalBoss.patternStep===0){
-            for(var fri=0;fri<16;fri++){
-              var frang=(fri/16)*Math.PI*2+finalBoss.spiral;
-              var frsp=fri%2?2.8:3.7;
-              enemyShots.push({x:finalBoss.x,y:finalBoss.y,vx:Math.cos(frang)*frsp,vy:Math.sin(frang)*frsp,kind:'orb',dead:false});
-            }
-            finalBoss.spiral+=0.18;finalBoss.shotTimer=2300;
-          } else if(finalBoss.patternStep===1){
-            /* 패턴: 배를 노리는 5way 부채꼴 조준탄 */
-            [-0.5,-0.25,0,0.25,0.5].forEach(function(foff){
-              enemyShots.push({x:finalBoss.x,y:finalBoss.y,vx:Math.cos(fang+foff)*3.8,vy:Math.sin(fang+foff)*3.8,kind:'spike',dead:false});
-            });
-            finalBoss.shotTimer=1300;
-          } else if(finalBoss.patternStep===2){
-            for(var fsi=0;fsi<18;fsi++){
-              var fsa=finalBoss.spiral+fsi*0.34;
-              enemyShots.push({x:finalBoss.x,y:finalBoss.y,vx:Math.cos(fsa)*3.45,vy:Math.sin(fsa)*3.45,kind:'wave',dead:false});
-            }
-            finalBoss.spiral+=0.55;finalBoss.shotTimer=1750;
-          } else if(finalBoss.patternStep===3){
-            var fbSummonN=finalBoss.phase3Done?9:(finalBoss.phase2Done?7:6); /* 페이즈 전환마다 소환량 강화 */
-            for(var fsm=0;fsm<fbSummonN;fsm++){
-              var fsp=spawnEdgePoint(60+fsm*7);
-              rocks.push({x:fsp.x,y:fsp.y,r:22,v:0.66,asset:pickRandom(ASSETS.monsterTiers[3]),passed:false,dead:false,
-                zigzag:true,zzPhase:Math.random()*6.28,homing:true,id:++rockIdCounter,hp:4,maxHp:4,tier:3,
-                ranged:fsm%2===0,shotTimer:700+Math.random()*700,dashTimer:1300+Math.random()*900,spawnedAt:el});
-            }
-            finalBoss.shotTimer=2600;
-          } else {
-            finalBoss.targetX=Math.max(finalBoss.r,Math.min(W-finalBoss.r,px));
-            finalBoss.targetY=Math.max(finalBoss.r,Math.min(H-finalBoss.r,shipY-90));finalBoss.moveTimer=420;
-            [0,Math.PI/2,Math.PI,Math.PI*1.5].forEach(function(ca){
-              enemyShots.push({x:finalBoss.x,y:finalBoss.y,vx:Math.cos(ca)*4.2,vy:Math.sin(ca)*4.2,kind:'orb',dead:false});
-            });
-            enemyShots.push({x:finalBoss.x,y:finalBoss.y,vx:Math.cos(fang)*5.0,vy:Math.sin(fang)*5.0,kind:'spike',dead:false});
-            finalBoss.shotTimer=1100;
-          }
-          sfx('pop',0.3);
-        }
-      }
-      if(finalBoss.state==='alive'){
-        var fbdx=Math.abs(finalBoss.x-px), fbdy=Math.abs(finalBoss.y-shipY);
-        if(fbdx<finalBoss.r+30 && fbdy<finalBoss.r+34){ hit=true; }
+    /* 손가락 궤적 보조 */
+    if(dragStart&&dragCur&&phase==='play'){
+      var ddx=dragCur.x-dragStart.x,ddy=dragCur.y-dragStart.y,ddist=Math.hypot(ddx,ddy);
+      if(ddist>10){
+        var tim=wimg('wind_trail');
+        if(tim)drawWImgC(tim,(dragStart.x+dragCur.x)/2,(dragStart.y+dragCur.y)/2,Math.min(220*U,60*U+ddist*0.55),Math.atan2(ddy,ddx),0.55);
       }
     }
 
-    /* ---- 해양쓰레기 몬스터 (Lv21+) ---- */
-    debris.forEach(function(dm){
-      if(!frozen){
-        /* 사방에서 나타나 배 쪽으로 천천히 몰려온다(뱀서라이크 스웜) + 살짝 흔들리는 웨이브 */
-        var ddx=px-dm.x, ddy=shipY-dm.y, dd=Math.hypot(ddx,ddy)||1;
-        dm.x+=(ddx/dd)*dm.v*frameK*2.6;
-        dm.y+=(ddy/dd)*dm.v*frameK*2.6;
-        dm.x+=Math.sin(el*2+dm.swayPhase)*1.1*frameK;
-      }
-      if(!drawImgFit(dm.asset,dm.x,dm.y,dm.r*2.2,dm.r*2.2,0)){
-        ctx.fillStyle='#5A4A32';ctx.beginPath();ctx.arc(dm.x,dm.y,dm.r,0,7);ctx.fill();
-      }
-      if(!frozen && isTargetable(dm,el)){
-        for(var dmi=missiles.length-1;dmi>=0;dmi--){
-          var dmm=missiles[dmi];
-          if(Math.hypot(dmm.x-dm.x,dmm.y-dm.y)<dm.r+10){
-            /* 🔥 화력 집중 — 보스와 동일하게 한 발당 데미지가 더 크다 */
-            dm.hp-=(1+upgLevel.focus);
-            dmm.hp--; if(dmm.hp<=0) missiles.splice(dmi,1);
-            sfx('pop',0.4); shake(1.6);
-            if(dm.hp<=0){
-              dm.dead=true;
-              explodeRock(dm.x,dm.y,dm.r,false); sfx('boom',0.45);
-              kills++; dropXpPouch(dm.x,dm.y,ROCK_XP*2,el); giveBok(3);
-              break;
-            }
-          }
-        }
-      }
-      if(!frozen && isTargetable(dm,el)){
-        dm.shotTimer-=sdt;
-        if(dm.shotTimer<=0){
-          dm.shotTimer=2200+Math.random()*1000;
-          var sang=Math.atan2(shipY-dm.y,px-dm.x);
-          enemyShots.push({x:dm.x,y:dm.y,vx:Math.cos(sang)*3.4,vy:Math.sin(sang)*3.4,kind:'spike',dead:false});
-          sfx('pop',0.3);
-        }
-        var ddx=Math.abs(dm.x-px), ddy=Math.abs(dm.y-shipY);
-        if(ddx<dm.r+30 && ddy<dm.r+34){ hit=true; }
-      }
-    });
-    debris=debris.filter(function(dm){ return !dm.dead && dm.y<H+100 && dm.x>-160 && dm.x<W+160; });
-
-    /* 해양쓰레기가 쏘는 파편 — 배의 청록색 포탄과 구분되도록 보라색 계열로 그린다 */
-    enemyShots.forEach(function(es){
-      if(!frozen){ es.x+=es.vx*frameK; es.y+=es.vy*frameK; }
-      if(es.kind==='orb'){
-        var eog=ctx.createRadialGradient(es.x-4,es.y-4,2,es.x,es.y,15);eog.addColorStop(0,'#fff');eog.addColorStop(.35,'#C77DFF');eog.addColorStop(1,'rgba(100,50,180,0)');
-        ctx.fillStyle=eog;ctx.beginPath();ctx.arc(es.x,es.y,16,0,7);ctx.fill();
-      }else if(es.kind==='wave'){
-        ctx.save();ctx.translate(es.x,es.y);ctx.rotate(el*5);ctx.strokeStyle='rgba(105,215,208,.95)';ctx.lineWidth=4;
-        ctx.beginPath();ctx.arc(0,0,13,0.25,5.1);ctx.stroke();ctx.restore();
-      }else if(!drawImgFit(ASSETS.enemyShot,es.x,es.y,32,58,Math.atan2(es.vy,es.vx)+Math.PI/2)){
-        ctx.save();ctx.translate(es.x,es.y);ctx.rotate(Math.atan2(es.vy,es.vx));
-        var eg=ctx.createLinearGradient(-10,0,10,0);
-        eg.addColorStop(0,'#3A1410');eg.addColorStop(1,'#E0645A');
-        ctx.fillStyle=eg;ctx.beginPath();ctx.moveTo(10,0);ctx.lineTo(-6,5);ctx.lineTo(-6,-5);ctx.closePath();ctx.fill();
-        ctx.restore();
-      }
-      if(!frozen){
-        var edx=Math.abs(es.x-px), edy=Math.abs(es.y-shipY);
-        if(edx<28 && edy<32){ hit=true; es.dead=true; }
-      }
-    });
-    enemyShots=enemyShots.filter(function(es){ return !es.dead && es.x>-40 && es.x<W+40 && es.y>-40 && es.y<H+40; });
-
-    if(!suspendSpawn){
-      /* 기본 함포 이동 + 명중 판정 */
-      missiles.forEach(function(m){m.x+=m.vx*frameK;m.y+=m.vy*frameK*2.6});
-      missiles=missiles.filter(function(m){return m.x>-60&&m.x<W+60&&m.y>-60&&m.y<H+60;});
-      rocks.forEach(function(r){
-        if(r.homing){
-          /* 뱀서라이크 스웜 — 바위가 배 쪽으로 아주 천천히 끌려온다(지나가는 장애물이 아니라
-             서서히 조여오는 적떼 느낌). x/y 둘 다 배 쪽으로 유도한다 */
-          var hdx=px-r.x, hdy=shipY-r.y, hd=Math.hypot(hdx,hdy)||1;
-          if(r.tier>=3){r.dashTimer-=sdt;if(r.dashTimer<=0){r.dashUntil=el+0.42;r.dashTimer=1900+Math.random()*1800;}}
-          var rush=el<(r.dashUntil||0)?2.5:1;
-          r.x+=(hdx/hd)*r.v*frameK*2.6*rush;
-          r.y+=(hdy/hd)*r.v*frameK*2.6*rush;
-        } else {
-          r.y+=r.v*frameK*2.6;
-        }
-        if(r.zigzag) r.x+=Math.sin(el*3+r.zzPhase)*1.4*frameK;
-        if(r.ranged && isTargetable(r,el)){
-          r.shotTimer-=sdt;
-          if(r.shotTimer<=0){
-            r.shotTimer=Math.max(1100,2600-r.tier*320)+Math.random()*700;
-            var rsa=Math.atan2(shipY-r.y,px-r.x);
-            enemyShots.push({x:r.x,y:r.y,vx:Math.cos(rsa)*(2.8+r.tier*0.25),vy:Math.sin(rsa)*(2.8+r.tier*0.25),kind:r.tier>=3?'wave':'spike',dead:false});
-          }
-        }
-        for(var mi2=missiles.length-1;mi2>=0;mi2--){
-          var m=missiles[mi2];
-          if(isTargetable(r,el)&&Math.hypot(m.x-r.x,m.y-r.y)<r.r+10){
-            var cannonDmg=1+Math.floor(upgLevel.focus/2);
-            r.hp=(r.hp||1)-cannonDmg;
-            m.hp--; if(m.hp<=0) missiles.splice(mi2,1); /* 🌊 관통탄 — hp가 남아있으면 계속 날아간다 */
-            hitFlashes.push({x:r.x,y:r.y,until:el+0.14,big:r.r>44});
-            splashes.push({x:r.x,y:r.y,until:el+0.3,tier:r.r>50?2:(r.r>36?1:0)});
-            /* 피격 넉백 + 파티클 + 데미지 숫자(가시성 패치) */
-            var kbA=Math.atan2(m.vy,m.vx), kb=3+Math.random()*3;
-            r.x+=Math.cos(kbA)*kb; r.y+=Math.sin(kbA)*kb;
-            fx.push({x:r.x,y:r.y,vx:Math.cos(kbA)*1.6,vy:Math.sin(kbA)*1.6,l:1,c:'#9fd8ff',sz:2+Math.random()*2});
-            showDmgNumber(r.x,r.y,cannonDmg,el);
-            if(fusion.typhoon)addSkillFx('typhoon',r.x,r.y,180,0);
-            sfx('pop',0.45);
-            if(r.hp<=0){r.dead=true;explodeRock(r.x,r.y,r.r);kills++;}
-            /* 경험치는 즉시 들어오지 않고 복주머니로 떨어진다 — 직접 먹어야 레벨업 */
-            if(r.dead)dropXpPouch(r.x,r.y,ROCK_XP,el);
-            /* 🌀 태풍포 융합(포격강화+다연장 MAX) — 일반 포탄에도 작은 폭발이 붙는다.
-               폭발탄 자체는 이제 별도 투사체(bombShots)로 분리됐다 */
-            if(r.dead&&fusion.typhoon){
-              rocks.forEach(function(r2){
-                if(r2!==r && !r2.dead && Math.hypot(r2.x-r.x,r2.y-r.y)<55){
-                  r2.dead=true; explodeRock(r2.x,r2.y,r2.r); kills++;
-                  dropXpPouch(r2.x,r2.y,ROCK_XP,el);
-                }
-              });
-            }
-            if(el-breakComboLast<0.7) breakComboN++; else breakComboN=1;
-            breakComboLast=el;
-            if(breakComboN>=2) showBig('BREAK ×'+breakComboN,'',600,'break');
-            shake(2.2);
-          }
-        }
-      });
-      rocks=rocks.filter(function(r){
-        if(r.dead)return false;
-        if(!drawImgFit(r.asset,r.x,r.y,r.r*2.2,r.r*2.3,0)){
-          ctx.fillStyle='#2A2F4A';ctx.beginPath();
-          ctx.moveTo(r.x-r.r,r.y+r.r);ctx.lineTo(r.x,r.y-r.r);ctx.lineTo(r.x+r.r,r.y+r.r);ctx.closePath();ctx.fill();
-          ctx.fillStyle='rgba(255,255,255,.14)';ctx.beginPath();
-          ctx.moveTo(r.x,r.y-r.r);ctx.lineTo(r.x+r.r*.5,r.y+r.r*.2);ctx.lineTo(r.x,r.y+r.r*.4);ctx.closePath();ctx.fill();
-        }
-        if(r.ranged){ctx.strokeStyle='rgba(199,125,255,.9)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(r.x,r.y,r.r+5,0,7);ctx.stroke();}
-        if((r.maxHp||1)>1){ctx.fillStyle='rgba(0,0,0,.45)';ctx.fillRect(r.x-r.r,r.y-r.r-9,r.r*2,4);ctx.fillStyle='#69D7D0';ctx.fillRect(r.x-r.r,r.y-r.r-9,r.r*2*Math.max(0,r.hp/r.maxHp),4);}
-        var dx=Math.abs(r.x-px), dy=Math.abs(r.y-shipY);
-        if(dx<r.r+30 && dy<r.r+34){ if(!r.noHit) hit=true; }
-        if(!r.passed && r.y>shipY+40){ r.passed=true; }
-        return r.y<H+90 && r.x>-160 && r.x<W+160; /* 바람가스트에 밀려 화면 밖으로 나간 바위 정리 */
-      });
-      missiles.forEach(function(m){
-        var ang=Math.atan2(m.vy,m.vx);
-        if(!drawImgFit(ASSETS.cannonShot,m.x,m.y,34,16,ang)){
-          ctx.save();ctx.translate(m.x,m.y);
-          var mg=ctx.createLinearGradient(0,-14,0,10);
-          mg.addColorStop(0,'#F2F0EA');mg.addColorStop(1,'#4FC3A1');
-          ctx.fillStyle=mg;ctx.beginPath();ctx.moveTo(0,-14);ctx.lineTo(4,6);ctx.lineTo(-4,6);ctx.closePath();ctx.fill();
-          ctx.restore();
-        }
-      });
-    } else {
-      rocks.forEach(function(r){
-        if(!drawImgFit(r.asset,r.x,r.y,r.r*2.2,r.r*2.3,0)){
-          ctx.fillStyle='#2A2F4A';ctx.beginPath();
-          ctx.moveTo(r.x-r.r,r.y+r.r);ctx.lineTo(r.x,r.y-r.r);ctx.lineTo(r.x+r.r,r.y+r.r);ctx.closePath();ctx.fill();
-        }
-      });
+    /* 바구니 */
+    if(basket && phase==='play'){
+      var bb=basket,im=wimg(bb.kind);
+      if(im)drawWImgC(im,bb.x,bb.y,86*U,bb.rot,bb.resolved?0.4:1);
+      else{ctx.fillStyle='#C97A2E';ctx.beginPath();ctx.arc(bb.x,bb.y,40*U,0,7);ctx.fill()}
+      if(!bb.resolved)drawText('바람 '+bb.windLeft+'/'+C.windMax,bb.x,bb.y-64*U,14,'#22485A','rgba(255,255,255,.85)');
     }
 
-    /* 먹거리 — 얼어있는 동안엔 떨어지지도, 먹히지도 않는다 */
-    foods.forEach(function(f){
-      if(!frozen) f.y+=f.v*2.4*frameK;
-      if(!drawImgFit(f.asset,f.x,f.y,f.r*2.1,f.r*2.1,0)){
-        ctx.save();ctx.translate(f.x,f.y);
-        var fg2=ctx.createRadialGradient(-f.r*.3,-f.r*.3,2,0,0,f.r);
-        fg2.addColorStop(0,'#E4F7EF');fg2.addColorStop(1,'#4FC3A1');
-        ctx.fillStyle=fg2;ctx.beginPath();ctx.arc(0,0,f.r,0,7);ctx.fill();
-        ctx.restore();
-      }
-      var dx=Math.abs(f.x-px), dy=Math.abs(f.y-shipY);
-      if(!frozen && !f.eaten && dx<f.r+30 && dy<f.r+34){
-        f.eaten=true;
-        var val = f.kind==='gold'?20:(f.kind==='bag'?5:(f.kind==='tangerine'?2:1));
-        var xpVal = f.kind==='gold'?30:(f.kind==='bag'?10:(f.kind==='tangerine'?5:3));
-        giveBok(val);
-        gainXp(xpVal,el);
-        sfx('bonus',0.5); shake(1.2);
-        zoomTo(1.05); setTimeout(function(){zoomTo(el<pauseUntil?cam.zoomTo:1)},160);
-        showBig('복 +'+val,'',500,'bok');
-      }
-    });
-    foods=foods.filter(function(f){return f.y<H+80&&!f.eaten});
-
-    /* 경험치 복주머니 — 바위를 부수면 여기 떨어진다. 자동으로 안 들어오고
-       직접 날아가서 먹어야 경험치가 들어온다(가까이 가면 살짝 끌려온다) */
-    xpPouches.forEach(function(xp){
-      if(!frozen){
-        var pdx=px-xp.x, pdy=shipY-xp.y, pd=Math.hypot(pdx,pdy)||1;
-        if(pd<140){ xp.x+=(pdx/pd)*4*frameK; xp.y+=(pdy/pd)*4*frameK; }
-        else xp.y+=xp.vy*frameK;
-      }
-      var pulse2=(Math.sin(el*6)+1)/2;
-      if(!drawImgFit(ASSETS.foodBag,xp.x,xp.y,20+pulse2*4,20+pulse2*4,0)){
-        ctx.fillStyle='rgba(160,255,190,.9)';ctx.beginPath();ctx.arc(xp.x,xp.y,10,0,7);ctx.fill();
-      }
-      var xdx=Math.abs(xp.x-px), xdy=Math.abs(xp.y-shipY);
-      if(!frozen && !xp.collected && xdx<30 && xdy<34){
-        xp.collected=true;
-        gainXp(xp.amount,el);
-        sfx('bonus',0.4);
+    /* 이펙트 */
+    fxList.forEach(function(f){
+      if(f.type==='gust'){
+        var im=wimg('wind_gust'),k=1-f.t/260;
+        if(im)drawWImgC(im,f.x,f.y,120*U,f.rot,Math.max(0,k));
+      } else if(f.type==='combo_star'){
+        var im=wimg('combo_star'),k=1-f.t/420;
+        if(im)drawWImgC(im,f.x,destY-10*U,90*U*(1+(1-k)*0.3),0,Math.max(0,k));
+      } else if(f.type==='water_splash'){
+        var im=wimg('water_splash'),k=1-f.t/420;
+        if(im)drawWImgC(im,f.x,destY+10*U,100*U,0,Math.max(0,k));
+      } else if(f.type==='bigwind'){
+        var k=1-f.t/(C.bigWindDur+300);
+        ctx.save();ctx.globalAlpha=Math.max(0,k)*0.5;
+        var gg=ctx.createLinearGradient(0,0,W,0);
+        gg.addColorStop(0,'rgba(255,220,120,0)');gg.addColorStop(0.5,'rgba(255,220,120,.6)');gg.addColorStop(1,'rgba(255,220,120,0)');
+        ctx.fillStyle=gg;ctx.fillRect(0,0,W,H);ctx.restore();
+        if(f.t<500)drawText('영등할망의 큰바람!',W/2,H*0.32,30,'#FFDC78','rgba(34,72,90,.8)');
+        var gim=wimg('golden_orange');
+        if(gim&&f.t<600){
+          var bob=Math.sin(f.t/90)*6*U;
+          drawWImgC(gim,W*0.16,H*0.22+bob,54*U,0,Math.max(0,k));
+          drawWImgC(gim,W*0.84,H*0.24-bob,54*U,0,Math.max(0,k));
+        }
+      } else if(f.type==='dok'){
+        var im=wimg('dokkaebi');
+        var kIn=Math.min(1,f.t/200),kOut=Math.min(1,(C.dokDur-f.t)/200);
+        var k=Math.max(0,Math.min(kIn,kOut));
+        var dx=W*0.16-(1-Math.min(1,f.t/300))*40*U;
+        if(im)drawWImgC(im,dx,H*0.34,110*U,0,k);
+        if(k>0.3)drawText('저쪽이야~',dx,H*0.34-70*U,15,'#3A2A18','rgba(255,255,255,.85)');
       }
     });
-    xpPouches=xpPouches.filter(function(xp){ return !xp.collected && el<xp.until; });
+    popups.forEach(function(p){ctx.save();ctx.globalAlpha=Math.max(0,p.life);drawText(p.txt,p.x,p.y,24,'#FFDC78','rgba(60,20,0,.6)');ctx.restore()});
 
-    /* 배 그리기 — 실제 이동 속도 기반 항해감(기울기·물살·이물보라·급회전 물보라).
-       예전엔 자이로 각도(tiltX)로 기울였는데 자이로를 없애면서 죽은 코드였다 —
-       이제는 프레임간 실제 이동량(shipVX/shipVY)으로 기울인다 */
-    haloSpin+=0.012*frameK;
-    var pulse=(Math.sin(el*4)+1)/2;
-    var invuln = el<invulnUntil;
-    var moveSpeed=Math.hypot(shipVX,shipVY);
-    var speedTier=moveSpeed<0.4?0:(moveSpeed<1.3?1:(moveSpeed<2.6?2:3));
-    var idleBob = moveSpeed<0.4 ? Math.sin(el*2.2)*3 : 0; /* 정지 시에도 아주 작게 위아래로 부유 */
-    var shipTilt = Math.max(-0.32,Math.min(0.32, shipVX*0.018));
-    ctx.save();ctx.translate(px,shipY+idleBob);ctx.rotate(shipTilt);
-    if(el<evoFlashUntil){var sc=1+Math.sin((evoFlashUntil-el)*30)*0.06;ctx.scale(sc,sc)}
-    if(invuln && Math.floor(el*10)%2===0) ctx.globalAlpha=0.4;
-    /* 배 뒤쪽 V자 물살 + 선미 포말 — 속도 단계(0~3)에 따라 커지고 진해진다 */
-    ctx.globalAlpha*=(0.55+speedTier*0.15);
-    if(!drawImgFit(ASSETS.wakeV[speedTier],0,58+speedTier*4,30+speedTier*6,54+speedTier*16,0)){
-      ctx.fillStyle='rgba(255,255,255,.18)';ctx.beginPath();ctx.ellipse(0,60,14,40*speedFeel,0,0,7);ctx.fill();
-    }
-    drawImgFit(ASSETS.foamStern[speedTier],0,86+speedTier*6,22+speedTier*4,34+speedTier*10,0);
-    /* 앞으로 빠르게 나아갈 때만 이물보라(선수 물보라) 표시 */
-    if(shipVY<-0.5){
-      var bowTier=Math.min(2,speedTier);
-      ctx.globalAlpha*=0.9;
-      drawImgFit(ASSETS.sprayBow[bowTier],0,-46-bowTier*6,24+bowTier*8,20+bowTier*7,0);
-    }
-    ctx.globalAlpha = invuln && Math.floor(el*10)%2===0 ? 0.4 : 1;
-    drawShip(ctx,shipTier,pulse);
-    /* 급회전(좌우 방향 급반전) 시 반대쪽으로 튀는 물보라 */
-    if(el<turnSprayUntil){
-      var tsp=1-(turnSprayUntil-el)/0.32;
-      ctx.save();
-      ctx.globalAlpha=Math.max(0,1-tsp);
-      var tsx=turnSprayDir*38;
-      if(!drawImgFit(turnSprayDir>0?ASSETS.wakeTurnRight:ASSETS.wakeTurnLeft, tsx,20,30,30,0)){
-        ctx.fillStyle='rgba(255,255,255,.4)';ctx.beginPath();ctx.arc(tsx,20,10,0,7);ctx.fill();
+    /* HUD */
+    if(phase==='play'){
+      ctx.save();var m=24*U;ctx.textBaseline='alphabetic';
+      if(!isPractice){
+        var left=Math.max(0,C.duration-elapsed),secs=Math.ceil(left/1000);
+        ctx.textAlign='left';ctx.font='800 '+Math.round(15*U)+'px SCDream, sans-serif';ctx.fillStyle='rgba(34,72,90,.7)';ctx.fillText('TIME',m,40*U);
+        ctx.font='800 '+Math.round(40*U)+'px SCDream, sans-serif';ctx.lineJoin='round';ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=6*U;ctx.strokeText(String(secs),m,80*U);
+        ctx.fillStyle=secs<=5?'#F0605A':'#22485A';ctx.fillText(String(secs),m,80*U);
+
+        ctx.textAlign='right';ctx.font='800 '+Math.round(15*U)+'px SCDream, sans-serif';ctx.fillStyle='rgba(34,72,90,.7)';ctx.fillText('SCORE',W-m,40*U);
+        ctx.font='800 '+Math.round(40*U)+'px SCDream, sans-serif';var sTxt=String(score);
+        ctx.strokeText(sTxt,W-m,80*U);ctx.fillStyle='#F7A348';ctx.fillText(sTxt,W-m,80*U);
+
+        if(combo>=2){ctx.textAlign='center';drawText(combo+' 콤보'+(combo>=5?'!':''),W/2,100*U,26,combo>=5?'#F7A348':'#22485A','rgba(255,255,255,.85)')}
+      } else {
+        ctx.textAlign='left';drawText('연습 중 · 무제한',m,36*U,16,'#22485A','rgba(255,255,255,.8)',600);
       }
       ctx.restore();
     }
-    if(shieldCharge>0){
-      ctx.globalAlpha=0.78+Math.sin(el*6)*0.12;
-      var shieldKey=fusion.seabarrier?'seabarrier':'shield', shieldSize=fusion.seabarrier?190:142;
-      if(!drawSkillFrame(SKILL_SHEETS[shieldKey],0,-20,shieldSize,t0,now,true,0)){
-        drawSkillFxFallback(shieldKey,0,-20,shieldSize,0);
-      }
-      ctx.globalAlpha=1;
-    }
-    ctx.restore();
 
-    /* 새 스킬 시트 연출은 배와 투사체 위, HUD 아래에 그린다. */
-    paintSkillFx(now);
-
-    /* 파괴 이펙트 — 배가 그려진 다음에 그려서(레이어 순서: 오브젝트→발사체→배→충돌이펙트)
-       파편이 배보다 위 레이어에 확실히 보이게 한다 */
-    flashes.forEach(function(fl){fl.t+=frameK;var p=Math.min(1,fl.t/14);var rad=fl.r0+(fl.r1-fl.r0)*p;
-      ctx.globalAlpha=1-p;
-      if(!drawImgFit(ASSETS.explosionFrames[fl.frame||0],fl.x,fl.y,rad*2.4,rad*2.4,0)){
-        var fg=ctx.createRadialGradient(fl.x,fl.y,0,fl.x,fl.y,rad);
-        fg.addColorStop(0,'rgba(220,250,255,.9)');fg.addColorStop(.5,'rgba(79,195,161,.5)');fg.addColorStop(1,'rgba(79,195,161,0)');
-        ctx.fillStyle=fg;ctx.beginPath();ctx.arc(fl.x,fl.y,rad,0,7);ctx.fill();
-      }
-      ctx.globalAlpha=1});
-    flashes=flashes.filter(function(fl){return fl.t/14<1});
-    if(fx.length>90) fx.splice(0,fx.length-90);
-    fx.forEach(function(p){p.x+=p.vx*2*frameK;p.y+=p.vy*2*frameK;p.vy+=.1*frameK;p.l-=.05*frameK;
-      ctx.globalAlpha=Math.max(0,p.l);ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,p.sz||5,0,7);ctx.fill();ctx.globalAlpha=1});
-    fx=fx.filter(function(p){return p.l>0});
-
-    /* 포구 섬광 — 포탄이 나가는 순간 배 쪽에 짧게 번쩍 */
-    muzzleFlashes.forEach(function(mf){
-      var mp=Math.max(0,1-(mf.until-el)/0.12);
-      ctx.globalAlpha=1-mp;
-      drawImgFit(ASSETS.muzzleFlash[mf.big?1:0],mf.x,mf.y,mf.big?34:22,mf.big?34:22,0);
-      ctx.globalAlpha=1;
-    });
-    muzzleFlashes=muzzleFlashes.filter(function(mf){return mf.until>el;});
-
-    /* 명중 섬광 + 수면 타격 — 바위가 맞는 순간의 짧은 임팩트감 */
-    hitFlashes.forEach(function(hf){
-      var hp=Math.max(0,1-(hf.until-el)/0.1);
-      ctx.globalAlpha=1-hp;
-      drawImgFit(ASSETS.hitFlash[hf.big?1:0],hf.x,hf.y,hf.big?60:36,hf.big?60:36,0);
-      ctx.globalAlpha=1;
-    });
-    hitFlashes=hitFlashes.filter(function(hf){return hf.until>el;});
-    splashes.forEach(function(sp){
-      var spp=Math.max(0,1-(sp.until-el)/0.22);
-      ctx.globalAlpha=(1-spp)*0.85;
-      var ssz=26+sp.tier*16;
-      drawImgFit(ASSETS.splashPool[sp.tier],sp.x,sp.y,ssz,ssz,0);
-      ctx.globalAlpha=1;
-    });
-    splashes=splashes.filter(function(sp){return sp.until>el;});
-
-    /* ---- 데미지 숫자 — 위로 살짝 뜨며 0.5~0.7초 안에 사라진다(가시성 패치) ---- */
-    ctx.textAlign='center';
-    dmgNumbers.forEach(function(dn){
-      var dp=(el-dn.from)/(dn.until-dn.from);
-      ctx.globalAlpha=Math.max(0,1-dp);
-      ctx.font='800 22px SCDream, sans-serif';ctx.fillStyle='#FFE9A8';
-      ctx.fillText(String(dn.val), dn.x, dn.y-dp*22);
-    });
-    ctx.globalAlpha=1;
-    dmgNumbers=dmgNumbers.filter(function(dn){return dn.until>el;});
-
-    /* ---- HUD ---- */
-    ctx.textAlign='left';ctx.font='800 15px SCDream, sans-serif';ctx.fillStyle='rgba(234,244,255,.7)';
-    ctx.fillText('생존',22,36);
-    ctx.font='800 30px SCDream, sans-serif';ctx.fillStyle='#F2F0EA';
-    ctx.fillText(el.toFixed(1)+'s',22,66);
-    ctx.textAlign='right';ctx.font='800 20px SCDream, sans-serif';ctx.fillStyle='#F5B331';
-    ctx.fillText('Lv.'+lv,W-22,36);
-    ctx.font='800 12px SCDream, sans-serif';ctx.fillStyle='rgba(79,195,161,.85)';
-    ctx.fillText(T.name,W-22,52);
-    var xpPct=Math.min(1,xp/xpNeed);
-    ctx.fillStyle='rgba(255,255,255,.15)';ctx.fillRect(W-122,58,100,6);
-    ctx.fillStyle='#F5B331';ctx.fillRect(W-122,58,100*xpPct,6);
-    /* 하트 — 업그레이드로 늘어날 수 있어 maxHearts만큼 그린다 */
-    ctx.textAlign='left';ctx.font='22px sans-serif';
-    for(var hi=0;hi<maxHearts;hi++){ ctx.fillText(hi<hearts?'❤️':'🖤', 22+hi*30, 96); }
-
-    /* ---- 좌측 하단 보유 스킬 레벨 HUD(최대 6개) — 상단 토스트 대신 여기서
-       항상 "지금 뭘 들고 있고 몇 레벨인지"가 보이게 한다(가시성 패치) */
-    (function(){
-      var ownedKeys=UPG_KEYS.filter(function(k){return UPGRADES[k].type==='weapon' && upgLevel[k]>0;}).slice(0,6);
-      if(!ownedKeys.length) return;
-      var timerNow={fire:fireTimer,pierce:pierceTimer,windpush:windpushTimer,lightning:lightningTimer,
-        missile:missileTimer,homing:homingTimer,bomb:bombTimer,shield:shieldTimer};
-      var iw=76, gap=10, hy=H-24-iw;
-      ownedKeys.forEach(function(k,ki){
-        var hx=22+ki*(iw+gap);
-        var pulsing = el<skillPulseUntil[k];
-        var scale = pulsing ? 1.14 : 1;
-        var isMax = upgLevel[k]>=UPG_MAX[k];
-        var tRem = timerNow[k]||0;
-        /* 발동 0.12~0.2초 전 예고 — 아이콘 테두리가 밝게 빛난다(가시성 패치) */
-        var telegraph = tRem>0 && tRem<180 && !(k==='shield'&&shieldCharge>0);
-        var frac = (k==='shield' && shieldCharge>0) ? 0 : Math.max(0,Math.min(1,tRem/(skillFull[k]||1)));
-        ctx.save();
-        ctx.translate(hx+iw/2,hy+iw/2); ctx.scale(scale,scale); ctx.translate(-(hx+iw/2),-(hy+iw/2));
-        ctx.fillStyle='rgba(10,16,30,.72)';
-        if(ctx.roundRect){ ctx.beginPath();ctx.roundRect(hx,hy,iw,iw,14);ctx.fill(); } else ctx.fillRect(hx,hy,iw,iw);
-        ctx.strokeStyle= telegraph ? '#FFFFFF' : ((k==='shield'&&shieldCharge>0) ? '#F5B331' : 'rgba(242,240,234,.35)');
-        ctx.lineWidth=telegraph?4:(isMax?3:2);
-        if(ctx.roundRect){ ctx.beginPath();ctx.roundRect(hx,hy,iw,iw,14);ctx.stroke(); } else ctx.strokeRect(hx,hy,iw,iw);
-        ctx.textAlign='center';ctx.font='40px sans-serif';ctx.fillStyle='#F2F0EA';
-        ctx.fillText(UPGRADES[k].emoji,hx+iw/2,hy+iw*0.6);
-        /* 쿨타임 — 위에서부터 남은 비율만큼 어두운 마스크(다 차면 사라짐) */
-        if(frac>0){
-          ctx.fillStyle='rgba(4,6,14,.68)';
-          ctx.fillRect(hx,hy,iw,iw*frac);
-        }
-        ctx.font='800 20px SCDream, sans-serif';ctx.fillStyle=isMax?'#F5B331':'#BFEEDC';
-        ctx.fillText(isMax?'MAX':('Lv.'+upgLevel[k]),hx+iw/2,hy+iw-8);
-        ctx.restore();
-      });
-      /* 배 중심에 흰 테두리 원으로 뜨던 발동예고 링은 모양이 이상하다는
-         피드백으로 제거 — 예고는 아래 스킬 HUD 아이콘 테두리 반짝임만으로 충분 */
-    })();
-
-    /* ---- 각성 시 커다란 용 파도 백드롭(장식) ---- */
-    if(awakened && imgOk(ASSETS.dragonWave)){
-      ctx.globalAlpha=0.22;
-      drawImgFit(ASSETS.dragonWave, W/2, H*0.32, W*0.9, W*0.9*(ASSETS.dragonWave.naturalHeight/ASSETS.dragonWave.naturalWidth), 0);
-      ctx.globalAlpha=1;
-    }
-
-    /* ---- 컷인(영등할망 대사) ---- */
-    if(cutin.until>performance.now()){
-      var cp=1-(cutin.until-performance.now())/(cutin.until-cutin.from);
-      var cAlpha=cp<0.15?cp/0.15:(cp>0.85?(1-cp)/0.15:1);
-      ctx.globalAlpha=cAlpha;
-      /* 원형 아바타 대신 얼굴이 크게 보이는 세로 카드 — 왼쪽에 크게, 오른쪽에 이름+대사 */
-      var pad=16, pW=132, pH=pW*(580/420);
-      var cbY=100, cbH=pH+pad*2;
-      ctx.fillStyle='rgba(8,12,24,.82)';ctx.fillRect(0,cbY,W,cbH);
-      var avImg=ASSETS.yeongdeung, avOk=imgOk(avImg);
-      var pX=pad, pY=cbY+pad;
-      if(avOk){ ctx.drawImage(avImg,pX,pY,pW,pH); }
-      else if(!drawImgFit(ASSETS.windSwirlBlue,pX+pW/2,pY+pH/2,pW*0.9,pW*0.9,el*1.4)){
-        ctx.fillStyle='#1c2e4a';ctx.fillRect(pX,pY,pW,pH);
-      }
-      ctx.strokeStyle='#F5B331';ctx.lineWidth=3;
-      if(ctx.roundRect){ ctx.beginPath();ctx.roundRect(pX,pY,pW,pH,14);ctx.stroke(); }
-      else ctx.strokeRect(pX,pY,pW,pH);
-      var txX0=pX+pW+pad, txAreaW=W-txX0-pad, txCX=txX0+txAreaW/2;
-      ctx.textAlign='center';ctx.font='800 22px SCDream, sans-serif';ctx.fillStyle='#F5B331';
-      ctx.fillText('영등할망', txCX, cbY+pad+30);
-      var tSize=36;
-      ctx.font='800 '+tSize+'px SCDream, sans-serif';
-      while(ctx.measureText(cutin.text).width>txAreaW-8 && tSize>18){ tSize-=2; ctx.font='800 '+tSize+'px SCDream, sans-serif'; }
-      ctx.fillStyle='#F2F0EA';
-      ctx.fillText(cutin.text, txCX, cbY+pH/2+34);
-      ctx.textAlign='left';
-      ctx.globalAlpha=1;
-    }
-
-    /* ---- 중앙 큰 텍스트/진화 배너 ---- */
-    if(bigText && bigText.until>performance.now()){
-      var bp=(performance.now()-bigText.from)/(bigText.until-bigText.from);
-      var bAlpha=bp<0.12?bp/0.12:(bp>0.8?(1-bp)/0.2:1);
-      ctx.globalAlpha=Math.max(0,bAlpha);
-      if(bigText.kind==='evo1'||bigText.kind==='evo2'){
-        var bannerImg=ASSETS.evoBanner[shipTier];
-        var pop=bp<0.2? (bp/0.2) : 1;
-        if(imgOk(bannerImg)){
-          var bw=Math.min(W*0.82, bannerImg.naturalWidth*1.6);
-          var bh=bw*bannerImg.naturalHeight/bannerImg.naturalWidth;
-          drawImgFit(bannerImg, W/2, H*0.4, bw*(0.7+0.3*pop), bh*(0.7+0.3*pop), 0);
-        } else {
-          ctx.textAlign='center';ctx.font='800 26px SCDream, sans-serif';ctx.fillStyle='#F5B331';
-          ctx.fillText(bigText.b, W/2, H*0.4);
-        }
-        if(bp<0.35){
-          ctx.textAlign='center';ctx.font='700 18px SCDream, sans-serif';ctx.fillStyle='rgba(242,240,234,.9)';
-          ctx.fillText(bigText.a, W/2, H*0.4-70);
-        }
-      } else if(bigText.kind==='awaken'){
-        ctx.fillStyle='rgba(4,6,14,'+(0.55*bAlpha)+')';ctx.fillRect(0,0,W,H);
-        var bannerImg4=ASSETS.evoBanner[3];
-        if(bp<0.45){
-          ctx.textAlign='center';ctx.font='800 24px SCDream, sans-serif';ctx.fillStyle='#BFEEDC';
-          ctx.fillText(bigText.a, W/2, H/2);
-        } else if(imgOk(bannerImg4)){
-          var bw4=Math.min(W*0.86, bannerImg4.naturalWidth*1.7);
-          var bh4=bw4*bannerImg4.naturalHeight/bannerImg4.naturalWidth;
-          drawImgFit(bannerImg4, W/2, H/2, bw4, bh4, 0);
-        } else {
-          ctx.textAlign='center';ctx.font='800 30px SCDream, sans-serif';ctx.fillStyle='#F5B331';
-          ctx.fillText(bigText.b, W/2, H/2);
-        }
-      } else if(bigText.kind==='fusion'){
-        ctx.fillStyle='rgba(4,6,14,'+(0.5*bAlpha)+')';ctx.fillRect(0,0,W,H);
-        ctx.textAlign='center';ctx.font='800 22px SCDream, sans-serif';ctx.fillStyle='#F5B331';
-        ctx.fillText(bigText.a, W/2, H*0.42);
-        ctx.font='800 30px SCDream, sans-serif';ctx.fillStyle='#4FC3A1';
-        ctx.fillText(bigText.b, W/2, H*0.42+44);
-      } else if(bigText.kind==='break'){
-        ctx.textAlign='center';ctx.font='800 26px SCDream, sans-serif';ctx.fillStyle='#F58C87';
-        ctx.fillText(bigText.a, W/2, H*0.22);
-      } else if(bigText.kind==='bok'){
-        ctx.textAlign='center';ctx.font='800 18px SCDream, sans-serif';ctx.fillStyle='#F5B331';
-        ctx.fillText(bigText.a, px, shipY-56);
-      } else if(bigText.kind==='levelup'){
-        ctx.textAlign='center';ctx.font='800 30px SCDream, sans-serif';ctx.fillStyle='#F5B331';
-        ctx.fillText(bigText.a, W/2, H*0.24);
-        ctx.font='800 20px SCDream, sans-serif';ctx.fillStyle='#F2F0EA';
-        ctx.fillText(bigText.b, W/2, H*0.24+34);
-      } else if(bigText.kind==='skillget'){
-        /* 상단 토스트 대신 중앙에 짧게: 이름(강화/습득) · Lv.전→후 · 효과 한 줄(가시성 패치).
-           카드와 마찬가지로 2x 캔버스 버퍼 기준 폰트 크기를 쓴다 */
-        ctx.fillStyle='rgba(4,6,14,'+(0.4*bAlpha)+')';ctx.fillRect(0,H*0.32,W,H*0.2);
-        ctx.textAlign='center';ctx.font='800 40px SCDream, sans-serif';ctx.fillStyle='#F5B331';
-        ctx.fillText(bigText.a, W/2, H*0.42);
-        ctx.font='700 30px SCDream, sans-serif';ctx.fillStyle='#BFEEDC';
-        ctx.fillText(bigText.b, W/2, H*0.42+40);
-        ctx.font='600 26px SCDream, sans-serif';ctx.fillStyle='rgba(242,240,234,.85)';
-        ctx.fillText(bigText.c||'', W/2, H*0.42+76);
-      }
-      ctx.globalAlpha=1;
-    } else if(bigText){ bigText=null; }
-
-    /* ---- 업그레이드 선택 카드(최대 3장, 탭해서 선택 — 희귀도에 따라 테두리색이 다르다) ----
-       cv.width가 CSS 화면의 2배라서 여기 폰트 px는 전부 "실제 보이는 크기 × 2"로 잡는다
-       (예: 화면 15px 원하면 30px 지정) — 이전엔 이걸 안 맞춰서 카드 글씨가 실제로는
-       절반 크기로만 보였다(가시성 패치, 안내 제목 최소 24px/스킬명 20px/설명 15px 기준) */
-    if(pick.open){
-      ctx.fillStyle='rgba(6,10,20,.6)';ctx.fillRect(0,0,W,H);
-      ctx.textAlign='center';ctx.font='800 48px SCDream, sans-serif';ctx.fillStyle='#F5B331';
-      ctx.fillText(pickTitle, W/2, H*0.2);
-      ctx.font='700 30px SCDream, sans-serif';ctx.fillStyle='rgba(242,240,234,.65)';
-      ctx.fillText('카드를 탭해서 하나만 고른다', W/2, H*0.2+40);
-      var cw=W/pick.options.length, cardW=cw-22, cardH=H*0.34, cardY=H*0.3;
-      pick.options.forEach(function(opt,i){
-        var key=opt.key, rarity=opt.rarity;
-        var cx=i*cw+cw/2, cx0=cx-cardW/2, cy0=cardY;
-        var pctLeft=Math.max(0,(pick.until-el)/8);
-        ctx.fillStyle='rgba(20,28,46,.95)';
-        if(ctx.roundRect){ ctx.beginPath();ctx.roundRect(cx0,cy0,cardW,cardH,18);ctx.fill(); }
-        else ctx.fillRect(cx0,cy0,cardW,cardH);
-        ctx.strokeStyle=rarity.color;ctx.lineWidth=rarity.key==='legendary'?4:2.5;
-        if(ctx.roundRect){ ctx.beginPath();ctx.roundRect(cx0,cy0,cardW,cardH,18);ctx.stroke(); }
-        else ctx.strokeRect(cx0,cy0,cardW,cardH);
-        ctx.textAlign='center';ctx.font='700 28px SCDream, sans-serif';ctx.fillStyle=rarity.color;
-        ctx.fillText((UPGRADES[key].type==='weapon'?'무기':'보조')+' · '+rarity.label,cx,cy0+32);
-        ctx.font='38px sans-serif';ctx.fillStyle='#F2F0EA';
-        ctx.fillText(UPGRADES[key].emoji, cx, cy0+76);
-        ctx.font='800 40px SCDream, sans-serif';ctx.fillStyle='#F2F0EA';
-        ctx.fillText(UPGRADES[key].title, cx, cy0+128);
-        ctx.font='600 30px SCDream, sans-serif';ctx.fillStyle='rgba(242,240,234,.78)';
-        var dLines=wrapCanvasText(ctx,UPGRADES[key].desc,cardW-24,2);
-        dLines.forEach(function(dl,dli){ ctx.fillText(dl, cx, cy0+168+dli*40.5); });
-        var curLv=upgLevel[key], newLv=Math.min(UPG_MAX[key],curLv+rarity.discrete);
-        ctx.font='700 28px SCDream, sans-serif';ctx.fillStyle='rgba(242,240,234,.6)';
-        ctx.fillText('Lv.'+curLv+' → '+newLv+' / '+UPG_MAX[key], cx, cy0+cardH-30);
-        ctx.fillStyle='rgba(255,255,255,.14)';ctx.fillRect(cx0+12,cy0+cardH-14,cardW-24,5);
-        ctx.fillStyle=rarity.color;ctx.fillRect(cx0+12,cy0+cardH-14,(cardW-24)*pctLeft,5);
-      });
-    }
-
-    /* ---- 엔딩: 결과 요약(2~3초 안에 파악 가능하게) — 사망과 완주(승리)를 다르게 취급한다 */
-    if(ending && el-endingT0>1.5){
-      var pnAlpha=Math.min(1,(el-endingT0-1.5)/0.3);
-      ctx.globalAlpha=pnAlpha;
-      ctx.fillStyle='rgba(6,10,20,.72)';ctx.fillRect(0,0,W,H);
-      ctx.textAlign='center';ctx.font='800 24px SCDream, sans-serif';ctx.fillStyle=endingWon?'#F5B331':'#BFC6D8';
-      ctx.fillText(endingWon?'항해 성공! 마지막 시련을 이겨냈다':'항해 종료',W/2,H*0.28);
-      var upgLine=UPG_KEYS.filter(function(k){return upgHistory[k]}).map(function(k){return UPGRADES[k].emoji+'×'+upgHistory[k];}).join('  ') || '-';
-      var resultRows=[['도달 레벨','Lv.'+lv],['생존 시간',Math.floor(el)+'초'],['파괴한 바위',kills+'개'],['획득한 복',bokEarned+'복'],['획득 카드',upgLine]];
-      ctx.font='700 17px SCDream, sans-serif';
-      resultRows.forEach(function(row,ri2){
-        var ry=H*0.28+48+ri2*36;
-        ctx.textAlign='left';ctx.fillStyle='rgba(242,240,234,.75)';ctx.fillText(row[0],W*0.24,ry);
-        ctx.textAlign='right';ctx.font='700 '+(row[0]==='획득 카드'?14:17)+'px SCDream, sans-serif';ctx.fillStyle='#F2F0EA';ctx.fillText(row[1],W*0.76,ry);
-        ctx.font='700 17px SCDream, sans-serif';
-      });
-      if(endingWon){
-        /* 완주 후에는 자동 종료 대신 "항해 완료"/"초월 항해"를 직접 탭해서 고르게 한다 */
-        var ebY=H*0.28+48+resultRows.length*36+30, ebW=W*0.42, ebH=52, ebGap=14;
-        var eb1X=W/2-ebW-ebGap/2, eb2X=W/2+ebGap/2;
-        ctx.textAlign='center';ctx.font='700 13px SCDream, sans-serif';ctx.fillStyle='rgba(242,240,234,.6)';
-        ctx.fillText('탭해서 선택',W/2,ebY-14);
-        [['항해 완료',eb1X,'#4FC3A1'],['초월 항해',eb2X,'#F5B331']].forEach(function(b){
-          ctx.fillStyle=b[2];
-          if(ctx.roundRect){ ctx.beginPath();ctx.roundRect(b[1],ebY,ebW,ebH,14);ctx.fill(); }
-          else ctx.fillRect(b[1],ebY,ebW,ebH);
-          ctx.textAlign='center';ctx.font='800 16px SCDream, sans-serif';ctx.fillStyle='#0B1220';
-          ctx.fillText(b[0],b[1]+ebW/2,ebY+ebH/2+6);
-        });
-      }
-      ctx.globalAlpha=1;
-    }
-
-    ctx.restore(); /* 카메라 변환 종료 */
-
-    $('#stScore').textContent='';
-
-    if(hit && !invuln && !ending && !frozen){
-      if(shieldCharge>0){
-        /* 🛡 바람막이 — 하트 대신 보호막을 소모한다 */
-        shieldCharge--; invulnUntil=el+1.0; shake(6); sfx('bonus',0.5);
-        toast(fusion.seabarrier?'🛡 해신의 결계가 막아냈다! ('+shieldCharge+'회 남음)':'🛡 바람막이가 막아냈다!');
-      } else {
-        hearts--;
-        invulnUntil=el+1.5; shake(9);
-        sfx('boom',0.6); beep(120,0.3,'square',0.2);
-        if(hearts>0){
-          /* 5. 체력 30% 이하 — 처음 그 문턱을 넘는 순간에만 전용 대사 */
-          if(!lowHpShown && hearts/maxHearts<=0.3){ lowHpShown=true; showCutin(LOW_HP_LINE,1500); }
-          else showCutin(pickRandom(HIT_LINES),1500);
-          toast('쾅! 정신 차리고 다시!');
-        } else {
-          triggerEnding(el);
-        }
-      }
-    }
-
+    if(phase==='result') drawResult();
     raf=requestAnimationFrame(loop);
   }
-
-  function giveBok(n){
-    /* 화면에 즉시 보이는 작은 보상 피드백 — 실제 지급은 finishSail에서 합산 */
-    bokEarned+=Math.round(n*(1+upgLevel.bok*0.25));
+  function drawResult(){
+    var p=Math.min(1,resultT/420),ease=1-Math.pow(1-p,3);
+    ctx.save();ctx.fillStyle='rgba(20,30,36,'+(0.55*ease)+')';ctx.fillRect(0,0,W,H);
+    var cw=Math.min(W-80*U,600*U),ch=Math.min(H-160*U,600*U),cx=W/2,cy=H/2+(1-ease)*60;
+    ctx.globalAlpha=ease;ctx.translate(cx,cy);
+    ctx.fillStyle='#FFF8EC';ctx.strokeStyle='#F7A348';ctx.lineWidth=6*U;
+    rrect(-cw/2,-ch/2,cw,ch,28*U);ctx.fill();ctx.stroke();
+    var gimg=wimg('golden_orange');if(gimg)drawWImgC(gimg,0,-ch/2+10,cw*0.32);
+    var y=-ch/2+cw*0.20+50*U;
+    var isBest=score>(S.best.wind||0);
+    drawText('배달 완료!',0,y,32,'#22485A');y+=54*U;
+    var rows=[['배달 성공',deliveries+'개'],['최고 콤보',bestCombo+' COMBO']];
+    ctx.textBaseline='middle';
+    rows.forEach(function(r){
+      ctx.textAlign='left';ctx.font='600 '+Math.round(22*U)+'px SCDream, sans-serif';ctx.fillStyle='#5C6A6E';ctx.fillText(r[0],-cw/2+40*U,y);
+      ctx.textAlign='right';ctx.font='800 '+Math.round(26*U)+'px SCDream, sans-serif';ctx.fillStyle='#22485A';ctx.fillText(r[1],cw/2-40*U,y);
+      ctx.fillStyle='rgba(34,72,90,.15)';ctx.fillRect(-cw/2+40*U,y+22*U,cw-80*U,2);y+=48*U;
+    });
+    y+=14*U;drawText('총점',0,y,18,'#5C6A6E',null,600);y+=46*U;
+    drawText(String(score),0,y,52,'#F7A348','rgba(34,72,90,.35)');y+=50*U;
+    drawText(windRank(deliveries),0,y,21,'#22485A',null,600);y+=38*U;
+    if(isBest){ctx.save();ctx.translate(0,y);var sc=1+Math.sin(resultT/120)*0.04;ctx.scale(sc,sc);drawText('NEW RECORD!',0,0,26,'#F0605A','rgba(255,255,255,.9)');ctx.restore();y+=34*U}
+    if(resultReady){ctx.globalAlpha=ease*(0.6+Math.sin(resultT/200)*0.4);drawText('화면을 눌러 복 받기',0,ch/2-34*U,17,'#5C6A6E',null,600)}
+    ctx.restore();
   }
-  var bokEarned=0;
-
   raf=requestAnimationFrame(loop);
-
-  function finishSail(sec,kills){
-    var s=Math.floor(sec);stopGame();
-    var isBest=s>(S.best.sail||0);
-    if(isBest)S.best.sail=s;
-    sfx(isBest?'fanfare':'bonus',0.7);
-    var winBonus=endingWon?100:0;
-    var bonus=(kills||0)*3+bossKillCount*15+bokEarned+lv*5+winBonus;
-    var label=endingWon
-      ? '항해 성공 · 영등할망의 마지막 시련 완료 · Lv.'+lv+(bonus?' · 완주 보너스 포함 +'+bonus:'')
-      : '영등할망의 바람 · '+s+'초 생존 · Lv.'+lv+(bonus?' · 보너스 +'+bonus:'');
-    reward(s*2+bonus,label);
-  }
 }
 /* --- ⑤ 기억력 카드 --- */
 function gMemo(){

@@ -306,6 +306,12 @@ p{margin:0}
 #lightningFlash.on{animation:lightningPulse .32s ease-out}
 @keyframes lightningPulse{0%{opacity:.95}60%{opacity:.25}100%{opacity:0}}
 #memo{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:9px;padding:var(--space-4);align-content:center}
+#wind{flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--space-4);padding:var(--space-6) var(--gutter) var(--space-8)}
+#wind .windHero{width:104px;height:104px;border-radius:50%;object-fit:cover;border:3px solid var(--color-accent);box-shadow:var(--shadow-md)}
+#wind .windCard{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5);width:100%;max-width:360px}
+#wind .btn--lg{min-height:56px;font-size:17px}
+#windAssistBtns{position:absolute;left:0;right:0;bottom:calc(var(--space-5) + var(--safe-b));display:flex;justify-content:space-between;padding:0 var(--space-5);pointer-events:none;z-index:6}
+#windAssistBtns button{pointer-events:auto;min-height:48px;min-width:64px;border-radius:var(--radius-pill);background:rgba(20,30,36,.35);color:#fff;font-size:22px;font-weight:800}
 .mcard{aspect-ratio:3/4;border-radius:10px;background:var(--color-surface-elevated);border:1px solid var(--color-border);
   display:grid;place-items:center;font-size:26px;transition:transform var(--transition-normal),background var(--transition-normal)}
 .mcard.flip{background:var(--color-text);color:var(--color-bg)}
