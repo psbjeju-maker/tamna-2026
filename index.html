@@ -7,7 +7,7 @@
 <title>도채비의 보물찾기 — 탐라문화제 × 메이커앤하비</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Song+Myung&display=swap">
-<link rel="stylesheet" href="app.css?v=10">
+<link rel="stylesheet" href="app.css?v=11">
 </head>
 <body>
 
@@ -1574,10 +1574,10 @@ function windScreenStart(){
   p.innerHTML=
     (windHeroOk()?'<img class="windHero" src="gods/final/GOD4.jpg" alt="영등할망">':
       '<div style="font-size:44px">🌬️</div>')+
-    '<h2 style="font-family:var(--font-display);font-size:23px;margin:6px 0 0">영등할망의 바람배달</h2>'+
-    '<p style="color:var(--color-text-secondary);font-size:15px;margin:2px 0 0;max-width:320px">바람을 그려 바구니를 반짝이는 곳으로!</p>'+
-    '<label class="windCard" style="display:flex;align-items:center;gap:10px;text-align:left;font-size:13px;color:var(--color-text-secondary);cursor:pointer">'+
-      '<input type="checkbox" id="windAssistChk" style="width:20px;height:20px;flex:none">'+
+    '<h2 style="font-family:var(--font-display);font-size:32px;margin:6px 0 0">영등할망의 바람배달</h2>'+
+    '<p style="color:var(--color-text-secondary);font-size:20px;margin:2px 0 0;max-width:320px">바람을 그려 바구니를 반짝이는 곳으로!</p>'+
+    '<label class="windCard" style="display:flex;align-items:center;gap:10px;text-align:left;font-size:18px;color:var(--color-text-secondary);cursor:pointer">'+
+      '<input type="checkbox" id="windAssistChk" style="width:24px;height:24px;flex:none">'+
       '스와이프가 어려우면 화면 아래 ◀ / ▶ 버튼으로 바람을 보낼 수 있어요'+
     '</label>'+
     '<button class="btn btn--primary btn--block btn--lg" id="windStartBtn" style="max-width:360px">시작하기</button>';
@@ -1589,7 +1589,7 @@ function windScreenStart(){
 function windScreenTutorial(assist){
   var p=$('#wind');
   p.innerHTML=
-    '<h2 style="font-size:19px;margin:8px 0 0">바구니가 내려오면</h2>'+
+    '<h2 style="font-size:26px;margin:8px 0 0">바구니가 내려오면</h2>'+
     '<div class="windCard" style="max-width:340px">'+
       '<svg viewBox="0 0 300 150" style="width:100%;display:block" aria-hidden="true">'+
         '<circle cx="60" cy="36" r="18" fill="var(--color-accent)"/>'+
@@ -1597,8 +1597,8 @@ function windScreenTutorial(assist){
         '<circle cx="224" cy="112" r="15" fill="none" stroke="var(--color-accent)" stroke-width="3"/>'+
         '<circle cx="224" cy="112" r="25" fill="none" stroke="var(--color-accent)" stroke-width="2" opacity=".45"/>'+
       '</svg>'+
-      '<p style="font-weight:800;font-size:16px;margin:8px 0 0">슥! 바람을 그려 보내세요</p>'+
-      '<p style="color:var(--color-text-secondary);font-size:13px;margin:4px 0 0">손가락으로 방향을 그으면, 그 방향으로 바구니가 바로 밀려요. 반짝이는 배송지에 넣으면 성공!</p>'+
+      '<p style="font-weight:800;font-size:21px;margin:8px 0 0">슥! 바람을 그려 보내세요</p>'+
+      '<p style="color:var(--color-text-secondary);font-size:17px;margin:4px 0 0">손가락으로 방향을 그으면, 그 방향으로 바구니가 바로 밀려요. 반짝이는 배송지에 넣으면 성공!</p>'+
     '</div>'+
     '<div style="display:flex;gap:10px;width:100%;max-width:340px">'+
       '<button class="btn btn--secondary btn--block btn--lg" id="windPracticeBtn">연습하기</button>'+
