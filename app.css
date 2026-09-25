@@ -308,27 +308,45 @@ p{margin:0}
 #memo{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:9px;padding:var(--space-4);align-content:center}
 #wind{flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--space-4);padding:var(--space-6) var(--gutter) var(--space-8)}
 #wind .btn--lg{min-height:56px;font-size:20px}
-/* 영등할망의 귤 튕기기 --------------------------------------- */
-.wg-app{display:flex;flex-direction:column;gap:var(--space-3);width:100%;max-width:360px}
-.wg-hud{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-2)}
+/* 영등할망의 귤 튕기기 (큰바람 모험 v2) ----------------------- */
+.wg-app{display:flex;flex-direction:column;gap:var(--space-2);width:100%;max-width:360px}
+.wg-hud{display:grid;grid-template-columns:1fr 1.35fr 1fr;gap:var(--space-2)}
 .wg-hud>div{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-2) var(--space-3);text-align:left}
-.wg-hud small{display:block;color:var(--color-text-secondary);font-size:11px}
-.wg-hud b{font-size:22px;font-variant-numeric:tabular-nums;color:var(--color-text)}
-.wg-hud span{font-size:12px;color:var(--color-text-secondary)}
-.wg-dots{display:flex;gap:4px;margin-top:4px}
-.wg-dot{width:12px;height:4px;border-radius:2px;background:var(--color-border-strong)}
-.wg-dot.on{background:var(--color-accent)}
+.wg-hud small{display:block;color:var(--color-text-secondary);font-size:10px}
+.wg-hud b{display:block;font-size:22px;font-variant-numeric:tabular-nums;color:var(--color-text)}
+.wg-hud b span{font-size:11px;font-weight:500;margin-left:2px;color:var(--color-text-secondary)}
+.wg-hud-score{background:var(--color-accent-soft)!important;border-color:var(--color-accent)!important}
+.wg-hud-score small{color:var(--color-accent-strong)!important}
+.wg-hud-score b{color:var(--color-accent-strong)}
+.wg-energy-row{display:flex;align-items:center;gap:var(--space-2);font-size:10px;font-weight:650;color:var(--color-text-secondary)}
+.wg-energy-track{height:6px;border-radius:4px;background:var(--color-surface-elevated);flex:1;overflow:hidden}
+.wg-energy-track i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--color-success),var(--color-accent));transition:width .1s linear}
+.wg-energy-row.fever{color:var(--color-accent-strong)}
+#wgEnergyValue{min-width:28px;text-align:right}
 .wg-stage{position:relative;width:100%;border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-md);background:#0c2b30}
 .wg-stage canvas{display:block;width:100%;height:auto;aspect-ratio:390/580;touch-action:none;user-select:none}
-#wgToast{position:absolute;top:49%;width:100%;text-align:center;pointer-events:none;color:#fff;font-size:22px;font-weight:900;text-shadow:0 2px 10px rgba(0,0,0,.5);transition:opacity .15s;opacity:0}
+#wgAnnouncement{position:absolute;top:46%;left:10%;right:10%;padding:8px 12px;border-radius:12px;background:rgba(15,17,32,.85);color:#fff;text-align:center;font-size:16px;font-weight:800;opacity:0;pointer-events:none;transition:opacity .12s}
 #wgOverlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(15,17,32,.6);backdrop-filter:blur(6px);padding:var(--space-5)}
 #wgOverlay.on{display:flex}
-.wg-panel{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);width:100%;padding:var(--space-6) var(--space-5);text-align:center;box-shadow:var(--shadow-lg);color:var(--color-text)}
-.wg-panel img{width:84px;height:84px;object-fit:contain;margin:0 auto;border-radius:var(--radius-md)}
+.wg-panel{max-height:100%;overflow:auto;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);width:100%;padding:var(--space-6) var(--space-5);text-align:center;box-shadow:var(--shadow-lg);color:var(--color-text)}
+.wg-panel img.hero{width:84px;height:84px;object-fit:contain;margin:0 auto;border-radius:var(--radius-md)}
 .wg-panel h2{font-family:var(--font-display);font-size:24px;line-height:1.25;margin:var(--space-2) 0 var(--space-3)}
 .wg-panel p{font-size:14px;line-height:1.7;margin:var(--space-3) 0 var(--space-5);color:var(--color-text-secondary)}
 .wg-panel .btn{margin-top:var(--space-2)}
+.wg-tag{font-size:10px;letter-spacing:1px;font-weight:800;color:var(--color-text-secondary)}
+.wg-micro{font-size:11px;color:var(--color-text-muted);margin:var(--space-3) 0 0!important}
+.wg-choices{display:grid;gap:var(--space-2);margin-top:var(--space-3)}
+.wg-choice{display:flex;align-items:center;gap:var(--space-3);width:100%;text-align:left;padding:var(--space-3);min-height:68px;border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-surface-elevated);color:var(--color-text)}
+.wg-choice:active{background:var(--color-accent-soft)}
+.wg-choice i{display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:var(--radius-md);background:var(--color-accent-soft);color:var(--color-accent-strong);font-style:normal;font-size:18px}
+.wg-choice b{font-size:15px}
+.wg-choice small{display:block;font-size:11px;color:var(--color-text-secondary);margin-top:3px;line-height:1.45}
+.wg-grade{font-size:12px;font-weight:750;color:var(--color-accent-strong);border:1px solid var(--color-accent);border-radius:var(--radius-pill);padding:4px 12px;display:inline-block;background:var(--color-accent-soft)}
 .wg-result-score{font-size:40px;font-weight:900;color:var(--color-accent);margin:var(--space-2) 0}
+.wg-stats{display:flex;justify-content:space-evenly;border-top:1px solid var(--color-border);border-bottom:1px solid var(--color-border);padding:var(--space-3) 0;margin:var(--space-4) 0;font-size:11px;color:var(--color-text-secondary)}
+.wg-stats b{display:block;font-size:17px;color:var(--color-text)}
+.wg-footer{display:flex;justify-content:space-between;font-size:10px;color:var(--color-text-muted)}
+.wg-footer #wgPhase{color:var(--color-accent-strong);font-weight:700}
 .wg-toolbar{display:flex;justify-content:flex-end;gap:var(--space-2)}
 .mcard{aspect-ratio:3/4;border-radius:10px;background:var(--color-surface-elevated);border:1px solid var(--color-border);
   display:grid;place-items:center;font-size:26px;transition:transform var(--transition-normal),background var(--transition-normal)}
