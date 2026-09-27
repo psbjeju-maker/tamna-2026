@@ -2303,9 +2303,12 @@ function runCardGen(finalize){
   },800);
 }
 function revealCard(rarity){
-  var wrap=$('#cardWrap');
+  var wrap=$('#cardWrap'), canvas=$('#cardCanvas');
   wrap.className='cardWrap reveal reveal--'+rarity;
   $('#cardRevealTag').textContent=(rarity==='diamond'||rarity==='platinum'?currentCard.rarityLabel+' 카드 탄생!':currentCard.rarityLabel+' 카드가 탄생했어요!');
+  /* 연출 애니메이션이 기기/브라우저 사정으로 안 걸려도 카드는 항상 보이게 하는 안전장치 */
+  setTimeout(function(){canvas.style.opacity='1';canvas.style.transform='scale(1)'},450);
+  sfx(rarity==='platinum'||rarity==='diamond'?'fanfare':rarity==='gold'?'bonus':'pop', 0.6);
 }
 function ensureCardFonts(){
   var specs=['800 100px SCDream','700 100px SCDream','600 100px SCDream'];
