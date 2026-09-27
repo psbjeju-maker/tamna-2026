@@ -2180,13 +2180,13 @@ var FRAME_WIN={
   platinum:{x0:0.0801,y0:0.1263,x1:0.9199,y1:0.7194},
   diamond: {x0:0.0918,y0:0.1348,x1:0.9053,y1:0.7161}
 };
-/* 프레임 5종에 원래 그려진 칸 좌표(800x1200 기준 px) — name/panel:[x0,y0,x1,y1], socket:[cx,cy,r] */
+/* 프레임 5종에 원래 그려진 칸 좌표(800x1200 기준 px) — name/panel:[x0,y0,x1,y1], socket:[cx,cy,r] — 소켓 안쪽 원판 기준 */
 var FRAME_SLOTS={
-  bronze:  {name:[70,75,655,140], socket:[699,104,36], panel:[75,908,735,1070]},
-  silver:  {name:[68,83,655,150], socket:[700,118,33], panel:[65,870,740,1100]},
-  gold:    {name:[60,50,655,130], socket:[702,90,40],  panel:[55,900,750,1135]},
-  platinum:{name:[60,72,640,150], socket:[700,120,40], panel:[60,870,750,1110]},
-  diamond: {name:[65,75,660,145], socket:[702,115,37], panel:[65,880,740,1110]}
+  bronze:  {name:[70,75,655,140], socket:[700,106,30],   panel:[75,908,735,1070]},
+  silver:  {name:[68,83,655,150], socket:[697,118,32],   panel:[65,870,740,1100]},
+  gold:    {name:[60,50,655,130], socket:[702,90,34.5],  panel:[55,900,750,1135]},
+  platinum:{name:[60,72,640,150], socket:[700,119,34], panel:[60,870,750,1110]},
+  diamond: {name:[65,75,660,145], socket:[701,115,31],   panel:[65,880,740,1110]}
 };
 var CARD_ASSET_BASE='assets/photo-card/', cardAssets=null;
 function loadCardAssets(cb){
@@ -2258,27 +2258,29 @@ function drawCard(ctx2,W,H,data,imgs,pos){
   if(frameImg)ctx2.drawImage(frameImg,0,0,W,H);
   /* 프레임 PNG에 원래 그려져 있는 칸(위 이름칸 · 오른쪽 위 속성 동그라미 · 아래 능력칸)에
      글자와 아이콘을 맞춰 넣는다. 좌표는 800x1200 원본 기준 픽셀 실측값. */
-  var sl=FRAME_SLOTS[data.rarity], k=W/800;
-  ctx2.textAlign='center';ctx2.textBaseline='middle';ctx2.fillStyle='#2B2314';
-  /* 이름 — 이름칸 한 줄 */
+  var sl=FRAME_SLOTS[data.rarity], k=W/800, FF='JejuGothic, SCDream, sans-serif', INK='#2B2314';
+  ctx2.textAlign='center';ctx2.textBaseline='middle';
+  /* 이름 — 이름칸 한 줄. 제주고딕은 굵기가 하나라 크기와 옅은 윤곽으로 무게감을 준다 */
   var nb=sl.name, nx0=nb[0]*k, ny0=nb[1]*k, nw=(nb[2]-nb[0])*k, nh=(nb[3]-nb[1])*k;
-  fitFont(ctx2,data.displayName,'800','SCDream, sans-serif',nh*0.52,nh*0.28,nw*0.88);
-  ctx2.fillText(data.displayName, nx0+nw/2, ny0+nh*0.53);
-  /* 속성 아이콘 — 프레임의 동그라미 소켓 안 */
+  fitFont(ctx2,data.displayName,'400',FF,nh*0.56,nh*0.3,nw*0.86);
+  ctx2.fillStyle=INK;ctx2.lineJoin='round';ctx2.strokeStyle=INK;ctx2.lineWidth=Math.max(1,nh*0.018);
+  ctx2.strokeText(data.displayName, nx0+nw/2, ny0+nh*0.54);
+  ctx2.fillText(data.displayName, nx0+nw/2, ny0+nh*0.54);
+  /* 속성 아이콘 — 프레임 소켓의 안쪽 원판에 딱 맞춘다(아이콘 PNG는 원이 캔버스의 약 90%) */
   var attrImg=assets['attr_'+data.attribute], sc2=sl.socket;
   if(attrImg){
-    var cx=sc2[0]*k, cy=sc2[1]*k, cr=sc2[2]*k*0.86;
+    var cx=sc2[0]*k, cy=sc2[1]*k, cr=sc2[2]*k*1.08, box=cr*2/0.9; /* 링 안쪽 틈이 안 보이게 살짝 크게 */
     ctx2.save();ctx2.beginPath();ctx2.arc(cx,cy,cr,0,Math.PI*2);ctx2.clip();
-    ctx2.drawImage(attrImg,cx-cr*1.08,cy-cr*1.08,cr*2.16,cr*2.16);ctx2.restore();
+    ctx2.drawImage(attrImg,cx-box/2,cy-box/2,box,box);ctx2.restore();
   }
-  /* 능력칸 — 레벨·역할·속성 / 능력 이름 / 설명(최대 2줄) / 레어도·행사명.
-     글씨 크기는 800 기준 고정값으로 잡고, 칸이 낮은 프레임(브론즈)에서만 전체를 함께 줄여
-     칸 세로 중앙에 쌓는다. */
-  var pb=sl.panel, px0=pb[0]*k, py0=pb[1]*k, pw=(pb[2]-pb[0])*k, ph=(pb[3]-pb[1])*k, pcx=px0+pw/2, tw=pw*0.86;
-  var subText='Lv.'+data.level+' · '+data.roleLabel+' · '+data.attributeLabel+' 속성';
+  /* 능력칸 — [Lv·역할·속성] / 능력 이름 / 구분선 / 설명 / 등급·행사명.
+     800 기준 크기로 잡고 칸 높이의 82%를 채우도록 함께 키우거나 줄여 세로 중앙에 쌓는다. */
+  var pb=sl.panel, px0=pb[0]*k, py0=pb[1]*k, pw=(pb[2]-pb[0])*k, ph=(pb[3]-pb[1])*k, pcx=px0+pw/2, tw=pw*0.84;
+  var subText='Lv.'+data.level+'  ·  '+data.roleLabel+'  ·  '+data.attributeLabel+' 속성';
+  var showFoot=ph>=200*k; /* 칸이 낮은 브론즈는 행사명 줄을 빼고 나머지 글씨를 키운다 */
   function layout(f){
-    var o={sub:22*k*f, nm:36*k*f, desc:23*k*f, foot:16*k*f, gap:10*k*f};
-    ctx2.font='600 '+Math.round(o.desc)+'px SCDream, sans-serif';
+    var o={sub:19*k*f, nm:38*k*f, desc:22*k*f, foot:14*k*f, gap:9*k*f};
+    ctx2.font='400 '+Math.round(o.desc)+'px '+FF;
     var full=ctx2.measureText(data.abilityText).width;
     if(full<=tw)o.lines=[data.abilityText];
     else if(full*0.85<=tw){o.desc*=tw/full;o.lines=[data.abilityText]} /* 살짝 넘치면 줄바꿈 대신 한 줄로 줄인다 */
@@ -2287,23 +2289,28 @@ function drawCard(ctx2,W,H,data,imgs,pos){
       words.forEach(function(w){var t=cur?cur+' '+w:w;if(cur&&ctx2.measureText(t).width>tw){o.lines.push(cur);cur=w}else cur=t});
       if(cur)o.lines.push(cur);o.lines=o.lines.slice(0,2);
     }
-    o.total=o.sub+o.gap+o.nm+o.gap+o.lines.length*o.desc*1.35+o.gap*0.6+o.foot;
+    o.foot=showFoot?o.foot:0;
+    o.total=o.sub+o.gap+o.nm+o.gap*2+o.lines.length*o.desc*1.4+(showFoot?o.gap*1.2+o.foot:0);
     return o;
   }
   var L=layout(1);
-  L=layout(Math.min(1.25,ph*0.8/L.total));
+  L=layout(Math.min(1.35,ph*0.82/L.total));
   var y=py0+(ph-L.total)/2;
-  ctx2.fillStyle='rgba(43,35,20,.72)';
-  fitFont(ctx2,subText,'700','SCDream, sans-serif',L.sub,L.sub*0.7,tw);
+  ctx2.fillStyle='rgba(43,35,20,.62)';
+  fitFont(ctx2,subText,'400',FF,L.sub,L.sub*0.7,tw);
   ctx2.fillText(subText,pcx,y+L.sub/2);y+=L.sub+L.gap;
-  ctx2.fillStyle='#2B2314';
-  fitFont(ctx2,data.abilityName,'800','SCDream, sans-serif',L.nm,L.nm*0.6,tw);
-  ctx2.fillText(data.abilityName,pcx,y+L.nm/2);y+=L.nm+L.gap;
-  ctx2.font='600 '+Math.round(L.desc)+'px SCDream, sans-serif';
-  L.lines.forEach(function(line){ctx2.fillText(line,pcx,y+L.desc*0.675);y+=L.desc*1.35});
-  y+=L.gap*0.6;
-  ctx2.fillStyle='rgba(43,35,20,.55)';ctx2.font='600 '+Math.round(L.foot)+'px SCDream, sans-serif';
-  ctx2.fillText(data.rarityLabel+' · 탐라문화제 2026',pcx,y+L.foot/2);
+  ctx2.fillStyle=INK;ctx2.strokeStyle=INK;ctx2.lineWidth=Math.max(1,L.nm*0.035);
+  fitFont(ctx2,data.abilityName,'400',FF,L.nm,L.nm*0.6,tw);
+  ctx2.strokeText(data.abilityName,pcx,y+L.nm/2);ctx2.fillText(data.abilityName,pcx,y+L.nm/2);y+=L.nm+L.gap;
+  /* 구분선 — 가운데가 진하고 양끝으로 사라지는 얇은 선 */
+  var lw=tw*0.55, g=ctx2.createLinearGradient(pcx-lw/2,0,pcx+lw/2,0);
+  g.addColorStop(0,'rgba(43,35,20,0)');g.addColorStop(0.5,'rgba(43,35,20,.35)');g.addColorStop(1,'rgba(43,35,20,0)');
+  ctx2.fillStyle=g;ctx2.fillRect(pcx-lw/2,y,lw,Math.max(1,1.5*k));y+=L.gap;
+  ctx2.fillStyle=INK;ctx2.font='400 '+Math.round(L.desc)+'px '+FF;
+  L.lines.forEach(function(line){ctx2.fillText(line,pcx,y+L.desc*0.7);y+=L.desc*1.4});
+  y+=L.gap*1.2;
+  ctx2.fillStyle='rgba(43,35,20,.5)';ctx2.font='400 '+Math.round(L.foot)+'px '+FF;
+  if(showFoot)ctx2.fillText(data.rarityLabel+'  ·  탐라문화제 2026',pcx,y+L.foot/2);
   ctx2.textBaseline='alphabetic';
 }
 var CARD_GEN_STAGES=['사진을 예쁘게 배치하는 중…','카드의 속성을 찾는 중…','이름과 능력을 새기는 중…','마지막 반짝임을 더하는 중…'];
@@ -2327,7 +2334,7 @@ function revealCard(rarity){
   sfx(rarity==='platinum'||rarity==='diamond'?'fanfare':rarity==='gold'?'bonus':'pop', 0.6);
 }
 function ensureCardFonts(){
-  var specs=['800 100px SCDream','700 100px SCDream','600 100px SCDream'];
+  var specs=['400 100px JejuGothic'];
   if(!(document.fonts&&document.fonts.load))return Promise.resolve();
   return Promise.all(specs.map(function(s){return document.fonts.load(s).catch(function(){})}))
     .then(function(){return document.fonts.ready.catch(function(){})});
