@@ -2151,27 +2151,37 @@ var CARD_RARITY=[
   {id:'platinum',label:'플래티넘',weight:6,lv:[65,95],val:[35,60]},
   {id:'diamond',label:'다이아',weight:2,lv:[85,100],val:[50,99]}
 ];
-var CARD_ATTR=[
-  {id:'fire',label:'불',mods:['불꽃의','타오르는','노을빛','뜨거운'],ab:[
-    {name:'열정 충전',text:'좋아하는 것을 만나면 열정이 {v} 오른다.'},
-    {name:'무대 체질',text:'주목받는 순간 자신감이 {v} 오른다.'}]},
-  {id:'water',label:'물',mods:['파도빛','푸른','물결의','깊은 바다의'],ab:[
-    {name:'파도 타기',text:'새로운 장소에서 적응력이 {v} 오른다.'},
-    {name:'느긋한 항해',text:'바쁜 순간에도 여유가 {v} 유지된다.'}]},
-  {id:'wind',label:'바람',mods:['바람을 타는','자유로운','산들바람의','구름 위의'],ab:[
-    {name:'가벼운 발걸음',text:'재미있는 곳을 향한 추진력이 {v} 오른다.'},
-    {name:'자유 여행',text:'새로운 길을 발견할 확률이 {v}% 오른다.'}]},
-  {id:'earth',label:'땅',mods:['단단한','한라의','숲길의','대지의'],ab:[
-    {name:'흔들림 없는 취향',text:'최애를 향한 집중력이 {v} 오른다.'},
-    {name:'든든한 동행',text:'함께하는 사람에게 안정감 {v}을 더한다.'}]},
-  {id:'light',label:'빛',mods:['반짝이는','새벽빛','눈부신','햇살의'],ab:[
-    {name:'오늘의 주인공',text:'카메라 앞에서 존재감이 {v} 오른다.'},
-    {name:'반짝이는 순간',text:'평범한 하루에 특별함 {v}을 더한다.'}]},
-  {id:'shadow',label:'어둠',mods:['달빛의','별밤의','고요한','밤하늘의'],ab:[
-    {name:'별밤의 감각',text:'남들이 놓친 매력을 발견하는 감각이 {v} 오른다.'},
-    {name:'조용한 몰입',text:'좋아하는 세계에 대한 몰입도가 {v} 오른다.'}]}
+var CARD_ATTR=[ /* 속성은 아이콘·라벨만 쓴다(이름·능력 문구는 아래 풀에서 따로 뽑음) */
+  {id:'fire',label:'불'},{id:'water',label:'물'},{id:'wind',label:'바람'},
+  {id:'earth',label:'땅'},{id:'light',label:'빛'},{id:'shadow',label:'어둠'}
 ];
-var CARD_ROLES=['여행자','수호자','모험가','탐험가','기록자','방랑자','길잡이','이야기꾼'];
+/* 이름·기술·설명·대사 풀 — 사장님 기획(인기 애니 키워드 + 다른 캐릭터명 크로스오버).
+   원작 고증보다 "웃긴 섞임"이 목표라 일부러 어긋난 조합도 그대로 둔다. 항목은 추가만 하면 된다. */
+var CARD_ROLES=['여행자','수호자','모험가','탐험가','기록자','방랑자','길잡이','이야기꾼','술사','검사','해적','닌자','마법사',
+  '초능력자','헌터','스트라이커','스파이커','영웅','병사','주인공','라이벌','천재','최애 수집가','포토존 사냥꾼','축제의 주인공',
+  '귤빛 여행자','탐라의 모험가'];
+var CARD_CHARS=['탄지로','네즈코','젠이츠','이노스케','렌고쿠','기유','고죠','유지','메구미','노바라','유타','스쿠나','루피','조로',
+  '상디','나미','우솝','쵸파','나루토','사스케','사쿠라','카카시','가아라','히나타','프리렌','페른','슈타르크','아우라','아냐',
+  '로이드','요르','덴지','파워','마키마','이사기','바치라','나기','린','히나타 쇼요','카게야마','켄마','보쿠토','미도리야',
+  '바쿠고','토도로키','에렌','리바이','미카사','곤','키르아','히소카','손오공','베지터','마오마오','오카룬','모모'];
+var CARD_KEYWORDS=['와쿠와쿠','전집중','고무고무','무량공처','흑섬','최강','영역전개','나선환','그림자','해적왕','주인공','에고이스트',
+  '인생샷','최애','반짝반짝','두근두근','폭주','각성','진심모드','레전드','돌격','질주','자유','모험','용기','우당탕','폭신폭신',
+  '반전매력','초집중','무적','텐션업','풀파워','운명','별빛','달빛','바람길','귤빛','탐라의','축제의','주술적','귀여운','천재',
+  '조용한','뜨거운','푸른','어둠의','빛의'];
+var CARD_SKILLS=['고무고무','전집중','물의 호흡','화염의 호흡','번개의 호흡','영역전개','무량공처','흑섬','나선환','천조','그림자술',
+  '기어 세컨드','기어 피프스','패왕색','견문색','무장색','마음 읽기','별밤 마법','졸트라크','인생샷 발생','최강 시선','돌진 모드',
+  '축제 감지','귤빛 각성','바람 추적','포토존 탐지','주인공 오라','몰입 모드','청량 버프','현무암 멘탈','에고 폭발','스파이크',
+  '그림자 잠입','폭주 기관차','덕력 개방','와쿠와쿠 버스트','고무고무 질주','전집중 포토','무량공처 시선집중','나선환 스텝',
+  '흑섬 텐션업','기어 파이브 모드','패왕색 포즈','마음읽기 탐지','졸트라크 인생샷','탐라 공명','축제 레이더','최애 감지','별빛 버프'];
+var CARD_DESCS=['존재감이 급상승한다.','축제 텐션이 크게 오른다.','재미있는 장소를 발견할 확률이 오른다.','인생샷 성공률이 상승한다.',
+  '주변 시선을 강제로 끌어온다.','최애를 향한 추진력이 상승한다.','낯선 장소에서도 적응력이 좋아진다.','갑자기 주인공 같은 분위기가 생긴다.',
+  '사진을 찍을수록 레어도가 올라가는 느낌이 든다.','친구들과의 시너지가 올라간다.','조용하지만 강한 몰입 상태에 들어간다.',
+  '포토존을 감지하는 능력이 상승한다.','운이 좋아진 것 같은 기분이 든다.','축제 현장에서만 발동하는 버프다.','바람을 타듯 움직이게 된다.',
+  '특별한 하루를 만드는 능력이 깨어난다.','인생샷을 놓치지 않는 집중력이 상승한다.','느긋하지만 강한 존재감이 발동한다.',
+  '주변 분위기를 빠르게 읽고 포토존을 감지한다.','카메라 앞에서 시선 집중 효과가 발동한다.','자유롭게 움직이며 축제 텐션을 끌어올린다.'];
+var CARD_LINES=['좋아, 해보자!','그 정도면 충분하지.','와쿠와쿠!','내가 제일 강하니까.','모험이다!','오늘 주인공은 나야.','한 장 더 찍자!',
+  '축제는 이제 시작이야.','귤 하나 먹고 갈까?','바람이 이쪽이래.','최애 발견!','텐션 올려!','포즈 준비 완료.','여기 포토존 맞지?',
+  '놓치지 않을 거야.','다 같이 가자!','지금이 제일 빛나.','제주 바람, 좋은데?','각성했다…!','레어 카드 확정!'];
 /* 프레임 5종의 사진창 좌표(0~1) — 실제 첨부 프레임 PNG를 픽셀 분석해 얻은 값 */
 var FRAME_WIN={
   bronze:  {x0:0.0938,y0:0.1309,x1:0.9053,y1:0.7422},
@@ -2211,17 +2221,25 @@ function rollCard(nickname){
   for(var i=0;i<CARD_RARITY.length;i++){acc+=CARD_RARITY[i].weight;if(roll<acc){rarity=CARD_RARITY[i];break}}
   var level=rarity.lv[0]+Math.floor(Math.random()*(rarity.lv[1]-rarity.lv[0]+1));
   var attr=CARD_ATTR[Math.floor(Math.random()*CARD_ATTR.length)];
-  var mod=attr.mods[Math.floor(Math.random()*attr.mods.length)];
-  var role=CARD_ROLES[Math.floor(Math.random()*CARD_ROLES.length)];
-  var ab=attr.ab[Math.floor(Math.random()*attr.ab.length)];
+  var pick=function(arr){return arr[Math.floor(Math.random()*arr.length)]};
+  var role=pick(CARD_ROLES), kw=pick(CARD_KEYWORDS);
+  while(role.indexOf(kw)>=0)kw=pick(CARD_KEYWORDS); /* '탐라의 탐라의 모험가' 같은 겹침 방지 */
   var val=rarity.val[0]+Math.floor(Math.random()*(rarity.val[1]-rarity.val[0]+1));
   var nick=(nickname||'').trim().slice(0,8);
-  if(nick&&!/[가-힣a-zA-Z0-9]/.test(nick))nick=''; /* 자음/모음 낱자만 입력된 경우(예: 'ㅇ') 무시하고 역할명 사용 */
+  if(nick&&!/[가-힣a-zA-Z0-9]/.test(nick))nick=''; /* 자음/모음 낱자만 입력된 경우(예: 'ㅇ') 무시 */
+  /* 이름 조합: 닉네임이 있으면 [키워드]+닉네임 / [키워드]+[역할]+닉네임,
+     없으면 [키워드]+캐릭터 · [기술]+캐릭터 · [키워드]+[역할]+캐릭터 · [키워드]+[역할] 중 하나 */
+  var r2=Math.random(), name;
+  if(nick) name=r2<0.6?(kw+' '+nick):(kw+' '+role+' '+nick);
+  else{
+    var ch=pick(CARD_CHARS);
+    name=r2<0.5?(kw+' '+ch):r2<0.65?(pick(CARD_SKILLS)+' '+ch):r2<0.85?(kw+' '+role+' '+ch):(kw+' '+role);
+  }
   return {
     schemaVersion:1,cardId:'c'+Date.now()+Math.floor(Math.random()*1000),createdAt:new Date().toISOString(),
     nickname:nick,rarity:rarity.id,rarityLabel:rarity.label,level:level,
-    attribute:attr.id,attributeLabel:attr.label,roleLabel:role,displayName:nick?(mod+' '+nick):(mod+' '+role),
-    abilityName:ab.name,abilityValue:val,abilityText:ab.text.replace('{v}',val)
+    attribute:attr.id,attributeLabel:attr.label,roleLabel:role,displayName:name,
+    abilityName:pick(CARD_SKILLS),abilityValue:val,abilityText:pick(CARD_DESCS),quote:pick(CARD_LINES)
   };
 }
 function wrapText(ctx2,text,maxWidth){
@@ -2277,9 +2295,9 @@ function drawCard(ctx2,W,H,data,imgs,pos){
      800 기준 크기로 잡고 칸 높이의 82%를 채우도록 함께 키우거나 줄여 세로 중앙에 쌓는다. */
   var pb=sl.panel, px0=pb[0]*k, py0=pb[1]*k, pw=(pb[2]-pb[0])*k, ph=(pb[3]-pb[1])*k, pcx=px0+pw/2, tw=pw*0.84;
   var subText='Lv.'+data.level+'  ·  '+data.roleLabel+'  ·  '+data.attributeLabel+' 속성';
-  var showFoot=ph>=200*k; /* 칸이 낮은 브론즈는 행사명 줄을 빼고 나머지 글씨를 키운다 */
+  var showFoot=ph>=220*k, showSub=ph>=200*k; /* 칸이 낮은 브론즈는 레벨 줄·행사명 줄을 빼고 나머지 글씨를 키운다 */ /* 칸이 낮은 브론즈는 행사명 줄을 빼고 나머지 글씨를 키운다 */
   function layout(f){
-    var o={sub:19*k*f, nm:38*k*f, desc:22*k*f, foot:14*k*f, gap:9*k*f};
+    var o={sub:19*k*f, nm:38*k*f, desc:22*k*f, qt:19*k*f, foot:14*k*f, gap:9*k*f};
     ctx2.font='400 '+Math.round(o.desc)+'px '+FF;
     var full=ctx2.measureText(data.abilityText).width;
     if(full<=tw)o.lines=[data.abilityText];
@@ -2290,7 +2308,8 @@ function drawCard(ctx2,W,H,data,imgs,pos){
       if(cur)o.lines.push(cur);o.lines=o.lines.slice(0,2);
     }
     o.foot=showFoot?o.foot:0;
-    o.total=o.sub+o.gap+o.nm+o.gap*2+o.lines.length*o.desc*1.4+(showFoot?o.gap*1.2+o.foot:0);
+    if(!showSub){o.sub=0}
+    o.total=(showSub?o.sub+o.gap:0)+o.nm+o.gap*2+o.lines.length*o.desc*1.4+(data.quote?o.gap*0.6+o.qt:0)+(showFoot?o.gap*1.2+o.foot:0);
     return o;
   }
   var L=layout(1);
@@ -2298,7 +2317,7 @@ function drawCard(ctx2,W,H,data,imgs,pos){
   var y=py0+(ph-L.total)/2;
   ctx2.fillStyle='rgba(43,35,20,.62)';
   fitFont(ctx2,subText,'400',FF,L.sub,L.sub*0.7,tw);
-  ctx2.fillText(subText,pcx,y+L.sub/2);y+=L.sub+L.gap;
+  if(showSub){ctx2.fillText(subText,pcx,y+L.sub/2);y+=L.sub+L.gap}
   ctx2.fillStyle=INK;ctx2.strokeStyle=INK;ctx2.lineWidth=Math.max(1,L.nm*0.035);
   fitFont(ctx2,data.abilityName,'400',FF,L.nm,L.nm*0.6,tw);
   ctx2.strokeText(data.abilityName,pcx,y+L.nm/2);ctx2.fillText(data.abilityName,pcx,y+L.nm/2);y+=L.nm+L.gap;
@@ -2308,6 +2327,11 @@ function drawCard(ctx2,W,H,data,imgs,pos){
   ctx2.fillStyle=g;ctx2.fillRect(pcx-lw/2,y,lw,Math.max(1,1.5*k));y+=L.gap;
   ctx2.fillStyle=INK;ctx2.font='400 '+Math.round(L.desc)+'px '+FF;
   L.lines.forEach(function(line){ctx2.fillText(line,pcx,y+L.desc*0.7);y+=L.desc*1.4});
+  if(data.quote){ /* 캐릭터 대사 한 줄 */
+    y+=L.gap*0.6;ctx2.fillStyle='rgba(43,35,20,.68)';
+    fitFont(ctx2,'“'+data.quote+'”','400',FF,L.qt,L.qt*0.7,tw);
+    ctx2.fillText('“'+data.quote+'”',pcx,y+L.qt/2);y+=L.qt;
+  }
   y+=L.gap*1.2;
   ctx2.fillStyle='rgba(43,35,20,.5)';ctx2.font='400 '+Math.round(L.foot)+'px '+FF;
   if(showFoot)ctx2.fillText(data.rarityLabel+'  ·  탐라문화제 2026',pcx,y+L.foot/2);
