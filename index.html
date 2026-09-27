@@ -199,6 +199,7 @@
       <input id="inCardNick" placeholder="예) 감귤" maxlength="8">
     </div>
     <p class="caption">레어도와 능력치는 재미를 위한 랜덤 설정입니다.</p>
+    <p class="caption" id="cardPity" style="color:var(--color-accent-strong);font-weight:700"></p>
 
     <button class="btn btn--primary btn--block" id="btnMake" style="margin-top:12px">카드 탄생시키기</button>
 
@@ -2220,9 +2221,17 @@ function loadCardAssets(cb){
     im.src=CARD_ASSET_BASE+files[k];
   });
 }
-function rollCard(nickname){
+/* 천장: 5장째마다 최고 등급(다이아) 확정. 누적 장수는 S.cardCount에 저장 */
+var CARD_PITY=5;
+function updateCardPity(){
+  var el=$('#cardPity');if(!el)return;
+  var left=CARD_PITY-((S.cardCount||0)%CARD_PITY);
+  el.textContent=left===1?'다음 카드는 다이아 확정!':'다이아 확정까지 '+left+'장 남았어요';
+}
+function rollCard(nickname,forceRarity){
   var totalW=CARD_RARITY.reduce(function(s,r){return s+r.weight},0), roll=Math.random()*totalW, acc=0, rarity=CARD_RARITY[CARD_RARITY.length-1];
   for(var i=0;i<CARD_RARITY.length;i++){acc+=CARD_RARITY[i].weight;if(roll<acc){rarity=CARD_RARITY[i];break}}
+  if(forceRarity)rarity=CARD_RARITY.filter(function(r){return r.id===forceRarity})[0]||rarity;
   var level=rarity.lv[0]+Math.floor(Math.random()*(rarity.lv[1]-rarity.lv[0]+1));
   var attr=CARD_ATTR[Math.floor(Math.random()*CARD_ATTR.length)];
   var pick=function(arr){return arr[Math.floor(Math.random()*arr.length)]};
@@ -2412,7 +2421,9 @@ $('#btnMake').onclick=function(){
   if(have<1){toast('사진을 넣어 주세요');return}
   var btn=$('#btnMake');if(btn.disabled)return;
   btn.disabled=true;$('#result').classList.remove('on');
-  var data=rollCard($('#inCardNick').value);
+  S.cardCount=(S.cardCount||0)+1;save();
+  var data=rollCard($('#inCardNick').value, S.cardCount%CARD_PITY===0?'diamond':null);
+  updateCardPity();
   loadCardAssets(function(assets){
     var need2=['frame_'+data.rarity,'attr_'+data.attribute];
     if(need2.some(function(k){return !assets[k]})){
@@ -2434,6 +2445,7 @@ $('#btnMake').onclick=function(){
     });
   });
 };
+updateCardPity();
 $('#btnReplay').onclick=function(){
   if(!currentCard)return;
   var wrap=$('#cardWrap');wrap.className='cardWrap';
