@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#142f37"><title>영등할망의 귤 튕기기 · 큰바람 모험</title><link rel="stylesheet" href="style.css"></head>
+<body><main id="app">
+<header><div><span class="eyebrow">JEJU · WIND ADVENTURE</span><h1>영등할망의 귤 튕기기</h1></div><div class="controls"><button id="sound" class="icon" aria-label="소리 켜기">♪</button><button id="pause" class="icon" aria-label="일시정지">Ⅱ</button></div></header>
+<section class="hud" aria-label="게임 점수"><div><small>남은 기회</small><strong id="time">3<span>개</span></strong></div><div class="scorebox"><small>모은 점수</small><strong id="score">0</strong></div><div><small id="chainLabel">최고 연쇄</small><strong id="chain">0<span>개</span></strong></div></section>
+<div class="energy-row"><span id="energy-label">큰바람 충전</span><div class="energy-track"><i id="energy-bar"></i></div><span id="energy-value">0%</span></div>
+<div id="rank-target" aria-live="off">새 최고 기록에 도전!</div><div id="board-wrap"><section id="stage"><canvas id="game" aria-label="아래 영역에서 손가락을 좌우로 움직여 귤을 받으세요"></canvas><div id="announcement" aria-live="polite"></div><div id="overlay"><div id="panel" class="panel"></div></div></section></div>
+<footer><span id="phase">01 · 보물 깨기</span><span id="build">가운데에 맞히면 강풍!</span></footer>
+</main><script src="game.js"></script></body></html>
