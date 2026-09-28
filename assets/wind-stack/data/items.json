@@ -1,0 +1,750 @@
+[
+  {
+    "id": "citrus_crate",
+    "name": "귤 상자",
+    "description": "넓고 든든한 첫 단",
+    "image": "assets/items/citrus_crate.png",
+    "sourceRect": {
+      "x": 78,
+      "y": 179,
+      "width": 1378,
+      "height": 664
+    },
+    "renderSize": {
+      "width": 128,
+      "height": 61.68
+    },
+    "anchor": [
+      0.5,
+      0.5
+    ],
+    "grip": [
+      0.5,
+      0.03
+    ],
+    "mass": 2.3,
+    "friction": 0.7,
+    "restitution": 0.04,
+    "windResponse": 0.7,
+    "difficultyBonus": 0,
+    "material": "wood",
+    "collision": {
+      "type": "convexPolygon",
+      "vertices": [
+        [
+          0.01,
+          0.1
+        ],
+        [
+          0.99,
+          0.1
+        ],
+        [
+          0.99,
+          0.98
+        ],
+        [
+          0.01,
+          0.98
+        ]
+      ]
+    },
+    "colliderStatus": "draft_needs_physics_overlay_review"
+  },
+  {
+    "id": "basalt_brick",
+    "name": "현무암",
+    "description": "무겁고 잘 버텨요",
+    "image": "assets/items/basalt_brick.png",
+    "sourceRect": {
+      "x": 153,
+      "y": 215,
+      "width": 1470,
+      "height": 507
+    },
+    "renderSize": {
+      "width": 110,
+      "height": 37.94
+    },
+    "anchor": [
+      0.5,
+      0.5
+    ],
+    "grip": [
+      0.5,
+      0.03
+    ],
+    "mass": 3.5,
+    "friction": 0.85,
+    "restitution": 0.02,
+    "windResponse": 0.35,
+    "difficultyBonus": 0,
+    "material": "stone",
+    "collision": {
+      "type": "convexPolygon",
+      "vertices": [
+        [
+          0.08,
+          0.99
+        ],
+        [
+          0.01,
+          0.86
+        ],
+        [
+          0.01,
+          0.19
+        ],
+        [
+          0.08,
+          0.02
+        ],
+        [
+          0.91,
+          0.01
+        ],
+        [
+          0.99,
+          0.17
+        ],
+        [
+          0.99,
+          0.82
+        ],
+        [
+          0.92,
+          0.99
+        ]
+      ]
+    },
+    "colliderStatus": "draft_needs_physics_overlay_review"
+  },
+  {
+    "id": "wood_plank",
+    "name": "바다 판자",
+    "description": "넓게 받치지만 얇아요",
+    "image": "assets/items/wood_plank.png",
+    "sourceRect": {
+      "x": 51,
+      "y": 197,
+      "width": 2069,
+      "height": 327
+    },
+    "renderSize": {
+      "width": 156,
+      "height": 24.66
+    },
+    "anchor": [
+      0.5,
+      0.5
+    ],
+    "grip": [
+      0.5,
+      0.03
+    ],
+    "mass": 1.3,
+    "friction": 0.62,
+    "restitution": 0.06,
+    "windResponse": 1.1,
+    "difficultyBonus": 40,
+    "material": "wood",
+    "collision": {
+      "type": "convexPolygon",
+      "vertices": [
+        [
+          0.03,
+          0.99
+        ],
+        [
+          0.005,
+          0.75
+        ],
+        [
+          0.005,
+          0.28
+        ],
+        [
+          0.03,
+          0.06
+        ],
+        [
+          0.96,
+          0.03
+        ],
+        [
+          0.997,
+          0.25
+        ],
+        [
+          0.997,
+          0.77
+        ],
+        [
+          0.965,
+          0.97
+        ]
+      ]
+    },
+    "colliderStatus": "draft_needs_physics_overlay_review"
+  },
+  {
+    "id": "tangerine",
+    "name": "제주 귤",
+    "description": "둥글어서 잘 굴러요",
+    "image": "assets/items/tangerine.png",
+    "sourceRect": {
+      "x": 146,
+      "y": 133,
+      "width": 974,
+      "height": 1008
+    },
+    "renderSize": {
+      "width": 64,
+      "height": 66.23
+    },
+    "anchor": [
+      0.5,
+      0.5
+    ],
+    "grip": [
+      0.5,
+      0.12
+    ],
+    "mass": 0.8,
+    "friction": 0.4,
+    "restitution": 0.12,
+    "windResponse": 1.2,
+    "difficultyBonus": 80,
+    "material": "soft",
+    "collision": {
+      "type": "circle",
+      "center": [
+        0.5,
+        0.575
+      ],
+      "radius": 0.422,
+      "radiusUnit": "min(renderWidth,renderHeight)"
+    },
+    "colliderStatus": "draft_needs_physics_overlay_review"
+  },
+  {
+    "id": "buoy",
+    "name": "바다 부표",
+    "description": "가볍고 통통 튀어요",
+    "image": "assets/items/buoy.png",
+    "sourceRect": {
+      "x": 129,
+      "y": 159,
+      "width": 997,
+      "height": 938
+    },
+    "renderSize": {
+      "width": 74,
+      "height": 69.62
+    },
+    "anchor": [
+      0.5,
+      0.5
+    ],
+    "grip": [
+      0.5,
+      0.03
+    ],
+    "mass": 0.6,
+    "friction": 0.38,
+    "restitution": 0.2,
+    "windResponse": 1.5,
+    "difficultyBonus": 80,
+    "material": "soft",
+    "collision": {
+      "type": "circle",
+      "center": [
+        0.5,
+        0.5
+      ],
+      "radius": 0.48,
+      "radiusUnit": "min(renderWidth,renderHeight)"
+    },
+    "colliderStatus": "draft_needs_physics_overlay_review"
+  },
+  {
+    "id": "tea_tin",
+    "name": "차 통",
+    "description": "작고 반듯한 받침",
+    "image": "assets/items/tea_tin.png",
+    "sourceRect": {
+      "x": 192,
+      "y": 141,
+      "width": 943,
+      "height": 909
+    },
+    "renderSize": {
+      "width": 68,
+      "height": 65.55
+    },
+    "anchor": [
+      0.5,
+      0.5
+    ],
+    "grip": [
+      0.5,
+      0.03
+    ],
+    "mass": 1.1,
+    "friction": 0.58,
+    "restitution": 0.05,
+    "windResponse": 0.85,
+    "difficultyBonus": 0,
+    "material": "metal",
+    "collision": {
+      "type": "convexPolygon",
+      "vertices": [
+        [
+          0.99,
+          0.12
+        ],
+        [
+          0.99,
+          0.94
+        ],
+        [
+          0.91,
+          0.99
+        ],
+        [
+          0.08,
+          0.99
+        ],
+        [
+          0.01,
+          0.94
+        ],
+        [
+          0.01,
+          0.13
+        ],
+        [
+          0.07,
+          0.01
+        ],
+        [
+          0.92,
+          0.01
+        ]
+      ]
+    },
+    "colliderStatus": "draft_needs_physics_overlay_review"
+  },
+  {
+    "id": "shell",
+    "name": "조개껍데기",
+    "description": "넓은 위, 좁은 아래",
+    "image": "assets/items/shell.png",
+    "sourceRect": {
+      "x": 41,
+      "y": 60,
+      "width": 1293,
+      "height": 1028
+    },
+    "renderSize": {
+      "width": 86,
+      "height": 68.37
+    },
+    "anchor": [
+      0.5,
+      0.5
+    ],
+    "grip": [
+      0.5,
+      0.03
+    ],
+    "mass": 0.9,
+    "friction": 0.55,
+    "restitution": 0.05,
+    "windResponse": 1.25,
+    "difficultyBonus": 80,
+    "material": "ceramic",
+    "collision": {
+      "type": "convexPolygon",
+      "vertices": [
+        [
+          0.005,
+          0.55
+        ],
+        [
+          0.07,
+          0.3
+        ],
+        [
+          0.25,
+          0.12
+        ],
+        [
+          0.5,
+          0.01
+        ],
+        [
+          0.77,
+          0.09
+        ],
+        [
+          0.94,
+          0.31
+        ],
+        [
+          0.995,
+          0.57
+        ],
+        [
+          0.89,
+          0.77
+        ],
+        [
+          0.69,
+          0.99
+        ],
+        [
+          0.31,
+          0.99
+        ],
+        [
+          0.1,
+          0.75
+        ]
+      ]
+    },
+    "colliderStatus": "draft_needs_physics_overlay_review"
+  },
+  {
+    "id": "lava_jar",
+    "name": "제주 옹기",
+    "description": "둥근 어깨를 조심",
+    "image": "assets/items/lava_jar.png",
+    "sourceRect": {
+      "x": 167,
+      "y": 150,
+      "width": 980,
+      "height": 927
+    },
+    "renderSize": {
+      "width": 70,
+      "height": 66.21
+    },
+    "anchor": [
+      0.5,
+      0.5
+    ],
+    "grip": [
+      0.5,
+      0.03
+    ],
+    "mass": 2.4,
+    "friction": 0.65,
+    "restitution": 0.03,
+    "windResponse": 0.55,
+    "difficultyBonus": 40,
+    "material": "ceramic",
+    "collision": {
+      "type": "convexPolygon",
+      "vertices": [
+        [
+          0.01,
+          0.65
+        ],
+        [
+          0.07,
+          0.4
+        ],
+        [
+          0.27,
+          0.02
+        ],
+        [
+          0.73,
+          0.02
+        ],
+        [
+          0.93,
+          0.4
+        ],
+        [
+          0.99,
+          0.65
+        ],
+        [
+          0.87,
+          0.91
+        ],
+        [
+          0.76,
+          0.99
+        ],
+        [
+          0.24,
+          0.99
+        ],
+        [
+          0.1,
+          0.9
+        ]
+      ]
+    },
+    "colliderStatus": "draft_needs_physics_overlay_review"
+  },
+  {
+    "id": "fish_block",
+    "name": "나무 물고기",
+    "description": "울퉁불퉁한 모양",
+    "image": "assets/items/fish_block.png",
+    "sourceRect": {
+      "x": 134,
+      "y": 69,
+      "width": 1501,
+      "height": 735
+    },
+    "renderSize": {
+      "width": 112,
+      "height": 54.84
+    },
+    "anchor": [
+      0.5,
+      0.5
+    ],
+    "grip": [
+      0.5,
+      0.03
+    ],
+    "mass": 1.1,
+    "friction": 0.6,
+    "restitution": 0.06,
+    "windResponse": 1.15,
+    "difficultyBonus": 80,
+    "material": "wood",
+    "collision": {
+      "type": "convexPolygon",
+      "vertices": [
+        [
+          0.01,
+          0.9
+        ],
+        [
+          0.01,
+          0.22
+        ],
+        [
+          0.44,
+          0.01
+        ],
+        [
+          0.59,
+          0.11
+        ],
+        [
+          0.79,
+          0.25
+        ],
+        [
+          0.99,
+          0.55
+        ],
+        [
+          0.95,
+          0.72
+        ],
+        [
+          0.75,
+          0.9
+        ],
+        [
+          0.58,
+          0.995
+        ]
+      ]
+    },
+    "colliderStatus": "draft_needs_physics_overlay_review"
+  },
+  {
+    "id": "straw_hat",
+    "name": "밀짚모자",
+    "description": "가벼워 바람에 약해요",
+    "image": "assets/items/straw_hat.png",
+    "sourceRect": {
+      "x": 38,
+      "y": 179,
+      "width": 1698,
+      "height": 540
+    },
+    "renderSize": {
+      "width": 124,
+      "height": 39.43
+    },
+    "anchor": [
+      0.5,
+      0.5
+    ],
+    "grip": [
+      0.5,
+      0.03
+    ],
+    "mass": 0.4,
+    "friction": 0.52,
+    "restitution": 0.03,
+    "windResponse": 1.8,
+    "difficultyBonus": 80,
+    "material": "soft",
+    "collision": {
+      "type": "convexPolygon",
+      "vertices": [
+        [
+          0.27,
+          0.04
+        ],
+        [
+          0.57,
+          0.01
+        ],
+        [
+          0.67,
+          0.12
+        ],
+        [
+          0.98,
+          0.73
+        ],
+        [
+          0.99,
+          0.84
+        ],
+        [
+          0.9,
+          0.95
+        ],
+        [
+          0.5,
+          0.995
+        ],
+        [
+          0.1,
+          0.95
+        ],
+        [
+          0.01,
+          0.83
+        ],
+        [
+          0.02,
+          0.74
+        ]
+      ]
+    },
+    "colliderStatus": "draft_needs_physics_overlay_review"
+  },
+  {
+    "id": "gift_box",
+    "name": "선물 상자",
+    "description": "반듯하고 가벼워요",
+    "image": "assets/items/gift_box.png",
+    "sourceRect": {
+      "x": 261,
+      "y": 248,
+      "width": 854,
+      "height": 648
+    },
+    "renderSize": {
+      "width": 80,
+      "height": 60.7
+    },
+    "anchor": [
+      0.5,
+      0.5
+    ],
+    "grip": [
+      0.5,
+      0.03
+    ],
+    "mass": 0.8,
+    "friction": 0.65,
+    "restitution": 0.03,
+    "windResponse": 1.1,
+    "difficultyBonus": 0,
+    "material": "soft",
+    "collision": {
+      "type": "convexPolygon",
+      "vertices": [
+        [
+          0.01,
+          0.92
+        ],
+        [
+          0.01,
+          0.13
+        ],
+        [
+          0.07,
+          0.01
+        ],
+        [
+          0.94,
+          0.01
+        ],
+        [
+          0.99,
+          0.12
+        ],
+        [
+          0.99,
+          0.92
+        ],
+        [
+          0.94,
+          0.99
+        ],
+        [
+          0.06,
+          0.99
+        ]
+      ]
+    },
+    "colliderStatus": "draft_needs_physics_overlay_review"
+  },
+  {
+    "id": "lifering",
+    "name": "구명환",
+    "description": "둥근 몸체가 데굴데굴",
+    "image": "assets/items/lifering.png",
+    "sourceRect": {
+      "x": 107,
+      "y": 113,
+      "width": 1044,
+      "height": 1026
+    },
+    "renderSize": {
+      "width": 78,
+      "height": 76.66
+    },
+    "anchor": [
+      0.5,
+      0.5
+    ],
+    "grip": [
+      0.5,
+      0.03
+    ],
+    "mass": 0.55,
+    "friction": 0.42,
+    "restitution": 0.16,
+    "windResponse": 1.6,
+    "difficultyBonus": 80,
+    "material": "soft",
+    "collision": {
+      "type": "circle",
+      "center": [
+        0.5,
+        0.5
+      ],
+      "radius": 0.48,
+      "radiusUnit": "min(renderWidth,renderHeight)"
+    },
+    "colliderStatus": "draft_needs_physics_overlay_review"
+  }
+]

@@ -1,0 +1,22 @@
+{
+  "colors": {
+    "ink": "#173f45",
+    "sea": "#287c7b",
+    "mint": "#95cebc",
+    "sand": "#fff8e9",
+    "coral": "#ee8465",
+    "gold": "#efbe72",
+    "muted": "#718d88"
+  },
+  "type": {
+    "fontFamily": "system-ui, -apple-system, sans-serif",
+    "titlePx": 30,
+    "bodyPx": 16,
+    "labelPx": 13
+  },
+  "radius": {
+    "card": 20,
+    "button": 16
+  },
+  "minTouchTargetPx": 44
+}

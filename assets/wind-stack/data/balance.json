@@ -1,0 +1,32 @@
+{
+  "ruleVersion": "wind-stack-design-1",
+  "selectionCount": 10,
+  "duplicatesAllowed": false,
+  "world": {
+    "width": 390,
+    "height": 720,
+    "platformTop": 620,
+    "platformWidth": 196,
+    "failY": 735,
+    "fixedStepSeconds": 0.008333333333333333
+  },
+  "crane": {
+    "speedPxPerSecond": 95,
+    "minX": 54,
+    "maxX": 336,
+    "releaseVelocityRatio": 0.1
+  },
+  "settling": {
+    "speedThreshold": 6,
+    "angularSpeedThreshold": 0.06,
+    "stableSeconds": 0.65,
+    "advanceAfterSeconds": 6,
+    "finalTimeoutSeconds": 12
+  },
+  "score": {
+    "stableItem": 100,
+    "stableHeightPerPixel": 2,
+    "clearBonus": 500
+  },
+  "status": "initial_tuning_not_playtested"
+}

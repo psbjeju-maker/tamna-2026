@@ -1,0 +1,181 @@
+{
+  "name": "영등할망의 바람탑",
+  "version": "design-kit-1",
+  "kind": "design_and_development_starter_not_completed_game",
+  "assets": [
+    {
+      "path": "assets/backgrounds/jeju_coast.png",
+      "role": "backgrounds",
+      "bytes": 1833037,
+      "sha256": "d7f6a01d294f8f5fe5e91d6fea305b0dff847ace3264ab0c1973db4094669250"
+    },
+    {
+      "path": "assets/characters/yeongdeung_blow.png",
+      "role": "characters",
+      "bytes": 2666575,
+      "sha256": "726452761fe995fce5836b180052331caea97b0a132ff7090ea557c4a8e255b2"
+    },
+    {
+      "path": "assets/characters/yeongdeung_smile.png",
+      "role": "characters",
+      "bytes": 2865413,
+      "sha256": "3980bece02f917335e7bccbb6937ad4434a03276b15ccc5c4580f92887b243d3"
+    },
+    {
+      "path": "assets/items/basalt_brick.png",
+      "role": "items",
+      "bytes": 1427007,
+      "sha256": "5fd4ae4f4b902d5eb4b542f93153e3dcfe6e994993f673d7b0b2fb8afa9361ac"
+    },
+    {
+      "path": "assets/items/buoy.png",
+      "role": "items",
+      "bytes": 1121353,
+      "sha256": "6e5e22ecddf62f81027342004c85d00e48bfd1c18b5d857cb28d4927d8027711"
+    },
+    {
+      "path": "assets/items/citrus_crate.png",
+      "role": "items",
+      "bytes": 1964258,
+      "sha256": "44977b8504a952ae37a8c1cf58f1615c224f549d06829739a693386fe24f8605"
+    },
+    {
+      "path": "assets/items/fish_block.png",
+      "role": "items",
+      "bytes": 1386911,
+      "sha256": "0dfcd996317c14bdc74e91c8f705b3293b5d8bf773eebf8ab265564f937584fc"
+    },
+    {
+      "path": "assets/items/gift_box.png",
+      "role": "items",
+      "bytes": 623438,
+      "sha256": "e041d8aabe9e72dae2e47ade3d3cc605517c76b3fd117e57c688652395eb2423"
+    },
+    {
+      "path": "assets/items/lava_jar.png",
+      "role": "items",
+      "bytes": 1408257,
+      "sha256": "4c82df6cb77306c799136cfb710c9543e26ca013df794cee4ad0cf72cadd3eb8"
+    },
+    {
+      "path": "assets/items/lifering.png",
+      "role": "items",
+      "bytes": 1124038,
+      "sha256": "560cde9cae02ba7a74142c47dc6f9c91ca4bd02405196e7fb2e036691deda548"
+    },
+    {
+      "path": "assets/items/shell.png",
+      "role": "items",
+      "bytes": 1651495,
+      "sha256": "1b23ea648851e137b74ca01d9e40dc3176f2e03ac210df00b043440b4afa561d"
+    },
+    {
+      "path": "assets/items/straw_hat.png",
+      "role": "items",
+      "bytes": 1117959,
+      "sha256": "a145b044e88cb4fdaa3f01d563eabf7911f960a1eeaf697aeedf3188d81b73b7"
+    },
+    {
+      "path": "assets/items/tangerine.png",
+      "role": "items",
+      "bytes": 1142458,
+      "sha256": "6e05976fecade1b8e881d683fe7225cdef0586edfcf075bfb784a0d7b5eb70a8"
+    },
+    {
+      "path": "assets/items/tea_tin.png",
+      "role": "items",
+      "bytes": 1694175,
+      "sha256": "2747ec49ad98955a35d8b5c016993fa06d6c2613cd6d2ce6b7bf378f08bb68c9"
+    },
+    {
+      "path": "assets/items/wood_plank.png",
+      "role": "items",
+      "bytes": 1091635,
+      "sha256": "caa88eebb7c99dcbaaf85bde5508e4ba7f692e43b3ee71885cce2f89301d2e3c"
+    },
+    {
+      "path": "assets/ui/crane_claw_closed.svg",
+      "role": "ui",
+      "bytes": 525,
+      "sha256": "2329e818d921e1ddf9d2bab5690a4389944983fd31c3cd7bd9805716e1adf5a4"
+    },
+    {
+      "path": "assets/ui/crane_claw_open.svg",
+      "role": "ui",
+      "bytes": 525,
+      "sha256": "6ff43111de7c971c678a306fb14c2c89290e05a35ae6b58393c767b458354613"
+    },
+    {
+      "path": "assets/ui/crane_rail.svg",
+      "role": "ui",
+      "bytes": 280,
+      "sha256": "7579d3f71924ec794c58d89296bb27dd7e4d1cf514ff38c8dbc40577374f7e77"
+    },
+    {
+      "path": "assets/ui/crane_trolley.svg",
+      "role": "ui",
+      "bytes": 522,
+      "sha256": "4b7596130beb21838a23eae8d28d60cd4e8ab420358d86d1ff74c52a5ae5fb6f"
+    },
+    {
+      "path": "assets/ui/icon_arrow_right.svg",
+      "role": "ui",
+      "bytes": 215,
+      "sha256": "6741b1ec00e1525ca281a1fc7aeea08a03b3ba8987620389048a2f7f626addf7"
+    },
+    {
+      "path": "assets/ui/icon_check.svg",
+      "role": "ui",
+      "bytes": 208,
+      "sha256": "8e48d8bb22d36f89856ba8c6e0b9742033cf37042d0f0165b7a7e4da8cf332c6"
+    },
+    {
+      "path": "assets/ui/icon_pause.svg",
+      "role": "ui",
+      "bytes": 209,
+      "sha256": "2f08593bb172ba046279e019b9065ccab45c35a9a7a7f546338341fc2d8f56e4"
+    },
+    {
+      "path": "assets/ui/icon_retry.svg",
+      "role": "ui",
+      "bytes": 223,
+      "sha256": "b36b0e887c671e46d971a0d666141e06330420062c19ff9af9009aca063b0105"
+    },
+    {
+      "path": "assets/ui/icon_sound.svg",
+      "role": "ui",
+      "bytes": 228,
+      "sha256": "bed0a6bd5e0c908f77e81fcf6201f6fc4b5b97348b9ea09ddfc3fa68cee1c37f"
+    },
+    {
+      "path": "assets/ui/impact_ring.svg",
+      "role": "ui",
+      "bytes": 290,
+      "sha256": "750f1ce63e2adce30313846b96acb512d64eb15d72b9dfe2621989d17819a734"
+    },
+    {
+      "path": "assets/ui/platform.svg",
+      "role": "ui",
+      "bytes": 430,
+      "sha256": "d2f8205d96b0012863b8ab6ef3b020bff5035b3ccfb7d6a851b2041a53009160"
+    },
+    {
+      "path": "assets/ui/sparkle.svg",
+      "role": "ui",
+      "bytes": 163,
+      "sha256": "83c41adb6a9b81fcddbe162de3f81aa6ffcb20bb9ec95f2a5a87fab9cb704163"
+    },
+    {
+      "path": "assets/ui/wind_gust.svg",
+      "role": "ui",
+      "bytes": 341,
+      "sha256": "d82902c2507201908fbca836e8ccee137dd7d59093d1e021f9efe9ffb8034212"
+    },
+    {
+      "path": "assets/ui/wind_help.svg",
+      "role": "ui",
+      "bytes": 341,
+      "sha256": "30154d8e3e9a061298b2c06f16f2da01fff95fce06d3367a4bdb8f0480ba295a"
+    }
+  ]
+}

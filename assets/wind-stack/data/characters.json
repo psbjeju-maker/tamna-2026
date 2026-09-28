@@ -1,0 +1,20 @@
+{
+  "status": "visual_alignment_draft",
+  "smile": {
+    "image": "assets/characters/yeongdeung_smile.png",
+    "faceAnchorPixels": [
+      495,
+      525
+    ],
+    "previewScale": 0.135
+  },
+  "blow": {
+    "image": "assets/characters/yeongdeung_blow.png",
+    "faceAnchorPixels": [
+      607,
+      435
+    ],
+    "previewScale": 0.135
+  },
+  "note": "Align faceAnchor to a fixed screen position when swapping portraits; do not align unequal full-image heights."
+}

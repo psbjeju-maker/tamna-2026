@@ -1,0 +1,33 @@
+{
+  "timing": {
+    "enter": 0.25,
+    "warning": 1,
+    "anticipation": 0.15,
+    "active": 1.4,
+    "exit": 0.4
+  },
+  "events": [
+    {
+      "slot": 4,
+      "kind": "gust",
+      "direction": 1,
+      "accelerationPxPerSecondSquared": 24,
+      "line": "후후, 이번엔 이쪽으로 불어 볼까?"
+    },
+    {
+      "slot": 7,
+      "kind": "help",
+      "gravityScale": 0.75,
+      "line": "살살… 이번엔 내가 받쳐 주마."
+    },
+    {
+      "slot": 9,
+      "kind": "gust",
+      "direction": -1,
+      "accelerationPxPerSecondSquared": 40,
+      "line": "이번엔 반대쪽이란다!"
+    }
+  ],
+  "oncePerSlot": true,
+  "characterSide": "left_for_rightward_wind_right_for_leftward_wind"
+}

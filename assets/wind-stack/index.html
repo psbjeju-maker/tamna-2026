@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#173f45"><title>영등할망의 바람탑</title><link rel="stylesheet" href="style.css"></head>
+<body><main id="app">
+<header>
+  <div><span class="eyebrow">JEJU · WIND TOWER</span><h1>영등할망의 바람탑</h1></div>
+  <div class="controls"><button id="sound" class="icon" aria-label="소리 켜기">♪</button></div>
+</header>
+<section class="hud" aria-label="게임 점수">
+  <div><small>남은 물건</small><strong id="hudLeft">10<span>개</span></strong></div>
+  <div class="scorebox"><small>점수</small><strong id="hudScore">0</strong></div>
+  <div><small>높이</small><strong id="hudHeight">0<span>px</span></strong></div>
+</section>
+<div id="board-wrap">
+  <section id="stage">
+    <canvas id="game"></canvas>
+    <div id="windBubble" class="windBubble"></div>
+    <div id="toast" class="toast"></div>
+    <div id="overlay"><div id="panel" class="panel"></div></div>
+  </section>
+</div>
+<footer><span id="phase">10개를 골라 탑을 쌓아보세요</span><span id="build">탭해서 놓기</span></footer>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+<script src="game.js"></script>
+</body></html>

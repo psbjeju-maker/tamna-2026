@@ -1,0 +1,218 @@
+[
+  {
+    "id": "citrus_crate",
+    "file": "wind_stack/assets/items/citrus_crate.png",
+    "size": [
+      1536,
+      1024
+    ],
+    "contentBounds": [
+      81,
+      182,
+      1453,
+      840
+    ],
+    "alphaExtrema": [
+      0,
+      254
+    ]
+  },
+  {
+    "id": "basalt_brick",
+    "file": "wind_stack/assets/items/basalt_brick.png",
+    "size": [
+      1774,
+      887
+    ],
+    "contentBounds": [
+      156,
+      218,
+      1620,
+      719
+    ],
+    "alphaExtrema": [
+      0,
+      255
+    ]
+  },
+  {
+    "id": "wood_plank",
+    "file": "wind_stack/assets/items/wood_plank.png",
+    "size": [
+      2172,
+      724
+    ],
+    "contentBounds": [
+      54,
+      200,
+      2117,
+      521
+    ],
+    "alphaExtrema": [
+      0,
+      255
+    ]
+  },
+  {
+    "id": "tangerine",
+    "file": "wind_stack/assets/items/tangerine.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "contentBounds": [
+      149,
+      136,
+      1117,
+      1138
+    ],
+    "alphaExtrema": [
+      0,
+      255
+    ]
+  },
+  {
+    "id": "buoy",
+    "file": "wind_stack/assets/items/buoy.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "contentBounds": [
+      132,
+      162,
+      1123,
+      1094
+    ],
+    "alphaExtrema": [
+      0,
+      255
+    ]
+  },
+  {
+    "id": "tea_tin",
+    "file": "wind_stack/assets/items/tea_tin.png",
+    "size": [
+      1328,
+      1184
+    ],
+    "contentBounds": [
+      195,
+      144,
+      1132,
+      1047
+    ],
+    "alphaExtrema": [
+      0,
+      254
+    ]
+  },
+  {
+    "id": "shell",
+    "file": "wind_stack/assets/items/shell.png",
+    "size": [
+      1374,
+      1145
+    ],
+    "contentBounds": [
+      44,
+      63,
+      1331,
+      1085
+    ],
+    "alphaExtrema": [
+      0,
+      255
+    ]
+  },
+  {
+    "id": "lava_jar",
+    "file": "wind_stack/assets/items/lava_jar.png",
+    "size": [
+      1312,
+      1199
+    ],
+    "contentBounds": [
+      170,
+      153,
+      1144,
+      1074
+    ],
+    "alphaExtrema": [
+      0,
+      255
+    ]
+  },
+  {
+    "id": "fish_block",
+    "file": "wind_stack/assets/items/fish_block.png",
+    "size": [
+      1774,
+      887
+    ],
+    "contentBounds": [
+      137,
+      72,
+      1632,
+      801
+    ],
+    "alphaExtrema": [
+      0,
+      255
+    ]
+  },
+  {
+    "id": "straw_hat",
+    "file": "wind_stack/assets/items/straw_hat.png",
+    "size": [
+      1774,
+      887
+    ],
+    "contentBounds": [
+      41,
+      182,
+      1733,
+      716
+    ],
+    "alphaExtrema": [
+      0,
+      255
+    ]
+  },
+  {
+    "id": "gift_box",
+    "file": "wind_stack/assets/items/gift_box.png",
+    "size": [
+      1374,
+      1145
+    ],
+    "contentBounds": [
+      264,
+      251,
+      1112,
+      893
+    ],
+    "alphaExtrema": [
+      0,
+      255
+    ]
+  },
+  {
+    "id": "lifering",
+    "file": "wind_stack/assets/items/lifering.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "contentBounds": [
+      110,
+      116,
+      1148,
+      1136
+    ],
+    "alphaExtrema": [
+      0,
+      255
+    ]
+  }
+]
