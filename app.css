@@ -50,6 +50,7 @@
 
 /* 2. base -------------------------------------------------- */
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important} /* .btn 등 개별 컴포넌트가 display:inline-flex를 강제해도 hidden이 항상 이긴다 */
 html,body{margin:0;padding:0}
 html{height:100%}
 body{
@@ -187,28 +188,76 @@ p{margin:0}
 .result.on{display:block}
 .result img{width:100%;border-radius:12px;box-shadow:var(--shadow-md)}
 
-/* 포토카드 생성 연출 */
-.cardGen{display:none;flex-direction:column;align-items:center;gap:var(--space-3);margin-top:var(--space-5);padding:var(--space-6) var(--space-4);
-  border-radius:var(--radius-lg);background:var(--color-surface)}
-.cardGen.on{display:flex}
-.cardGen__spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--color-border-strong);border-top-color:var(--color-accent);
-  animation:card-spin 900ms linear infinite}
-@keyframes card-spin{to{transform:rotate(360deg)}}
-.cardGen__text{font-size:14.5px;font-weight:700;color:var(--color-text-secondary)}
-.cardWrap{position:relative;width:100%;max-width:300px;margin:0 auto;border-radius:var(--radius-lg);overflow:hidden}
-.cardWrap canvas{width:100%;height:auto;display:block;transform:scale(.92);opacity:0;filter:drop-shadow(0 18px 40px rgba(0,0,0,.55))}
-.cardWrap.reveal canvas{opacity:1;transform:scale(1);animation:card-pop 400ms var(--ease)}
-@keyframes card-pop{to{transform:scale(1);opacity:1}}
-.cardWrap::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:0;
+/* 포토카드 탄생 연출 (2026-09-28 개편) — idle→gathering→combining→suspense→reveal→settle→result,
+   최소 8초, 사용자가 저장/다시뽑기/닫기 중 하나를 누를 때까지 결과 유지. 카드 자체를 3D로 뒤집어
+   앞면(실제 카드 캔버스)·뒷면(실루엣+후보 문구 깜빡임)을 전환한다. */
+.flipCard{position:relative;width:100%;max-width:300px;margin:0 auto;aspect-ratio:750/1020;perspective:1400px}
+.flipCard__inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform 1000ms cubic-bezier(.3,.08,.2,1)}
+.flipCard--instant .flipCard__inner{transition:none}
+.flipCard--flipped .flipCard__inner{transform:rotateY(180deg)}
+.flipCard__face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  border-radius:var(--radius-lg);overflow:hidden}
+.flipCard__face--front{transform:rotateY(180deg)}
+.flipCard__face--back{transform:rotateY(0deg);background:radial-gradient(120% 90% at 50% 18%,#1c2338,#0b0f1a 72%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-3);
+  border:1px solid var(--color-border-strong);text-align:center;padding:var(--space-5)}
+.flipCard .cardWrap{position:absolute;inset:0;max-width:none;margin:0;border-radius:0}
+.flipCard .cardWrap canvas{width:100%;height:auto;display:block;filter:drop-shadow(0 18px 40px rgba(0,0,0,.55))}
+.flipCard__glow{position:absolute;inset:-25%;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,var(--rarity-glow,rgba(245,179,49,.5)) 0%,transparent 65%);
+  opacity:0;filter:blur(6px);transition:opacity 700ms var(--ease)}
+.flipCard--glow .flipCard__glow{opacity:.85}
+.flipCard--glowBurst .flipCard__glow{opacity:1;animation:glow-burst 1000ms var(--ease) forwards}
+@keyframes glow-burst{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.5)}}
+.flipCard.rarity-bronze{--rarity-glow:rgba(176,137,104,.55)}
+.flipCard.rarity-silver{--rarity-glow:rgba(200,214,230,.6)}
+.flipCard.rarity-gold{--rarity-glow:rgba(245,197,66,.65)}
+.flipCard.rarity-platinum{--rarity-glow:rgba(180,225,255,.65)}
+.flipCard.rarity-diamond{--rarity-glow:rgba(255,255,255,.75)}
+.flipCard__emblem{width:52px;height:52px;border-radius:50%;border:2px solid rgba(255,255,255,.35);
+  display:flex;align-items:center;justify-content:center;animation:flip-spin 5.5s linear infinite;position:relative;z-index:1}
+.flipCard__emblem::before{content:'';width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.5)}
+@keyframes flip-spin{to{transform:rotateZ(360deg)}}
+.flipCard__candidate{font-family:var(--font-display);font-size:21px;font-weight:800;color:var(--color-text);
+  min-height:1.3em;position:relative;z-index:1}
+.flipCard__label{font-size:14px;font-weight:700;color:var(--color-text-secondary);min-height:1.4em;position:relative;z-index:1;
+  transition:opacity 300ms var(--ease)}
+.flipCard--dim .flipCard__label,.flipCard--dim .flipCard__candidate{opacity:.35}
+.flipCard__spark{position:absolute;width:5px;height:5px;border-radius:50%;background:#fff;opacity:0;
+  animation:flip-spark 2.2s ease-in-out infinite}
+.flipCard__spark:nth-child(2){top:22%;left:18%;animation-delay:0s}
+.flipCard__spark:nth-child(3){top:65%;left:78%;animation-delay:.6s}
+.flipCard__spark:nth-child(4){top:78%;left:24%;animation-delay:1.2s}
+@keyframes flip-spark{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1.3)}}
+.revealStage__skip:not([hidden]){display:block;margin:var(--space-3) auto 0}
+/* 정착(settle) 단계 — 실버 이상만 은은한 잔광이 카드 위를 천천히 훑는다(브론즈는 생략) */
+.cardWrap.settle::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.22) 50%,transparent 58%);background-size:220% 220%;
+  animation:card-sweep-loop 3.6s linear infinite}
+.cardWrap.settle.reveal--bronze::after{display:none}
+@keyframes card-sweep-loop{0%{background-position:-60% -60%}100%{background-position:120% 120%}}
+.cardWrap.reveal::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:0;
   background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.55) 48%,transparent 60%);background-size:220% 220%;background-position:-40% -40%}
-.cardWrap.reveal--gold::after,.cardWrap.reveal--platinum::after,.cardWrap.reveal--diamond::after{
-  animation:card-sweep 900ms var(--ease) 380ms 1}
+.cardWrap.reveal--gold:not(.settle)::after,.cardWrap.reveal--platinum:not(.settle)::after,.cardWrap.reveal--diamond:not(.settle)::after{
+  animation:card-sweep 900ms var(--ease) 1}
 .cardWrap.reveal--diamond::after{background:linear-gradient(115deg,transparent 30%,rgba(255,120,220,.35) 40%,rgba(120,200,255,.4) 50%,rgba(255,230,120,.35) 60%,transparent 70%);background-size:260% 260%}
 @keyframes card-sweep{0%{opacity:0;background-position:-40% -40%}30%{opacity:1}100%{opacity:0;background-position:60% 60%}}
+.cardActions{opacity:0;transform:translateY(6px);transition:opacity 400ms var(--ease),transform 400ms var(--ease);pointer-events:none}
+.result.settled .cardActions{opacity:1;transform:none;pointer-events:auto}
 .cardRevealTag{text-align:center;margin-top:10px;font-family:SCDream,sans-serif;font-size:19px;font-weight:800;color:var(--color-accent-strong);
   opacity:0;transform:translateY(6px)}
-.cardWrap.reveal ~ .cardRevealTag{animation:tag-in var(--transition-normal) var(--ease) 500ms forwards}
+.result.settled .cardRevealTag{animation:tag-in var(--transition-normal) var(--ease) forwards}
 @keyframes tag-in{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){
+  .flipCard__inner{transition:opacity 250ms linear!important;transform:none!important}
+  .flipCard__face--back{transform:none;opacity:1;transition:opacity 250ms linear}
+  .flipCard__face--front{transform:none;opacity:0;transition:opacity 250ms linear}
+  .flipCard--flipped .flipCard__face--back{opacity:0}
+  .flipCard--flipped .flipCard__face--front{opacity:1}
+  .flipCard__emblem,.flipCard__spark{animation:none;opacity:0}
+  .cardWrap.settle::after,.cardWrap.reveal--gold::after,.cardWrap.reveal--platinum::after,.cardWrap.reveal--diamond::after{animation:none;display:none}
+  .flipCard--glowBurst .flipCard__glow{animation:none;opacity:0}
+}
 
 /* shop / tickets */
 .shop{text-align:center;padding:var(--space-6) 0 var(--space-2)}

@@ -203,21 +203,30 @@
 
     <button class="btn btn--primary btn--block" id="btnMake" style="margin-top:12px">카드 탄생시키기</button>
 
-    <div class="cardGen" id="cardGen">
-      <div class="cardGen__spinner"></div>
-      <div class="cardGen__text" id="cardGenText">사진을 예쁘게 배치하는 중…</div>
-    </div>
-
     <div class="result" id="result">
-      <div class="cardWrap" id="cardWrap">
-        <canvas id="cardCanvas" width="1500" height="2040"></canvas>
+      <div class="flipCard" id="flipCard">
+        <div class="flipCard__inner" id="flipInner">
+          <div class="flipCard__face flipCard__face--back">
+            <div class="flipCard__glow" id="flipGlow"></div>
+            <div class="flipCard__spark"></div><div class="flipCard__spark"></div><div class="flipCard__spark"></div>
+            <div class="flipCard__emblem"></div>
+            <div class="flipCard__candidate" id="flipCandidate"></div>
+            <div class="flipCard__label" id="flipLabel">당신의 카드가 만들어지고 있어요</div>
+          </div>
+          <div class="flipCard__face flipCard__face--front">
+            <div class="cardWrap" id="cardWrap">
+              <canvas id="cardCanvas" width="1500" height="2040"></canvas>
+            </div>
+          </div>
+        </div>
       </div>
+      <button class="btn btn--tertiary revealStage__skip" id="btnRevealSkip" hidden>건너뛰기</button>
       <div class="cardRevealTag" id="cardRevealTag"></div>
-      <div class="btnrow" style="margin-top:14px">
+      <div class="btnrow cardActions" id="cardActions1" style="margin-top:14px">
         <button class="btn btn--secondary" id="btnSave">이미지 저장</button>
         <button class="btn btn--secondary" id="btnShare">공유</button>
       </div>
-      <div class="btnrow" style="margin-top:8px">
+      <div class="btnrow cardActions" id="cardActions2" style="margin-top:8px">
         <button class="btn btn--secondary" id="btnReplay">탄생 연출 다시 보기</button>
         <button class="btn btn--secondary" id="btnNewCard">새 카드 만들기</button>
       </div>
@@ -1720,12 +1729,16 @@ var CARD_LINES=['좋아, 해보자!','그 정도면 충분하지.','와쿠와쿠
    기술명/설명/대사는 더 이상 개별 topY로 고정하지 않고 기술명 아래부터 gap을 두고 세로로 흘려 쌓는다(desc/quote에 topY 없음). */
 var CARD_LAYOUT={
   base:750, radius:24,
-  title:{cx:375,topY:51,size:48,maxW:440,lineH:1.12,weight:'800'}, /* maxW를 넉넉히 줄여 우측 속성 배지(x=637~)와 항상 간격 확보 */
+  /* 폰트는 프로젝트에 실제로 있는 파일만 쓴다(fonts/) — JejuGothic(400 1종, 제목·기술명용 개성 폰트),
+     SCDream(400/600/800 3종, 나머지 가독성 폰트). 가짜 굵기(없는 weight 강제 지정) 금지 —
+     JejuGothic은 항상 실제 400으로, weight 지정이 필요한 굵은 인상은 fillWeighted()의 미세 다중칠로만 보강한다. */
+  fontDisplay:'JejuGothic, sans-serif', fontBody:'SCDream, sans-serif',
+  title:{cx:375,topY:51,size:48,maxW:440,lineH:1.12,weight:'400'}, /* maxW를 넉넉히 줄여 우측 속성 배지(x=637~)와 항상 간격 확보 */
   icon:{x:637,y:52,size:74},
-  meta:{cx:375,topY:719,size:30,maxW:640,lineH:1.15,weight:'700'},
-  skill:{cx:375,topY:790,size:44,maxW:620,lineH:1.13,weight:'800'},
+  meta:{cx:375,topY:719,size:30,maxW:640,lineH:1.15,weight:'600'}, /* 700 요청 → 실존 웨이트 중 가장 가까운 600 */
+  skill:{cx:375,topY:790,size:44,maxW:620,lineH:1.13,weight:'400'},
   desc:{cx:375,size:30,maxW:620,lineH:1.28,weight:'600',gap:12},
-  quote:{cx:375,size:26,maxW:620,lineH:1.25,weight:'500',gap:12},
+  quote:{cx:375,size:26,maxW:620,lineH:1.25,weight:'400',gap:12}, /* 500 요청 → 400 사용(더 가벼운 인상이 대사에 어울림) */
   foot:{cx:375,topY:962,size:19,lineH:1.1,weight:'600'}
 };
 var CARD_ASSET_BASE='assets/photo-card/layers/', cardAssets=null;
@@ -1767,9 +1780,10 @@ function rollCard(nickname,forceRarity){
   var val=rarity.val[0]+Math.floor(Math.random()*(rarity.val[1]-rarity.val[0]+1));
   var nick=(nickname||'').trim().slice(0,8);
   if(nick&&!/[가-힣a-zA-Z0-9]/.test(nick))nick=''; /* 자음/모음 낱자만 입력된 경우(예: 'ㅇ') 무시 */
-  /* 카드명 = [앞말] + [뒷말] 두 조각(등장 연출에서 따로 붙는다). 명세: 공백 빼고 14자 넘으면 다시 뽑는다.
-     META BAR에는 캐릭터명(닉네임 · 역할)만 따로 보여 준다. */
-  var parts, meta, tries=0;
+  /* 카드명 = [앞말] + [뒷말] 두 조각(등장 연출에서 따로 붙는다). 글자 수가 아니라 실제 렌더 폭으로 판정 —
+     카드명 최소 허용 크기(48px의 78%, "한 단계만 축소")로 쟀을 때도 안전영역(우측 속성 배지 앞)을 넘으면
+     다른 조합으로 다시 뽑는다(2줄로 접지 않는다, 계속 축소하지도 않는다). META BAR에는 캐릭터명만 따로. */
+  var parts, meta, tries=0, TL=CARD_LAYOUT.title;
   do{
     var r2=Math.random(), ch=pick(CARD_CHARS), k2=pick(CARD_KEYWORDS);
     if(role.indexOf(k2)>=0)k2=pick(CARD_KEYWORDS); /* '탐라의 탐라의 모험가' 같은 겹침 방지 */
@@ -1777,7 +1791,7 @@ function rollCard(nickname,forceRarity){
     else if(r2<0.6){parts=[k2,ch];meta=ch}
     else if(r2<0.82){parts=[pick(CARD_SKILLS),ch];meta=ch}
     else{parts=[k2+' '+role,ch];meta=ch} /* [키워드]+[역할]만 있는 이름은 META와 겹쳐서 안 쓴다 */
-  }while(parts.join('').replace(/\s/g,'').length>14&&++tries<30);
+  }while(measureAt(parts.join(' '),TL.weight,TL.size*0.78,CARD_LAYOUT.fontDisplay)>TL.maxW&&++tries<30);
   var skill; tries=0; do{skill=pick(CARD_SKILLS)}while(skill.replace(/\s/g,'').length>12&&++tries<30);
   var quote; tries=0; do{quote=pick(CARD_LINES)}while(quote.length>18&&++tries<30);
   return {
@@ -1807,20 +1821,34 @@ function fitFont(ctx2,text,weight,family,maxSize,minSize,maxWidth){
   }
   return size;
 }
-/* 텍스트를 살짝 두껍게 — JejuGothic이 굵기 1종뿐이라 외곽선 대신 미세 오프셋 다중칠로 무게감만 준다(스펙: 외곽선 금지) */
+/* 텍스트를 살짝 두껍게 — JejuGothic이 실제로 가진 굵기는 400 하나뿐이라 CSS처럼 font-weight:800을
+   지정해 가짜 굵기를 만들지 않는다. 대신 같은(진짜) 글리프를 미세 오프셋으로 여러 번 칠해 무게감만 보강한다.
+   외곽선(다른 색 stroke)이 아니라 같은 색 다중 fill이라 스펙이 금지한 '외곽선'과는 다르다. */
 function fillWeighted(ctx2,text,x,y,off){
   if(off){[[-off,0],[off,0],[0,0]].forEach(function(o){ctx2.fillText(text,x+o[0],y+o[1])})}
   else ctx2.fillText(text,x,y);
 }
+/* 사진이 밝아도 읽히도록 아주 약한 그림자만(스펙: 외곽선 금지, 약한 그림자만 허용) */
+function setTextShadow(ctx2,k){ctx2.shadowColor='rgba(0,0,0,.4)';ctx2.shadowBlur=2.5*k;ctx2.shadowOffsetY=1*k}
+function clearTextShadow(ctx2){ctx2.shadowColor='transparent';ctx2.shadowBlur=0;ctx2.shadowOffsetY=0}
+function setLS(ctx2,px){try{ctx2.letterSpacing=px+'px'}catch(e){}}
+/* 카드명이 실제로 폭에 맞는지 텍스트 렌더링 없이 측정 — rollCard()가 카드명을 다시 뽑을지 판단하는 데 쓴다 */
+var _measureCtx=(function(){try{return document.createElement('canvas').getContext('2d')}catch(e){return null}})();
+function measureAt(text,weight,size,family){
+  if(!_measureCtx)return text.replace(/\s/g,'').length*size*0.6;
+  _measureCtx.font=weight+' '+Math.round(size)+'px '+family;
+  return _measureCtx.measureText(text).width;
+}
 function drawCard(ctx2,W,H,data,imgs,pos,t){
-  var assets=cardAssets, L=CARD_LAYOUT, k=W/L.base, FF='JejuGothic, SCDream, sans-serif', INK='#F4F7F5';
+  var assets=cardAssets, L=CARD_LAYOUT, k=W/L.base, FD=L.fontDisplay, FB=L.fontBody, INK='#F4F7F5';
   ctx2.clearRect(0,0,W,H);
   ctx2.fillStyle='#0b0f1a';ctx2.fillRect(0,0,W,H);
   var T=(t==null)?Infinity:t;
   function A(start,dur){var v=(T-start)/(dur||180);return v<=0?0:v>=1?1:1-Math.pow(1-v,3)}
   var radius=L.radius*k;
-  /* 1) 사진 — 카드 전체를 object-fit:cover로 채운다(약 85%+가 그대로 사진). 등장 시 페이드인 */
-  var aBase=(t!=null)?Math.min(1,Math.max(0,t/250)):1;
+  /* 1) 사진 — 카드 전체를 object-fit:cover로 채운다(약 85%+가 그대로 사진).
+     "등장"은 카드 자체가 3D로 뒤집히는 연출(flipCard)이 담당하므로 사진/틀은 항상 바로 보인다 — 텍스트만 순차 등장 */
+  var aBase=1;
   ctx2.save();roundRectPath(ctx2,0,0,W,H,radius);ctx2.clip();
   ctx2.globalAlpha=aBase;
   var img=imgs[0];
@@ -1834,91 +1862,91 @@ function drawCard(ctx2,W,H,data,imgs,pos,t){
   var foil=assets['foil_'+data.rarity];if(foil)ctx2.drawImage(foil,0,0,W,H);
   var frame=assets['frame_'+data.rarity];if(frame)ctx2.drawImage(frame,0,0,W,H);
   ctx2.restore();
-  /* 7) 텍스트 · 속성 아이콘 — 디자인팩 좌표(750×1020 기준, 상단-y) 그대로 스케일 */
+  /* 7) 텍스트 · 속성 아이콘 — 디자인팩 좌표(750×1020 기준, 상단-y) 그대로 스케일.
+     제목·기술명은 개성 폰트(JejuGothic, 실제 400 하나뿐), 나머지는 가독성 폰트(SCDream, 실제 400/600/800).
+     굵기는 항상 각 폰트가 실제로 가진 값만 쓴다(L.*.weight가 이미 실존 웨이트로 맞춰져 있음). */
   ctx2.textAlign='center';ctx2.textBaseline='top';ctx2.fillStyle=INK;
-  /* 카드명: 앞말 먼저, 뒷말 0.15초 뒤 합류. 공백 제외 11자 이상이면 축소 */
+  setTextShadow(ctx2,k);
+  /* 카드명: 앞말 먼저, 뒷말 0.15초 뒤 합류. rollCard()가 이미 폭을 재서 안전한 조합만 넘기므로
+     여기서는 "한 단계만 축소"(78%~100%) 범위 안에서만 fitFont가 움직인다 */
   var tp=data.titleParts||[data.displayName,''], title=tp[1]?tp[0]+' '+tp[1]:tp[0];
-  var tBase=L.title.size*k*(title.replace(/\s/g,'').length>=11?0.86:1);
-  var tSize=fitFont(ctx2,title,'700',FF,tBase,L.title.size*k*0.55,L.title.maxW*k);
-  ctx2.font='700 '+Math.round(tSize)+'px '+FF;
-  var fullW=ctx2.measureText(title).width, cxT=L.title.cx*k, cyT=L.title.topY*k;
+  var TL=L.title, tSize=fitFont(ctx2,title,TL.weight,FD,TL.size*k,TL.size*k*0.78,TL.maxW*k);
+  ctx2.font=TL.weight+' '+Math.round(tSize)+'px '+FD;setLS(ctx2,-0.02*tSize);
+  var fullW=ctx2.measureText(title).width, cxT=TL.cx*k, cyT=TL.topY*k;
   var w0=ctx2.measureText(tp[0]+(tp[1]?' ':'')).width, txL=cxT-fullW/2;
   ctx2.textAlign='left';
-  [[tp[0],txL,A(300,150)],[tp[1],txL+w0,A(450,150)]].forEach(function(q){
+  [[tp[0],txL,A(255,127)],[tp[1],txL+w0,A(382,127)]].forEach(function(q){
     if(!q[0]||q[2]<=0)return;
     ctx2.save();ctx2.globalAlpha=q[2];ctx2.translate(0,(1-q[2])*tSize*0.3);
     fillWeighted(ctx2,q[0],q[1],cyT,tSize*0.012);ctx2.restore();
   });
-  ctx2.textAlign='center';
+  ctx2.textAlign='center';setLS(ctx2,0);
   /* 속성 아이콘 */
-  var attrImg=assets['attr_'+data.attribute], aIcon=A(600,220);
+  var attrImg=assets['attr_'+data.attribute], aIcon=A(509,187);
   if(attrImg&&aIcon>0){
     ctx2.save();ctx2.globalAlpha=aIcon;
     var isz=L.icon.size*k*(0.85+0.15*aIcon);
     ctx2.drawImage(attrImg,L.icon.x*k+(L.icon.size*k-isz)/2,L.icon.y*k+(L.icon.size*k-isz)/2,isz,isz);
     ctx2.restore();
   }
-  /* 메타 라인: Lv · 캐릭터 · 속성 */
-  var aMeta=A(750,180);
+  /* 메타 라인: Lv · 캐릭터 · 속성 — 구분점 좌우 간격을 고정폭으로 고정해 항상 일정하게 보이게 한다 */
+  var ML=L.meta, aMeta=A(636,153);
   if(aMeta>0){
-    var meta='Lv.'+data.level+'  ·  '+(data.metaName||data.roleLabel)+'  ·  '+data.attributeLabel+' 속성';
-    var msize=fitFont(ctx2,meta,'400',FF,L.meta.size*k,L.meta.size*k*0.64,L.meta.maxW*k);
-    ctx2.save();ctx2.globalAlpha=aMeta;ctx2.font='400 '+Math.round(msize)+'px '+FF;
-    ctx2.fillText(meta,L.meta.cx*k,L.meta.topY*k);ctx2.restore();
+    var meta='Lv.'+data.level+'   ·   '+(data.metaName||data.roleLabel)+'   ·   '+data.attributeLabel+' 속성';
+    var msize=fitFont(ctx2,meta,ML.weight,FB,ML.size*k,ML.size*k*0.8,ML.maxW*k);
+    ctx2.save();ctx2.globalAlpha=aMeta;ctx2.font=ML.weight+' '+Math.round(msize)+'px '+FB;
+    ctx2.fillText(meta,ML.cx*k,ML.topY*k);ctx2.restore();
   }
-  /* 기술명 */
-  var aSkill=A(900,200);
+  /* 기술명 → 설명 → 대사: 개별 y좌표로 고정하지 않고, 기술명 아래부터 gap을 두고 세로로 흘려 쌓는다 */
+  var SK=L.skill, DE=L.desc, QT=L.quote, FO=L.foot;
+  var skillTop=SK.topY*k;
+  var ssize=fitFont(ctx2,data.abilityName,SK.weight,FD,SK.size*k,SK.size*k*0.78,SK.maxW*k);
+  var skillLineH=ssize*SK.lineH, aSkill=A(764,170);
   if(aSkill>0){
     var sk=1+0.04*(1-aSkill);
-    var ssize=fitFont(ctx2,data.abilityName,'700',FF,L.skill.size*k*(data.abilityName.replace(/\s/g,'').length>=9?0.9:1),L.skill.size*k*0.6,L.skill.maxW*k);
-    ctx2.save();ctx2.globalAlpha=aSkill;ctx2.font='700 '+Math.round(ssize)+'px '+FF;
-    ctx2.translate(L.skill.cx*k,L.skill.topY*k+ssize*0.5);ctx2.scale(sk,sk);
-    fillWeighted(ctx2,data.abilityName,0,-ssize*0.5,ssize*0.012);ctx2.restore();
+    ctx2.save();ctx2.globalAlpha=aSkill;ctx2.font=SK.weight+' '+Math.round(ssize)+'px '+FD;setLS(ctx2,-0.02*ssize);
+    ctx2.translate(SK.cx*k,skillTop+skillLineH/2);ctx2.scale(sk,sk);
+    fillWeighted(ctx2,data.abilityName,0,-skillLineH*0.5,ssize*0.012);ctx2.restore();setLS(ctx2,0);
   }
-  /* 능력 설명 — 최대 2줄. 2줄이 되면 대사·풋터를 그만큼 아래로 민다(1줄일 때는 스펙 좌표와 완전히 일치) */
-  ctx2.font='400 '+Math.round(L.desc.size*k)+'px '+FF;
+  var y=skillTop+skillLineH+DE.gap*k;
+  /* 능력 설명 — 최대 2줄. 줄 수를 늘리려고 계속 축소하지 않는다(문구 풀 자체가 짧게 큐레이션돼 있음) */
+  ctx2.font=DE.weight+' '+Math.round(DE.size*k)+'px '+FB;
   var words=data.abilityText.split(' '), cur='', lines=[];
-  words.forEach(function(w){var s2=cur?cur+' '+w:w;if(cur&&ctx2.measureText(s2).width>L.desc.maxW*k){lines.push(cur);cur=w}else cur=s2});
+  words.forEach(function(w){var s2=cur?cur+' '+w:w;if(cur&&ctx2.measureText(s2).width>DE.maxW*k){lines.push(cur);cur=w}else cur=s2});
   if(cur)lines.push(cur);lines=lines.slice(0,2);
-  var descLineH=L.desc.size*k*L.desc.lineH, extraShift=(lines.length-1)*descLineH;
-  var aDesc=A(1080,200);
+  var descLineH=DE.size*k*DE.lineH, aDesc=A(916,170);
   if(aDesc>0){
     ctx2.save();ctx2.globalAlpha=aDesc;
-    lines.forEach(function(line,i){ctx2.fillText(line,L.desc.cx*k,L.desc.topY*k+i*descLineH)});
+    lines.forEach(function(line,i){ctx2.fillText(line,DE.cx*k,y+i*descLineH)});
     ctx2.restore();
   }
+  y+=lines.length*descLineH+QT.gap*k;
   /* 대사 */
-  var aQuote=A(1250,200);
-  if(data.quote&&aQuote>0){
-    var qsize=fitFont(ctx2,'“'+data.quote+'”','400',FF,L.quote.size*k,L.quote.size*k*0.7,L.quote.maxW*k);
-    ctx2.save();ctx2.globalAlpha=aQuote*0.88;ctx2.font='400 '+Math.round(qsize)+'px '+FF;
-    ctx2.fillText('“'+data.quote+'”',L.quote.cx*k,L.quote.topY*k+extraShift);ctx2.restore();
+  var aQuote=A(1061,170);
+  if(data.quote){
+    var qsize=fitFont(ctx2,'“'+data.quote+'”',QT.weight,FB,QT.size*k,QT.size*k*0.8,QT.maxW*k);
+    if(aQuote>0){
+      ctx2.save();ctx2.globalAlpha=aQuote*0.88;ctx2.font=QT.weight+' '+Math.round(qsize)+'px '+FB;
+      ctx2.fillText('“'+data.quote+'”',QT.cx*k,y);ctx2.restore();
+    }
+    y+=QT.size*k*QT.lineH;
   }
-  /* 등급 · 행사명 */
-  var aFoot=A(1400,220);
+  /* 등급 · 행사명 — 기본은 962 고정, 위 내용이 길어져 침범할 때만 그만큼 밀리되 카드 바닥 밖으로는 안 나간다 */
+  var footTop=Math.max(FO.topY*k, y+10*k);
+  footTop=Math.min(footTop, H-FO.size*k*FO.lineH-14*k);
+  var aFoot=A(1188,187);
   if(aFoot>0){
-    ctx2.save();ctx2.globalAlpha=aFoot*0.7;ctx2.font='400 '+Math.round(L.foot.size*k)+'px '+FF;
-    ctx2.fillText((data.rarityEn||data.rarityLabel)+'  ·  탐라문화제 2026',L.foot.cx*k,L.foot.topY*k+extraShift);
+    ctx2.save();ctx2.globalAlpha=aFoot*0.7;ctx2.font=FO.weight+' '+Math.round(FO.size*k)+'px '+FB;
+    ctx2.fillText((data.rarityEn||data.rarityLabel)+'  ·  탐라문화제 2026',FO.cx*k,footTop);
     ctx2.restore();
   }
+  clearTextShadow(ctx2);
 }
-var CARD_GEN_STAGES=['사진을 예쁘게 배치하는 중…','카드의 속성을 찾는 중…','이름과 능력을 새기는 중…','마지막 반짝임을 더하는 중…'];
-var cardGenToken=0;
-function runCardGen(finalize){
-  var token=++cardGenToken, gen=$('#cardGen'), txt=$('#cardGenText'), i=0;
-  gen.classList.add('on');txt.textContent=CARD_GEN_STAGES[0];
-  var timer=setInterval(function(){
-    if(token!==cardGenToken){clearInterval(timer);return}
-    i++;
-    if(i<CARD_GEN_STAGES.length){txt.textContent=CARD_GEN_STAGES[i]}
-    else{clearInterval(timer);gen.classList.remove('on');finalize()}
-  },800);
-}
-/* 등장 연출: 빈 프레임 → 사진 → 카드명(앞말→뒷말) → 속성 → META → 기술명 → 설명 → 대사 → 등급 (약 1.6초).
+/* 등장 연출: 사진/텍스트 순서로 그리는 drawCard(t) 자체는 "④ 카드 완성" 구간(약 1.4초) 안에서만 돈다.
    rAF가 멈추는 환경(백그라운드 탭 등)에서도 마지막엔 반드시 완성본을 그린다. */
 var cardAnimToken=0, currentCardImgs=null;
 function animateCard(canvas,data,imgs,pos){
-  var token=++cardAnimToken, ctx2=canvas.getContext('2d'), t0=performance.now(), END=1650;
+  var token=++cardAnimToken, ctx2=canvas.getContext('2d'), t0=performance.now(), END=1400;
   function step(now){
     if(token!==cardAnimToken)return;
     var t=now-t0;
@@ -1926,21 +1954,140 @@ function animateCard(canvas,data,imgs,pos){
     drawCard(ctx2,canvas.width,canvas.height,data,imgs,pos,t);requestAnimationFrame(step);
   }
   drawCard(ctx2,canvas.width,canvas.height,data,imgs,pos,0);requestAnimationFrame(step);
-  setTimeout(function(){if(token===cardAnimToken){cardAnimToken++;drawCard(ctx2,canvas.width,canvas.height,data,imgs,pos)}},END+400);
+  setTimeout(function(){if(token===cardAnimToken){cardAnimToken++;drawCard(ctx2,canvas.width,canvas.height,data,imgs,pos)}},END+300);
 }
-function revealCard(rarity){
-  var wrap=$('#cardWrap'), canvas=$('#cardCanvas');
-  wrap.className='cardWrap reveal reveal--'+rarity;
-  $('#cardRevealTag').textContent=(rarity==='diamond'||rarity==='platinum'?currentCard.rarityLabel+' 카드 탄생!':currentCard.rarityLabel+' 카드가 탄생했어요!');
-  /* 연출 애니메이션이 기기/브라우저 사정으로 안 걸려도 카드는 항상 보이게 하는 안전장치 */
-  setTimeout(function(){canvas.style.opacity='1';canvas.style.transform='scale(1)'},450);
-  sfx(rarity==='platinum'||rarity==='diamond'?'fanfare':rarity==='gold'?'bonus':'pop', 0.6);
+/* 배경음을 뚝 끊지 않고 짧게 페이드아웃 */
+function fadeStopAmbient(ms){
+  if(!ambientEl){return}
+  var el=ambientEl, startVol=el.volume||0.35, steps=6, stepMs=Math.max(30,ms/steps), i=0;
+  var iv=setInterval(function(){
+    i++;
+    if(!el){clearInterval(iv);return}
+    el.volume=Math.max(0,startVol*(1-i/steps));
+    if(i>=steps){clearInterval(iv);sfxStopAmbient()}
+  },stepMs);
 }
+/* 카드 탄생 연출 — idle→gathering→combining→suspense→reveal→settle→result 상태로 진행(최소 8초).
+   결과는 사용자가 저장/다시뽑기/새카드/건너뛰기 중 하나를 누를 때까지 자동으로 닫지 않는다.
+   audio.onended/animationend/setTimeout(음악 길이) 무엇도 결과를 닫거나 카드 DOM을 지우지 않는다 —
+   여기서 만드는 타이머들은 오직 "다음 단계로 넘어가기"만 하고, 마지막 단계(result) 이후로는 아무 것도 스스로 실행되지 않는다. */
+var revealToken=0, currentReveal=null;
+function playCardReveal(data,photos,pos){
+  var token=++revealToken;
+  var reduced=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var flip=$('#flipCard'), cand=$('#flipCandidate'), label=$('#flipLabel');
+  var canvas=$('#cardCanvas'), ctx2=canvas.getContext('2d');
+  var wrap=$('#cardWrap'), result=$('#result'), skipBtn=$('#btnRevealSkip'), tag=$('#cardRevealTag');
+  var timers=[], settled=false;
+  function live(){return token===revealToken}
+  function at(ms,fn){timers.push(setTimeout(function(){if(live())fn()},reduced?Math.round(ms*0.45):ms))}
+  function clearAll(){timers.forEach(clearTimeout);timers=[]}
+
+  /* 초기화 */
+  flip.className='flipCard rarity-'+data.rarity;
+  wrap.className='cardWrap';
+  result.classList.remove('settled');
+  tag.textContent='';
+  cand.textContent='';label.textContent='';
+  skipBtn.hidden=true;
+  drawCard(ctx2,canvas.width,canvas.height,data,photos,pos,0);
+
+  /* 0.0~0.6 시작 */
+  sfx('pop',0.4);
+  /* 건너뛰기는 2초 후부터 노출 */
+  at(2000,function(){skipBtn.hidden=false});
+
+  /* 0.6~2.0 탐색 — 실루엣 회전 + 안내문구 + 배경음악 시작 */
+  at(600,function(){
+    label.textContent='당신의 카드가 만들어지고 있어요';
+    sfxAmbient('evolve',0.32);
+  });
+
+  /* 2.0~3.5 조합 — 후보 이름이 빠르게 스쳐가다 실제 카드명에 고정, 이어서 레벨→속성 순서로 공개(틱 2회) */
+  var flickerPool=CARD_CHARS.concat(CARD_KEYWORDS);
+  var flickerIv=null;
+  at(2000,function(){
+    var n=0;
+    flickerIv=setInterval(function(){
+      if(!live()){clearInterval(flickerIv);return}
+      cand.textContent=flickerPool[Math.floor(Math.random()*flickerPool.length)];
+      if(++n>=6)clearInterval(flickerIv);
+    },130);
+  });
+  at(2780,function(){cand.textContent=data.displayName});
+  at(2780,function(){beep(880,0.08,'sine',0.18)});
+  at(3140,function(){label.textContent='Lv.'+data.level});
+  at(3140,function(){beep(1046,0.09,'sine',0.2)});
+  at(3320,function(){label.textContent=data.attributeLabel+' 속성'});
+
+  /* 3.5~4.3 정적 — 화면·소리를 살짝 눌러주고 레어도색 빛이 서서히 모인다(등급은 아직 안 보여줌) */
+  at(3500,function(){
+    flip.classList.add('flipCard--dim');
+    flip.classList.add('flipCard--glow');
+    if(ambientEl)ambientEl.volume=(ambientEl.volume||0.32)*0.5;
+  });
+
+  /* 4.3~5.3 공개 — 카드가 앞으로 돌아오며 등급색 빛이 한 번 퍼진다. 이 순간에만 가장 큰 효과음 */
+  at(4300,function(){
+    clearInterval(flickerIv);
+    flip.classList.remove('flipCard--dim');
+    flip.classList.remove('flipCard--glow');
+    flip.classList.add('flipCard--flipped','flipCard--glowBurst');
+    wrap.className='cardWrap reveal reveal--'+data.rarity;
+    sfx(data.rarity==='platinum'||data.rarity==='diamond'?'fanfare':data.rarity==='gold'?'bonus':'pop',0.65);
+  });
+
+  /* 5.3~6.7 카드 완성 — 제목→아이콘→기술명→설명·대사가 drawCard(t)의 자체 타임라인으로 약 0.2초 간격 등장 */
+  at(5300,function(){
+    currentCardImgs=[photos,pos];
+    animateCard(canvas,data,photos,pos);
+  });
+
+  /* 6.7~8.2 감상 — 카드 고정, 은은한 잔광, 음악 자연스럽게 잦아들고, 저장/다시뽑기 버튼 등장 */
+  at(6700,function(){
+    wrap.classList.add('settle');
+    fadeStopAmbient(900);
+  });
+  at(8200,function(){enterResult()});
+
+  function enterResult(){
+    if(settled)return;
+    settled=true;
+    skipBtn.hidden=true;
+    tag.textContent=(data.rarity==='diamond'||data.rarity==='platinum')?data.rarityLabel+' 카드 탄생!':data.rarityLabel+' 카드가 탄생했어요!';
+    result.classList.add('settled');
+    var btn=$('#btnMake');if(btn)btn.disabled=false;
+  }
+  /* 건너뛰기 — 2초 뒤부터 노출(위 skipBtn.hidden=false가 즉시라 버튼 자체는 CSS로 항상 있고 여기선 로직만),
+     눌리면 진행 중인 모든 타이머를 취소하고 곧장 완성본으로 이동, 결과는 똑같이 유지된다(자동 종료 아님) */
+  function finishNow(){
+    if(!live()||settled)return;
+    clearAll();clearInterval(flickerIv);sfxStopAmbient();
+    flip.classList.add('flipCard--instant'); /* 건너뛰기는 1초짜리 뒤집기 연출 없이 즉시 완성본으로 */
+    flip.classList.remove('flipCard--dim','flipCard--glow');
+    flip.classList.add('flipCard--flipped');
+    flip.classList.remove('flipCard--glowBurst');
+    wrap.className='cardWrap reveal reveal--'+data.rarity+' settle';
+    currentCardImgs=[photos,pos];
+    drawCard(ctx2,canvas.width,canvas.height,data,photos,pos); /* t 없이 = 완성본 즉시 */
+    enterResult();
+  }
+  currentReveal={finishNow:finishNow,token:token};
+  return currentReveal;
+}
+$('#btnRevealSkip').onclick=function(){if(currentReveal)currentReveal.finishNow()};
+/* 카드가 쓰는 실제 웨이트만 미리 로드 — JejuGothic 400, SCDream 400/600/800.
+   document.fonts.check()로 실제 로딩 여부까지 확인해서, 로딩 전에 캔버스를 그려 기본 폰트로
+   저장되는 사고(미리보기와 저장 PNG의 폰트가 달라지는 문제)를 막는다. */
 function ensureCardFonts(){
-  var specs=['400 100px JejuGothic'];
+  var specs=['400 100px JejuGothic','400 100px SCDream','600 100px SCDream','800 100px SCDream'];
   if(!(document.fonts&&document.fonts.load))return Promise.resolve();
   return Promise.all(specs.map(function(s){return document.fonts.load(s).catch(function(){})}))
-    .then(function(){return document.fonts.ready.catch(function(){})});
+    .then(function(){return document.fonts.ready.catch(function(){})})
+    .then(function(){
+      var missing=specs.filter(function(s){try{return !document.fonts.check(s)}catch(e){return false}});
+      if(missing.length)console.warn('[card] 폰트 로딩 확인 실패(기본 폰트로 대체될 수 있음):',missing);
+    });
 }
 $('#btnMake').onclick=function(){
   var have=slots.filter(Boolean).length;
@@ -1956,28 +2103,20 @@ $('#btnMake').onclick=function(){
       btn.disabled=false;toast('카드 에셋을 불러오지 못했어요. 다시 시도해 주세요.');return;
     }
     var photosSnapshot=slots.slice(), posSnapshot=slotPos.slice();
-    runCardGen(function(){
-      ensureCardFonts().then(function(){
-        currentCard=data;
-        var canvas=$('#cardCanvas');
-        currentCardImgs=[photosSnapshot,posSnapshot];
-        animateCard(canvas,data,photosSnapshot,posSnapshot);
-        $('#result').classList.add('on');
-        revealCard(data.rarity);
-        if(!d().photo){d().photo=1;addGold(C.gold.photo,'포토카드 완성')}
-        btn.disabled=false;
-        $('#result').scrollIntoView({behavior:'smooth',block:'start'});
-      });
+    ensureCardFonts().then(function(){
+      currentCard=data;
+      $('#result').classList.add('on');
+      $('#result').scrollIntoView({behavior:'smooth',block:'start'});
+      playCardReveal(data,photosSnapshot,posSnapshot);
+      if(!d().photo){d().photo=1;addGold(C.gold.photo,'포토카드 완성')}
     });
   });
 };
 updateCardPity();
 $('#btnReplay').onclick=function(){
-  if(!currentCard)return;
-  var wrap=$('#cardWrap');wrap.className='cardWrap';
-  void wrap.offsetWidth;
-  if(currentCardImgs)animateCard($('#cardCanvas'),currentCard,currentCardImgs[0],currentCardImgs[1]);
-  revealCard(currentCard.rarity);
+  if(!currentCard||!currentCardImgs)return;
+  var btn=$('#btnMake');if(btn)btn.disabled=true;
+  playCardReveal(currentCard,currentCardImgs[0],currentCardImgs[1]);
 };
 $('#btnNewCard').onclick=function(){
   $('#result').classList.remove('on');
