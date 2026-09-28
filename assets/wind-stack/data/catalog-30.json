@@ -1,0 +1,40 @@
+{
+  "selectionCount": 10,
+  "activeIds": [
+    "citrus_crate",
+    "basalt_brick",
+    "wood_plank",
+    "tangerine",
+    "buoy",
+    "tea_tin",
+    "shell",
+    "lava_jar",
+    "fish_block",
+    "straw_hat",
+    "gift_box",
+    "lifering",
+    "dol_hareubang",
+    "surfboard",
+    "conch",
+    "kettle",
+    "bucket",
+    "watering_can",
+    "rain_boot",
+    "book_stack",
+    "bread_loaf",
+    "cactus_pot",
+    "camera",
+    "suitcase",
+    "hand_drum",
+    "wood_duck",
+    "pillow",
+    "ceramic_mug",
+    "wood_stool",
+    "picnic_basket"
+  ],
+  "reserveIds": [
+    "starfish",
+    "anchor"
+  ],
+  "requiresOriginalPack": true
+}
