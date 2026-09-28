@@ -1,6 +1,7 @@
 'use strict';
-/* 영등할망의 바람탑 — 10개 선택 → 왕복 크레인 탭 낙하 → Matter.js 강체 쌓기 → 바람 개입 → 결과.
-   docs/01~04 규약대로 자체완결 게임을 구현. 부모 앱(탐라 index.html)에는 onGameComplete(result)로만 결과를 넘긴다. */
+/* 영등할망의 바람탑 — 1~3단계, 단계마다 판을 새로 시작해 왕복 크레인 탭 낙하로 Matter.js 강체 쌓기.
+   1단계는 평평한 물건 위주, 2단계는 섞어서, 3단계는 다 섞어서. 실패하면 그 단계만 다시 도전.
+   3단계까지 전부 클리어했을 때만 onGameComplete(result)로 부모 앱(탐라 index.html)에 결과를 한 번 넘긴다. */
 
 var RULE_VERSION='wind-stack-design-1';
 var WORLD={width:390,height:720,platformTop:620,platformWidth:196,platformHeight:26,failY:735};
@@ -53,11 +54,11 @@ var ITEMS_BY_ID={};ITEMS.forEach(function(it){ITEMS_BY_ID[it.id]=it});
    물건의 낙하·쌓기는 이 이벤트 동안에도 평소와 똑같이 진행된다. */
 var WIND_TIMING={enter:0.1,cover:1.1,exit:0.3}; // enter를 짧게 해서 "확" 튀어나오는 느낌
 var WIND_TOTAL=WIND_TIMING.enter+WIND_TIMING.cover+WIND_TIMING.exit;
-var WIND_EVENTS_BY_SLOT={
- 4:{slot:4,line:'짠! 잠깐 안 보이게 할게!'},
- 7:{slot:7,line:'후훗, 눈 감고 있어 볼까?'},
- 9:{slot:9,line:'또 나왔지롱!'}
-};
+var WIND_LINES=['짠! 잠깐 안 보이게 할게!','후훗, 눈 감고 있어 볼까?','또 나왔지롱!'];
+/* 단계별 화면가림은 '그 단계 안에서 몇 번째 물건을 잡을 때'로 정한다(단계마다 물건 수가 같아서 절대 슬롯 번호로 충분).
+   3단계(가장 어려움)만 한 번 더 넣는다. */
+var WIND_SLOTS_BY_STAGE={1:[3],2:[3],3:[2,4]};
+var STAGE_ITEM_COUNTS=[5,5,5]; // 1/2/3단계 각각 몇 개를 쌓는지
 
 var $=function(s){return document.querySelector(s)};
 var stage=$('#stage'),cv=$('#game'),ctx=cv.getContext('2d'),overlay=$('#overlay'),panel=$('#panel'),windBubble=$('#windBubble'),toastEl=$('#toast');
@@ -111,12 +112,13 @@ var UI={};['crane_rail','crane_trolley','crane_claw_open','crane_claw_closed','p
 /* ---------------- 상태 ---------------- */
 var S={
  phase:'SELECT', // SELECT, HELD, FALLING, SETTLING, COLLAPSE, RESULT_CLEAR, RESULT_FAIL, RESULT_UNSTABLE
- picked:[], // ordered array of item ids, up to 10
- order:[], // confirmed order at round start (copy of picked)
- released:0, // count of items dropped so far
- score:0, itemScore:0, heightPx:0,
+ stage:1, // 1~3
+ totalScore:0, totalPlaced:0, // 지금까지 클리어한 단계들의 누적치(현재 진행 중인 단계 점수는 미포함)
+ order:[], // 현재 단계에서 쌓을 물건 순서
+ released:0, // 이번 단계에서 떨어뜨린 개수
+ score:0, itemScore:0, heightPx:0, // 이번 단계 점수
  craneX:CRANE.minX, craneDir:1, heldY:0, cameraTargetY:0, cameraY:0,
- windEvent:null, windTimer:0,
+ windEvent:null, windTimer:0, windUsedSlots:{},
  settlingElapsed:0, stableTimer:0, shownStuckToast:false,
  bodies:[], currentBody:null,
  attemptId:null, seed:null, startedAt:0, collapseTimer:0,
@@ -172,37 +174,40 @@ var FLAT_IDS=['citrus_crate','basalt_brick','wood_plank','tea_tin','gift_box','b
 var MEDIUM_IDS=['bread_loaf','pillow'];
 var HARD_IDS=['tangerine','buoy','shell','lava_jar','fish_block','straw_hat','lifering','dol_hareubang','surfboard','conch','kettle','bucket','watering_can','rain_boot','cactus_pot','wood_duck','ceramic_mug','wood_stool'];
 function shuffleArr(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
-function shuffledTen(){
- var flat=shuffleArr(FLAT_IDS.slice());
- var stage1=flat.slice(0,3); // 1단계: 평평한 것 위주
- var stage2Pool=shuffleArr(flat.slice(3).concat(MEDIUM_IDS));
- var stage2=stage2Pool.slice(0,3); // 2단계: 남은 평평한 것 + 중간 난이도를 섞어서
- var stage3Pool=shuffleArr(stage2Pool.slice(3).concat(HARD_IDS));
- var stage3=stage3Pool.slice(0,4); // 3단계: 남은 전부(둥글고 불안정한 것 포함)를 다 섞어서
- return stage1.concat(stage2,stage3);
+/* 단계별 후보 풀: 1단계는 FLAT만, 2단계는 FLAT+MEDIUM을 섞어서, 3단계는 30종 전부를 다 섞어서 고른다.
+   각 단계는 판이 새로 시작되므로(플랫폼 리셋) 단계 사이에 물건이 겹쳐도 상관없다 — 그 판 안에서만 중복 없으면 된다. */
+function poolForStage(stageNum){
+ if(stageNum===1)return FLAT_IDS.slice();
+ if(stageNum===2)return FLAT_IDS.concat(MEDIUM_IDS);
+ return ACTIVE_CATALOG_IDS.slice();
 }
-function stageOfSlot(slot){return slot<=3?1:(slot<=6?2:3)}
-function renderSelect(){
+function pickStageItems(stageNum){
+ var pool=shuffleArr(poolForStage(stageNum));
+ return pool.slice(0,STAGE_ITEM_COUNTS[stageNum-1]);
+}
+function renderIntro(){
  overlay.classList.remove('hidden');
- S.picked=shuffledTen(); // 무엇이 나올지는 시작 전엔 안 보여준다 — 미리보기 없이 깜짝 등장
- panel.innerHTML='<h2>오늘은 무엇을 쌓을까?</h2><p>"어디까지 쌓나 볼까?" 열 가지 물건이 무작위로 정해져요. 크레인이 순서대로 가져다줘요.</p>'+
+ panel.innerHTML='<h2>영등할망의 바람탑</h2><p>1단계는 평평한 물건으로 기초를 다지고, 2·3단계로 갈수록 점점 뒤섞인 물건이 나와요. 판마다 새로 시작해요.</p>'+
   '<img class="startPortrait" src="assets/characters/yeongdeung_smile.png" alt="영등할망">'+
-  '<button class="primary" id="btnStart">내 탑 쌓기 시작</button>';
+  '<button class="primary" id="btnStart">1단계 시작</button>';
  var btn=$('#btnStart');
- if(btn)btn.onclick=function(){startBgm();startRound()};
+ if(btn)btn.onclick=function(){
+  startBgm();
+  S.stage=1;S.totalScore=0;S.totalPlaced=0;
+  S.attemptId=Date.now()+'-'+Math.random().toString(36).slice(2,8);
+  S.seed=Date.now();S.startedAt=performance.now();
+  beginStage();
+ };
 }
 
 /* ---------------- 라운드 진행 ---------------- */
-function startRound(){
- clearPhysics();initPhysics();
- S.order=S.picked.slice();
+function beginStage(){
+ clearPhysics();initPhysics(); // 단계마다 판(플랫폼)을 새로 시작
+ S.order=pickStageItems(S.stage);
  S.released=0;S.score=0;S.itemScore=0;S.heightPx=0;
  S.cameraY=0;S.cameraTargetY=0;
- S.attemptId=Date.now()+'-'+Math.random().toString(36).slice(2,8);
- S.seed=Date.now();
- S.startedAt=performance.now();
  S.craneX=CRANE.minX;S.craneDir=1;
- S.windEvent=null;S.windTimer=0;
+ S.windEvent=null;S.windTimer=0;S.windUsedSlots={};
  S.settlingElapsed=0;S.stableTimer=0;S.shownStuckToast=false;
  S.collapseTimer=0;
  overlay.classList.add('hidden');
@@ -224,9 +229,13 @@ function setPhase(p){
   S.cameraTargetY=Math.min(S.cameraTargetY,S.heldY-160);
   S.craneX=CRANE.minX;S.craneDir=1;
   var slot=S.released+1;
-  var ev=WIND_EVENTS_BY_SLOT[slot];
-  if(ev && !ev._used){ev._used=true;S.windEvent=Object.assign({},ev);S.windTimer=0;}
-  $('#phase').textContent=stageOfSlot(slot)+'단계 · '+item.name+' · '+item.description;
+  var slotsForStage=WIND_SLOTS_BY_STAGE[S.stage]||[];
+  if(slotsForStage.indexOf(slot)>=0 && !S.windUsedSlots[slot]){
+   S.windUsedSlots[slot]=true;
+   S.windEvent={slot:slot,line:WIND_LINES[Math.floor(Math.random()*WIND_LINES.length)]};
+   S.windTimer=0;
+  }
+  $('#phase').textContent=S.stage+'단계 ('+slot+'/'+S.order.length+') · '+item.name+' · '+item.description;
  }
 }
 
@@ -331,17 +340,17 @@ function tick(dt){
    if(anyChecked&&allStable)S.stableTimer+=dt;else S.stableTimer=0;
    if(S.stableTimer>=SETTLE.stableSeconds){
     confirmStable(visited);
-   } else if(S.settlingElapsed>=SETTLE.advanceAfterSeconds && S.released<10){
+   } else if(S.settlingElapsed>=SETTLE.advanceAfterSeconds && S.released<S.order.length){
     if(!S.shownStuckToast){showToast('아직 흔들려요');S.shownStuckToast=true}
     setPhase('HELD');
-   } else if(S.released===10 && S.settlingElapsed>=SETTLE.finalTimeoutSeconds){
-    finishRound('unstable');
+   } else if(S.released===S.order.length && S.settlingElapsed>=SETTLE.finalTimeoutSeconds){
+    finishStage('unstable');
    }
   }
  } else if(S.phase==='COLLAPSE'){
   Matter.Engine.update(engine,dt*1000);
   S.collapseTimer+=dt;
-  if(S.collapseTimer>=0.8)finishRound('fall');
+  if(S.collapseTimer>=0.8)finishStage('fall');
  }
 }
 function confirmStable(visited){
@@ -355,7 +364,7 @@ function confirmStable(visited){
  S.heightPx=Math.max(0,WORLD.platformTop-top);
  S.score=S.itemScore+Math.round(S.heightPx*SCORE.heightPerPixel);
  S.shownStuckToast=false;
- if(S.released===10){finishRound('clear');return}
+ if(S.released===S.order.length){finishStage('clear');return}
  setPhase('HELD');
 }
 function beginCollapse(){
@@ -368,30 +377,61 @@ function showToast(msg){
  clearTimeout(showToast._t);
  showToast._t=setTimeout(function(){toastEl.classList.remove('on')},1400);
 }
-function finishRound(outcome){
- if(outcome==='clear'){S.score+=SCORE.clearBonus;clearSound()}
- S.phase=outcome==='clear'?'RESULT_CLEAR':(outcome==='fall'?'RESULT_FAIL':'RESULT_UNSTABLE');
+/* 단계 하나가 끝났을 때. 클리어면 다음 단계로(또는 3단계면 전체 클리어), 실패면 이 단계만 다시 — 게임 전체가
+   끝나는 게 아니다. onGameComplete는 전체 게임을 다 클리어했을 때 딱 한 번만 부모 앱에 보낸다. */
+function finishStage(outcome){
+ var placedCount=S.bodies.filter(function(b){return b.plugin&&b.plugin.stableAwarded}).length;
+ if(outcome==='clear'){
+  S.score+=SCORE.clearBonus;clearSound();
+  S.totalScore+=S.score;S.totalPlaced+=placedCount;
+  S.phase='RESULT_CLEAR';
+  if(S.stage<3){
+   renderStageClear(placedCount);
+  } else {
+   finishGame('clear');
+  }
+ } else {
+  S.phase=outcome==='fall'?'RESULT_FAIL':'RESULT_UNSTABLE';
+  renderStageFail(outcome,placedCount);
+ }
+}
+function finishGame(outcome){
  var durationMs=Math.round(performance.now()-S.startedAt);
  var result={
   gameId:'wind-stack',ruleVersion:RULE_VERSION,attemptId:S.attemptId,seed:S.seed,
-  selectedIds:S.order.slice(),placedCount:S.bodies.filter(function(b){return b.plugin&&b.plugin.stableAwarded}).length,
-  stableHeight:Math.round(S.heightPx),score:S.score,outcome:outcome,durationMs:durationMs
+  stagesCleared:S.stage,placedCount:S.totalPlaced,
+  stableHeight:Math.round(S.heightPx),score:S.totalScore,outcome:outcome,durationMs:durationMs
  };
- if(S.score>S.best)S.best=S.score;
- renderResult(result,outcome);
+ renderGameClear(result);
  try{if(window.onGameComplete)window.onGameComplete(result)}catch(e){}
 }
-function renderResult(result,outcome){
+function renderStageClear(placedCount){
  overlay.classList.remove('hidden');
- var title=outcome==='clear'?'열 개를 다 올렸구나!':(outcome==='fall'?'아이고, 와르르!':'아직 흔들려요');
- var sub=outcome==='clear'?'제법인데?':(outcome==='fall'?'이번엔 순서를 바꿔 볼까?':'시간이 다 되어 여기서 마무리할게요.');
- panel.innerHTML='<h2>'+title+'</h2><p>'+sub+'</p>'+
+ panel.innerHTML='<h2>'+S.stage+'단계 클리어!</h2><p>'+(S.stage===1?'제법인데? 다음부터는 물건이 좀 더 섞여 나와요.':'대단해! 마지막 단계엔 다 뒤섞여 나와요.')+'</p>'+
+  '<div class="big-score">'+S.score+'<small> 점</small></div>'+
+  '<div class="stats"><div><b>'+Math.round(S.heightPx)+'px</b>높이</div><div><b>'+placedCount+'/'+S.order.length+'</b>쌓은 개수</div></div>'+
+  '<button class="primary" id="btnNextStage">'+(S.stage+1)+'단계로</button>';
+ $('#btnNextStage').onclick=function(){S.stage++;beginStage()};
+}
+function renderGameClear(result){
+ overlay.classList.remove('hidden');
+ panel.innerHTML='<h2>바람탑 완성!</h2><p>3단계까지 전부 쌓았구나! 제법인데?</p>'+
   '<div class="big-score">'+result.score+'<small> 점</small></div>'+
-  '<div class="stats"><div><b>'+result.stableHeight+'px</b>높이</div><div><b>'+result.placedCount+'/10</b>쌓은 개수</div><div><b>'+Math.round(result.durationMs/1000)+'초</b>걸린 시간</div></div>'+
-  '<button class="primary" id="btnRetry">같은 순서로 다시하기</button>'+
-  '<button class="secondary" id="btnReselect">다른 물건으로 다시하기</button>';
- $('#btnRetry').onclick=function(){S.picked=S.order.slice();startRound()};
- $('#btnReselect').onclick=function(){renderSelect()};
+  '<div class="stats"><div><b>3/3</b>단계</div><div><b>'+result.placedCount+'</b>쌓은 개수</div><div><b>'+Math.round(result.durationMs/1000)+'초</b>걸린 시간</div></div>'+
+  '<button class="primary" id="btnRestart">처음부터 다시하기</button>';
+ $('#btnRestart').onclick=function(){renderIntro()};
+}
+function renderStageFail(outcome,placedCount){
+ overlay.classList.remove('hidden');
+ var title=outcome==='fall'?'아이고, 와르르!':'아직 흔들려요';
+ var sub=outcome==='fall'?(S.stage+'단계, 이번엔 순서를 바꿔 볼까?'):'시간이 다 되어 여기서 마무리할게요.';
+ panel.innerHTML='<h2>'+title+'</h2><p>'+sub+'</p>'+
+  '<div class="big-score">'+S.score+'<small> 점</small></div>'+
+  '<div class="stats"><div><b>'+Math.round(S.heightPx)+'px</b>높이</div><div><b>'+placedCount+'/'+S.order.length+'</b>쌓은 개수</div><div><b>'+S.stage+'/3</b>단계</div></div>'+
+  '<button class="primary" id="btnRetryStage">'+S.stage+'단계 다시하기</button>'+
+  '<button class="secondary" id="btnRestartAll">처음부터 다시하기</button>';
+ $('#btnRetryStage').onclick=function(){beginStage()};
+ $('#btnRestartAll').onclick=function(){renderIntro()};
 }
 
 /* ---------------- 렌더 ---------------- */
@@ -490,7 +530,7 @@ function updateCamera(){
  if(S.cameraY>0)S.cameraY=0;
 }
 function updateHud(){
- $('#hudLeft').innerHTML=(10-S.released)+'<span>개</span>';
+ $('#hudLeft').innerHTML=(S.order.length-S.released)+'<span>개</span>';
  $('#hudScore').textContent=S.score;
  $('#hudHeight').innerHTML=Math.round(S.heightPx)+'<span>px</span>';
 }
@@ -530,5 +570,5 @@ document.addEventListener('visibilitychange',function(){S.paused=document.hidden
 /* ---------------- 시작 ---------------- */
 resizeCanvas();
 initPhysics();
-renderSelect();
+renderIntro();
 raf=requestAnimationFrame(loop);
