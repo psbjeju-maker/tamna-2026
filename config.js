@@ -75,7 +75,7 @@ window.TAMNA = {
       bonusDay: "2026-10-17" },
     { id: "GOD2", code: "GOD2",
       name: "도채비",
-      desc: "장난기 많지만 정이 많은 제주의 도깨비.",
+      desc: "장난기 많지만 정이 많은 제주의 도채비.",
       photo: "gods/final/GOD2.jpg",
       jeju: { word: "놀멍쉬멍", mean: "놀면서 쉬면서" },
       activeDays: ["2026-10-17","2026-10-18","2026-10-19","2026-10-20","2026-10-21"],
