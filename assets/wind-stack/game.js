@@ -5,6 +5,7 @@
 var RULE_VERSION='wind-stack-design-1';
 var WORLD={width:390,height:720,platformTop:620,platformWidth:196,platformHeight:26,failY:735};
 var CRANE={speed:95,minX:54,maxX:336,releaseVelocityRatio:0.1};
+var DROP_HEIGHT=420; // 크레인이 탑 꼭대기보다 얼마나 높은 곳(멀리서)에서 물건을 내려놓기 시작하는지
 var SETTLE={speedThreshold:6,angularSpeedThreshold:0.06,stableSeconds:0.65,advanceAfterSeconds:6,finalTimeoutSeconds:12};
 var SCORE={stableItem:100,heightPerPixel:2,clearBonus:500};
 var MATTER_BASE_DELTA=1000/60; // Matter.Body._baseDelta와 동일(내부 상수, 버전 의존 위험을 피하려 직접 정의)
@@ -126,37 +127,22 @@ function spawnItemBody(item,x,y){
  return body;
 }
 
-/* ---------------- 선택 화면 ---------------- */
+/* ---------------- 시작 화면 (물건은 매판 무작위로 정해짐) ---------------- */
+function shuffledTen(){
+ var pool=ITEMS.map(function(it){return it.id});
+ for(var i=pool.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=pool[i];pool[i]=pool[j];pool[j]=t}
+ return pool.slice(0,10);
+}
 function renderSelect(){
  overlay.classList.remove('hidden');
- var cards=ITEMS.map(function(it,i){
-  var idx=S.picked.indexOf(it.id);
-  return '<div class="itemcard'+(idx>=0?' picked':'')+'" data-id="'+it.id+'"><div class="badge">'+(idx>=0?idx+1:'')+'</div>'+
-   '<img src="'+it.image+'" alt=""><b>'+it.name+'</b><small>'+it.description+'</small></div>';
- }).join('');
- var order=S.picked.map(function(id,i){
-  var it=ITEMS_BY_ID[id];
-  return '<div class="orderrow"><span class="ord">'+(i+1)+'</span><img src="'+it.image+'" alt=""><span>'+it.name+'</span>'+
-   '<button data-up="'+i+'" '+(i===0?'disabled':'')+'>▲</button><button data-down="'+i+'" '+(i===S.picked.length-1?'disabled':'')+'>▼</button></div>';
- }).join('');
- panel.innerHTML='<h2>열 가지를 골라 보렴</h2><p>"어디까지 쌓나 볼까?" 12개 중 10개를 골라 순서를 정하세요. 고른 순서대로 크레인이 물건을 가져와요.</p>'+
-  '<div class="itemgrid">'+cards+'</div>'+
-  (S.picked.length?('<div class="orderlist">'+order+'</div>'):'')+
-  '<button class="primary" id="btnStart" '+(S.picked.length===10?'':'disabled')+'>내 탑 쌓기 ('+S.picked.length+'/10)</button>';
- $$q('.itemcard').forEach(function(el){
-  el.onclick=function(){
-   var id=el.dataset.id,idx=S.picked.indexOf(id);
-   if(idx>=0)S.picked.splice(idx,1);
-   else if(S.picked.length<10)S.picked.push(id);
-   renderSelect();
-  };
- });
- $$q('[data-up]').forEach(function(b){b.onclick=function(e){e.stopPropagation();var i=+b.dataset.up;var t=S.picked[i-1];S.picked[i-1]=S.picked[i];S.picked[i]=t;renderSelect()}});
- $$q('[data-down]').forEach(function(b){b.onclick=function(e){e.stopPropagation();var i=+b.dataset.down;var t=S.picked[i+1];S.picked[i+1]=S.picked[i];S.picked[i]=t;renderSelect()}});
+ S.picked=shuffledTen();
+ var preview=S.picked.map(function(id){var it=ITEMS_BY_ID[id];return '<img src="'+it.image+'" alt="'+it.name+'" title="'+it.name+'">'}).join('');
+ panel.innerHTML='<h2>오늘은 무엇을 쌓을까?</h2><p>"어디까지 쌓나 볼까?" 열 가지 물건이 무작위로 정해져요. 크레인이 순서대로 가져다줘요.</p>'+
+  '<div class="itemgrid itemgrid--preview">'+preview+'</div>'+
+  '<button class="primary" id="btnStart">내 탑 쌓기 시작</button>';
  var btn=$('#btnStart');
- if(btn)btn.onclick=function(){if(S.picked.length===10)startRound()};
+ if(btn)btn.onclick=function(){startRound()};
 }
-function $$q(sel){return Array.prototype.slice.call(panel.querySelectorAll(sel))}
 
 /* ---------------- 라운드 진행 ---------------- */
 function startRound(){
@@ -186,7 +172,7 @@ function setPhase(p){
  if(p==='HELD'){
   var item=currentItem();
   if(!item)return; // shouldn't happen (RESULT_CLEAR handled elsewhere)
-  S.heldY=Math.max(90,towerTopY()-150);
+  S.heldY=Math.max(90,towerTopY()-DROP_HEIGHT);
   S.cameraTargetY=Math.min(S.cameraTargetY,S.heldY-160);
   S.craneX=CRANE.minX;S.craneDir=1;
   var slot=S.released+1;
@@ -377,9 +363,9 @@ function renderResult(result,outcome){
   '<div class="big-score">'+result.score+'<small> 점</small></div>'+
   '<div class="stats"><div><b>'+result.stableHeight+'px</b>높이</div><div><b>'+result.placedCount+'/10</b>쌓은 개수</div><div><b>'+Math.round(result.durationMs/1000)+'초</b>걸린 시간</div></div>'+
   '<button class="primary" id="btnRetry">같은 순서로 다시하기</button>'+
-  '<button class="secondary" id="btnReselect">물건 다시 고르기</button>';
+  '<button class="secondary" id="btnReselect">다른 물건으로 다시하기</button>';
  $('#btnRetry').onclick=function(){S.picked=S.order.slice();startRound()};
- $('#btnReselect').onclick=function(){S.picked=S.order.slice();renderSelect()};
+ $('#btnReselect').onclick=function(){renderSelect()};
 }
 
 /* ---------------- 렌더 ---------------- */

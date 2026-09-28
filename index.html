@@ -139,11 +139,7 @@
         <button class="btn btn--secondary btn--sm" data-game="catch">도전</button>
       </div>
       <div class="game">
-        <div><div class="game__title">영등할망의 귤 튕기기</div><div class="game__desc">받침으로 귤을 튕겨 보물을 터뜨리세요. 스테이지를 깨며 강해지고, 3의 배수마다 먹구름 보스전!</div><div class="game__best" id="best-wind">최고 0점</div></div>
-        <button class="btn btn--secondary btn--sm" data-game="wind">도전</button>
-      </div>
-      <div class="game">
-        <div><div class="game__title">영등할망의 바람탑</div><div class="game__desc">열 가지 물건을 골라 크레인으로 탑을 쌓으세요. 영등할망이 바람으로 돕거나 장난칩니다.</div><div class="game__best" id="best-stack">최고 0점</div></div>
+        <div><div class="game__title">영등할망의 바람탑</div><div class="game__desc">무작위로 나오는 열 가지 물건을 크레인으로 쌓으세요. 영등할망이 바람으로 돕거나 장난칩니다.</div><div class="game__best" id="best-stack">최고 0점</div></div>
         <button class="btn btn--secondary btn--sm" data-game="stack">도전</button>
       </div>
       <div class="game">
@@ -222,8 +218,8 @@
         <button class="btn btn--secondary" id="btnShare">공유</button>
       </div>
       <div class="btnrow" style="margin-top:8px">
-        <button class="btn btn--tertiary" id="btnReplay">탄생 연출 다시 보기</button>
-        <button class="btn btn--tertiary" id="btnNewCard">새 카드 만들기</button>
+        <button class="btn btn--secondary" id="btnReplay">탄생 연출 다시 보기</button>
+        <button class="btn btn--secondary" id="btnNewCard">새 카드 만들기</button>
       </div>
     </div>
 
@@ -305,7 +301,6 @@
     <button class="stagebar__x" id="stClose" aria-label="닫기"><svg class="icon"><use href="#i-close"/></svg></button></div>
   <div id="canvasWrap"><canvas id="gcv"></canvas><div id="lightningFlash"></div></div>
   <div id="memo" style="display:none"></div>
-  <div id="wind" style="display:none"></div>
   <div id="stack" style="display:none"></div>
 </div>
 
@@ -547,7 +542,7 @@ function load(){
   try{var v=JSON.parse(localStorage.getItem(KEY));if(v&&v.name)return v;}catch(e){}
   return {name:'',phone:'',gold:0,crew:{},tickets:[],days:[],
           daily:{},                 // {날짜:{games:n, photo:1, sns:1, buy:1, attend:1}}
-          best:{catch:0,wind:0,memo:0}, flags:{}, photos:[null,null,null,null]};
+          best:{catch:0,stack:0,memo:0}, flags:{}, photos:[null,null,null,null]};
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function d(){var t=today();if(!S.daily[t])S.daily[t]={};return S.daily[t]}
@@ -1031,7 +1026,6 @@ function decayRate(){
 function paintGame(){
   $('#decayTag').textContent='오늘 '+(d().games||0)+'회 · 지급률 '+Math.round(decayRate()*100)+'%';
   $('#best-catch').textContent='최고 '+(S.best.catch||0)+'점';
-  $('#best-wind').textContent='최고 '+(S.best.wind||0)+'점';
   $('#best-stack').textContent='최고 '+(S.best.stack||0)+'점';
   $('#best-memo').textContent=S.best.memo?'최고 '+S.best.memo+'초':'최고 기록 없음';
 }
@@ -1052,7 +1046,7 @@ function openStage(title){
   cur=title;stage.classList.add('on');
   $('#stTitle').textContent=title;$('#stScore').textContent='';
   var w=$('#canvasWrap');w.style.display='';cv.width=w.clientWidth*2;cv.height=w.clientHeight*2;
-  cv.style.display='block';$('#memo').style.display='none';var windEl0=$('#wind');if(windEl0)windEl0.style.display='none';
+  cv.style.display='block';$('#memo').style.display='none';
   var stackEl0=$('#stack');if(stackEl0)stackEl0.style.display='none';
 }
 function stopGame(){
@@ -1060,14 +1054,11 @@ function stopGame(){
   stage.classList.remove('on');
   cv.onpointerdown=null;cv.onpointermove=null;cv.onpointerup=null;cv.onpointercancel=null;
   sfxStopAmbient();
-  if(windTeardown){windTeardown();windTeardown=null}
-  var windEl=$('#wind');if(windEl)windEl.style.display='none';
   if(stackTeardown){stackTeardown();stackTeardown=null}
   var stackEl=$('#stack');if(stackEl)stackEl.style.display='none';
 }
 function startGame(k){
   if(k==='catch')gCatch();
-  if(k==='wind')gWind();
   if(k==='stack')gStack();
   if(k==='memo')gMemo();
 }
@@ -1557,51 +1548,7 @@ function finishCatch(score){
   reward(score/4,'황금귤 캐치 · '+score+'점'+(isBest?' · 신기록!':''));
 }
 
-/* --- ② 영등할망의 귤 튕기기 (v3, 자체 완결 게임을 iframe으로 임베드) --- */
-/* v3는 스테이지 클리어 기반 성장+보스전+닉네임 순위표 구조라 전역 상태(S/reward/sfx)와
-   변수명이 겹치기 쉬워 index.html에 직접 이식하지 않고 assets/wind-game-v3/(자체 index.html
-   +style.css+game.js+assets)를 그대로 iframe으로 띄운다. 같은 출처라 postMessage 없이
-   frame.contentWindow.onGameComplete 콜백으로 결과를 받는다. */
-var windTeardown=null;
-var windRewardedAttempt=null;
-function gWind(){
-  openStage('영등할망의 귤 튕기기');
-  cv.style.display='none';
-  $('#canvasWrap').style.display='none';
-  var p=$('#wind');p.style.display='flex';
-  windMount();
-}
-function windMount(){
-  var p=$('#wind');
-  windRewardedAttempt=null;
-  p.innerHTML='<iframe id="wgFrame" title="영등할망의 귤 튕기기" allow="autoplay" '+
-    'src="assets/wind-game-v3/index.html?ts='+Date.now()+'" '+
-    'style="width:100%;max-width:420px;height:100%;border:0;border-radius:var(--radius-xl);box-shadow:var(--shadow-md);background:#102830"></iframe>';
-  windInit();
-}
-function windInit(){
-  var frame=$('#wgFrame');
-  function onLoad(){
-    var w=frame.contentWindow;
-    if(!w)return;
-    w.onGameComplete=function(result){
-      if(!result||windRewardedAttempt===result.attemptId)return;
-      windRewardedAttempt=result.attemptId;
-      var isBest=result.score>(S.best.wind||0);
-      if(isBest)S.best.wind=result.score;
-      save();paintGame();
-      sfx(isBest?'fanfare':'bonus',0.7);
-      reward(Math.round(result.score/40),'영등할망의 귤 튕기기 · '+result.stage+'스테이지 · 보스 '+result.bossesDefeated+'회 격파 · 총점 '+result.score+'점'+(isBest?' · 신기록!':''));
-    };
-  }
-  frame.addEventListener('load',onLoad);
-  windTeardown=function(){
-    frame.removeEventListener('load',onLoad);
-    var p=$('#wind');if(p)p.innerHTML='';
-  };
-}
-
-/* --- ③ 영등할망의 바람탑 (자체 완결 게임을 iframe으로 임베드, wind-game-v3와 동일 패턴) --- */
+/* --- ② 영등할망의 바람탑 (자체 완결 게임을 iframe으로 임베드) --- */
 var stackTeardown=null;
 var stackRewardedAttempt=null;
 function gStack(){
@@ -1769,15 +1716,17 @@ var CARD_LINES=['좋아, 해보자!','그 정도면 충분하지.','와쿠와쿠
   '놓치지 않을 거야.','다 같이 가자!','지금이 제일 빛나.','제주 바람, 좋은데?','각성했다…!','레어 카드 확정!'];
 /* 풀아트 카드 레이아웃 — 750x1020 기준 픽셀 좌표(디자인팩 README 그대로). k=W/750로 스케일.
    레어도 5종 모두 프레임 위치·두께가 같으므로(디자인팩 명시) 좌표는 공용이다. */
+/* 2026-09-28 사장님 피드백(타이포 기준표) 반영 — 750x1020 기준, 카드 자체 너비에 비례해서만 스케일된다(뷰포트 폭 아님).
+   기술명/설명/대사는 더 이상 개별 topY로 고정하지 않고 기술명 아래부터 gap을 두고 세로로 흘려 쌓는다(desc/quote에 topY 없음). */
 var CARD_LAYOUT={
   base:750, radius:24,
-  title:{cx:375,topY:59,size:42,maxW:520},
+  title:{cx:375,topY:51,size:48,maxW:440,lineH:1.12,weight:'800'}, /* maxW를 넉넉히 줄여 우측 속성 배지(x=637~)와 항상 간격 확보 */
   icon:{x:637,y:52,size:74},
-  meta:{cx:375,topY:722,size:25,maxW:640},
-  skill:{cx:375,topY:810,size:36,maxW:620},
-  desc:{cx:375,topY:863,size:23,maxW:620,lineH:1.25},
-  quote:{cx:375,topY:905,size:20,maxW:620},
-  foot:{cx:375,topY:962,size:16}
+  meta:{cx:375,topY:719,size:30,maxW:640,lineH:1.15,weight:'700'},
+  skill:{cx:375,topY:790,size:44,maxW:620,lineH:1.13,weight:'800'},
+  desc:{cx:375,size:30,maxW:620,lineH:1.28,weight:'600',gap:12},
+  quote:{cx:375,size:26,maxW:620,lineH:1.25,weight:'500',gap:12},
+  foot:{cx:375,topY:962,size:19,lineH:1.1,weight:'600'}
 };
 var CARD_ASSET_BASE='assets/photo-card/layers/', cardAssets=null;
 function loadCardAssets(cb){
