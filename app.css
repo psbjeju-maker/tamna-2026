@@ -243,6 +243,7 @@ p{margin:0}
 .cardWrap.reveal--diamond::after{background:linear-gradient(115deg,transparent 30%,rgba(255,120,220,.35) 40%,rgba(120,200,255,.4) 50%,rgba(255,230,120,.35) 60%,transparent 70%);background-size:260% 260%}
 @keyframes card-sweep{0%{opacity:0;background-position:-40% -40%}30%{opacity:1}100%{opacity:0;background-position:60% 60%}}
 .cardActions{opacity:0;transform:translateY(6px);transition:opacity 400ms var(--ease),transform 400ms var(--ease);pointer-events:none}
+.cardActions .btn{font-size:14px;padding:0 8px;white-space:nowrap} /* "탄생 연출 다시 보기" 같은 긴 라벨이 좁은 2열에서 줄바꿈되던 문제 */
 .result.settled .cardActions{opacity:1;transform:none;pointer-events:auto}
 .cardRevealTag{text-align:center;margin-top:10px;font-family:SCDream,sans-serif;font-size:19px;font-weight:800;color:var(--color-accent-strong);
   opacity:0;transform:translateY(6px)}
