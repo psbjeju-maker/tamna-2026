@@ -163,14 +163,25 @@ function spawnItemBody(item,x,y){
  return body;
 }
 
-/* ---------------- 시작 화면 (물건은 매판 무작위로 정해짐) ---------------- */
+/* ---------------- 시작 화면 (물건은 매판 무작위로 정해짐, 난이도는 1~3단계로 점점 섞임) ---------------- */
 /* 후보 30종. starfish/anchor(reserveIds)는 모양이 복잡해 기본 후보에서 제외 — 필요하면 교체용으로만 사용 */
 var ACTIVE_CATALOG_IDS=['citrus_crate','basalt_brick','wood_plank','tangerine','buoy','tea_tin','shell','lava_jar','fish_block','straw_hat','gift_box','lifering','dol_hareubang','surfboard','conch','kettle','bucket','watering_can','rain_boot','book_stack','bread_loaf','cactus_pot','camera','suitcase','hand_drum','wood_duck','pillow','ceramic_mug','wood_stool','picnic_basket'];
+/* 평평하고 잘 받쳐주는 것 10종(1단계용). 나머지 중 완만한 것 2종은 중간지대(2단계용). 그 외 18종은 둥글거나
+   손잡이·다리처럼 오목한 부분이 있어 불안정한 것(3단계용). 세 목록을 합치면 ACTIVE_CATALOG_IDS와 정확히 같다. */
+var FLAT_IDS=['citrus_crate','basalt_brick','wood_plank','tea_tin','gift_box','book_stack','camera','suitcase','hand_drum','picnic_basket'];
+var MEDIUM_IDS=['bread_loaf','pillow'];
+var HARD_IDS=['tangerine','buoy','shell','lava_jar','fish_block','straw_hat','lifering','dol_hareubang','surfboard','conch','kettle','bucket','watering_can','rain_boot','cactus_pot','wood_duck','ceramic_mug','wood_stool'];
+function shuffleArr(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
 function shuffledTen(){
- var pool=ACTIVE_CATALOG_IDS.slice();
- for(var i=pool.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=pool[i];pool[i]=pool[j];pool[j]=t}
- return pool.slice(0,10);
+ var flat=shuffleArr(FLAT_IDS.slice());
+ var stage1=flat.slice(0,3); // 1단계: 평평한 것 위주
+ var stage2Pool=shuffleArr(flat.slice(3).concat(MEDIUM_IDS));
+ var stage2=stage2Pool.slice(0,3); // 2단계: 남은 평평한 것 + 중간 난이도를 섞어서
+ var stage3Pool=shuffleArr(stage2Pool.slice(3).concat(HARD_IDS));
+ var stage3=stage3Pool.slice(0,4); // 3단계: 남은 전부(둥글고 불안정한 것 포함)를 다 섞어서
+ return stage1.concat(stage2,stage3);
 }
+function stageOfSlot(slot){return slot<=3?1:(slot<=6?2:3)}
 function renderSelect(){
  overlay.classList.remove('hidden');
  S.picked=shuffledTen(); // 무엇이 나올지는 시작 전엔 안 보여준다 — 미리보기 없이 깜짝 등장
@@ -215,7 +226,7 @@ function setPhase(p){
   var slot=S.released+1;
   var ev=WIND_EVENTS_BY_SLOT[slot];
   if(ev && !ev._used){ev._used=true;S.windEvent=Object.assign({},ev);S.windTimer=0;}
-  $('#phase').textContent=item.name+' · '+item.description;
+  $('#phase').textContent=stageOfSlot(slot)+'단계 · '+item.name+' · '+item.description;
  }
 }
 
