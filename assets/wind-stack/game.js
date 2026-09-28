@@ -187,7 +187,7 @@ function pickStageItems(stageNum){
 }
 function renderIntro(){
  overlay.classList.remove('hidden');
- panel.innerHTML='<h2>영등할망의 바람탑</h2><p>1단계는 평평한 물건으로 기초를 다지고, 2·3단계로 갈수록 점점 뒤섞인 물건이 나와요. 판마다 새로 시작해요.</p>'+
+ panel.innerHTML='<h2>어디까지 쌓을 수 있을까?</h2><p>1단계는 평평한 물건으로 기초를 다지고, 2·3단계로 갈수록 점점 뒤섞인 물건이 나와요. 판마다 새로 시작해요.</p>'+
   '<img class="startPortrait" src="assets/characters/yeongdeung_smile.png" alt="영등할망">'+
   '<button class="primary" id="btnStart">1단계 시작</button>';
  var btn=$('#btnStart');
@@ -385,24 +385,24 @@ function finishStage(outcome){
   S.score+=SCORE.clearBonus;clearSound();
   S.totalScore+=S.score;S.totalPlaced+=placedCount;
   S.phase='RESULT_CLEAR';
+  sendStageReward(placedCount); // 실패는 보상 없음, 클리어한 단계마다 그 자리에서 바로 보상(복 포인트를 단계별로 나눠 지급)
   if(S.stage<3){
    renderStageClear(placedCount);
   } else {
-   finishGame('clear');
+   renderGameClear();
   }
  } else {
   S.phase=outcome==='fall'?'RESULT_FAIL':'RESULT_UNSTABLE';
   renderStageFail(outcome,placedCount);
  }
 }
-function finishGame(outcome){
+function sendStageReward(placedCount){
  var durationMs=Math.round(performance.now()-S.startedAt);
  var result={
-  gameId:'wind-stack',ruleVersion:RULE_VERSION,attemptId:S.attemptId,seed:S.seed,
-  stagesCleared:S.stage,placedCount:S.totalPlaced,
-  stableHeight:Math.round(S.heightPx),score:S.totalScore,outcome:outcome,durationMs:durationMs
+  gameId:'wind-stack',ruleVersion:RULE_VERSION,attemptId:S.attemptId+'-s'+S.stage,seed:S.seed,
+  stage:S.stage,stagesCleared:S.stage,placedCount:placedCount,
+  stableHeight:Math.round(S.heightPx),score:S.score,outcome:'clear',durationMs:durationMs
  };
- renderGameClear(result);
  try{if(window.onGameComplete)window.onGameComplete(result)}catch(e){}
 }
 function renderStageClear(placedCount){
@@ -413,11 +413,12 @@ function renderStageClear(placedCount){
   '<button class="primary" id="btnNextStage">'+(S.stage+1)+'단계로</button>';
  $('#btnNextStage').onclick=function(){S.stage++;beginStage()};
 }
-function renderGameClear(result){
+function renderGameClear(){
  overlay.classList.remove('hidden');
+ var durationSec=Math.round((performance.now()-S.startedAt)/1000);
  panel.innerHTML='<h2>바람탑 완성!</h2><p>3단계까지 전부 쌓았구나! 제법인데?</p>'+
-  '<div class="big-score">'+result.score+'<small> 점</small></div>'+
-  '<div class="stats"><div><b>3/3</b>단계</div><div><b>'+result.placedCount+'</b>쌓은 개수</div><div><b>'+Math.round(result.durationMs/1000)+'초</b>걸린 시간</div></div>'+
+  '<div class="big-score">'+S.totalScore+'<small> 점</small></div>'+
+  '<div class="stats"><div><b>3/3</b>단계</div><div><b>'+S.totalPlaced+'</b>쌓은 개수</div><div><b>'+durationSec+'초</b>걸린 시간</div></div>'+
   '<button class="primary" id="btnRestart">처음부터 다시하기</button>';
  $('#btnRestart').onclick=function(){renderIntro()};
 }

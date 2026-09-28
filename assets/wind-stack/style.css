@@ -1,9 +1,14 @@
 :root{font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;color:#fff8e9;background:#122f34;font-synthesis:none}
 *{box-sizing:border-box}
-body{margin:0;height:100dvh;overflow:hidden;display:grid;place-items:center;background:radial-gradient(ellipse at top,#2c5a57,#122f34 65%)}
+html{overflow:hidden}
+/* 모바일에서 주소창이 스크롤/탭으로 접혔다 펴졌다 할 때 dvh를 쓰면 화면 크기가 실시간으로 같이
+   움직여서 카드 전체가 커졌다 작아졌다 하는 것처럼 보인다(실기기 확인된 버그). svh(주소창이 항상
+   펼쳐진 걸로 치는 "가장 작은" 값)로 고정해서 크기가 안 움직이게 한다 — 미지원 브라우저는 위의
+   100vh로 자동 폴백. */
+body{margin:0;height:100vh;height:100svh;overflow:hidden;display:grid;place-items:center;background:radial-gradient(ellipse at top,#2c5a57,#122f34 65%);word-break:keep-all;overflow-wrap:break-word}
 button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
 button:focus-visible{outline:3px solid #efbe72;outline-offset:3px}
-#app{width:min(100%,460px);height:min(100dvh,950px);display:flex;flex-direction:column;gap:10px;padding:max(10px,env(safe-area-inset-top)) 14px max(10px,env(safe-area-inset-bottom))}
+#app{width:min(100%,460px);height:min(100vh,950px);height:min(100svh,950px);display:flex;flex-direction:column;gap:10px;padding:max(10px,env(safe-area-inset-top)) 14px max(10px,env(safe-area-inset-bottom))}
 header{display:flex;justify-content:space-between;align-items:center;flex-shrink:0;height:48px}
 .eyebrow{display:block;font-size:9px;letter-spacing:2px;color:#95cebc;font-weight:650}
 h1{font-size:20px;letter-spacing:-.8px;margin:3px 0 0}

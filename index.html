@@ -1592,7 +1592,8 @@ function stackInit(){
       if(isBest)S.best.stack=result.score;
       save();paintGame();
       sfx(isBest?'fanfare':'bonus',0.7);
-      reward(Math.round(result.score/50),'영등할망의 바람탑 · '+result.placedCount+'개 쌓기 · '+result.score+'점'+(isBest?' · 신기록!':''));
+      var label=(result.stage===3?'3단계 완주':result.stage+'단계 클리어');
+      reward(Math.round(result.score/50),'영등할망의 바람탑 · '+label+' · '+result.placedCount+'개 쌓기 · '+result.score+'점'+(isBest?' · 신기록!':''));
     };
   }
   frame.addEventListener('load',onLoad);
