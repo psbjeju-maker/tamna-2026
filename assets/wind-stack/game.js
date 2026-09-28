@@ -557,6 +557,22 @@ var raf=null,lastT=null,acc=0;
 function resizeCanvas(){
  cv.width=WORLD.width*DPR;cv.height=WORLD.height*DPR;
 }
+/* #stage에 aspect-ratio+max-width/max-height만 주면 브라우저가 항상 높이를 100% 채우는 쪽으로
+   계산해버려서(실기기 확인됨), 세로가 빠듯하고 가로가 넉넉한 화면에서 게임창이 필요 이상으로
+   좁게 나온다. 가용 공간을 직접 재서 폭/높이 중 더 타이트한 쪽에 맞춰 최대 크기로 채운다. */
+var boardWrapEl=document.getElementById('board-wrap');
+function fitStage(){
+ if(!boardWrapEl)return;
+ var availW=boardWrapEl.clientWidth,availH=boardWrapEl.clientHeight;
+ if(!availW||!availH)return;
+ var ratio=WORLD.width/WORLD.height;
+ var w=availW,h=w/ratio;
+ if(h>availH){h=availH;w=h*ratio;}
+ stage.style.width=Math.floor(w)+'px';
+ stage.style.height=Math.floor(h)+'px';
+}
+window.addEventListener('resize',fitStage);
+window.addEventListener('orientationchange',function(){setTimeout(fitStage,60)});
 function loop(t){
  if(lastT==null)lastT=t;
  var dt=t-lastT;lastT=t;
@@ -570,6 +586,7 @@ document.addEventListener('visibilitychange',function(){S.paused=document.hidden
 
 /* ---------------- 시작 ---------------- */
 resizeCanvas();
+fitStage();
 initPhysics();
 renderIntro();
 raf=requestAnimationFrame(loop);
