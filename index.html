@@ -143,6 +143,10 @@
         <button class="btn btn--secondary btn--sm" data-game="wind">도전</button>
       </div>
       <div class="game">
+        <div><div class="game__title">영등할망의 바람탑</div><div class="game__desc">열 가지 물건을 골라 크레인으로 탑을 쌓으세요. 영등할망이 바람으로 돕거나 장난칩니다.</div><div class="game__best" id="best-stack">최고 0점</div></div>
+        <button class="btn btn--secondary btn--sm" data-game="stack">도전</button>
+      </div>
+      <div class="game">
         <div><div class="game__title">기억력 카드</div><div class="game__desc">12장 중 같은 그림 6쌍. 빠를수록 복이 큽니다.</div><div class="game__best" id="best-memo">최고 기록 없음</div></div>
         <button class="btn btn--secondary btn--sm" data-game="memo">도전</button>
       </div>
@@ -210,7 +214,7 @@
 
     <div class="result" id="result">
       <div class="cardWrap" id="cardWrap">
-        <canvas id="cardCanvas" width="1200" height="1800"></canvas>
+        <canvas id="cardCanvas" width="1500" height="2040"></canvas>
       </div>
       <div class="cardRevealTag" id="cardRevealTag"></div>
       <div class="btnrow" style="margin-top:14px">
@@ -302,6 +306,7 @@
   <div id="canvasWrap"><canvas id="gcv"></canvas><div id="lightningFlash"></div></div>
   <div id="memo" style="display:none"></div>
   <div id="wind" style="display:none"></div>
+  <div id="stack" style="display:none"></div>
 </div>
 
 <!-- 나침반 추적 -->
@@ -1027,6 +1032,7 @@ function paintGame(){
   $('#decayTag').textContent='오늘 '+(d().games||0)+'회 · 지급률 '+Math.round(decayRate()*100)+'%';
   $('#best-catch').textContent='최고 '+(S.best.catch||0)+'점';
   $('#best-wind').textContent='최고 '+(S.best.wind||0)+'점';
+  $('#best-stack').textContent='최고 '+(S.best.stack||0)+'점';
   $('#best-memo').textContent=S.best.memo?'최고 '+S.best.memo+'초':'최고 기록 없음';
 }
 function reward(raw,label){
@@ -1047,6 +1053,7 @@ function openStage(title){
   $('#stTitle').textContent=title;$('#stScore').textContent='';
   var w=$('#canvasWrap');w.style.display='';cv.width=w.clientWidth*2;cv.height=w.clientHeight*2;
   cv.style.display='block';$('#memo').style.display='none';var windEl0=$('#wind');if(windEl0)windEl0.style.display='none';
+  var stackEl0=$('#stack');if(stackEl0)stackEl0.style.display='none';
 }
 function stopGame(){
   if(raf)cancelAnimationFrame(raf);raf=null;
@@ -1055,10 +1062,13 @@ function stopGame(){
   sfxStopAmbient();
   if(windTeardown){windTeardown();windTeardown=null}
   var windEl=$('#wind');if(windEl)windEl.style.display='none';
+  if(stackTeardown){stackTeardown();stackTeardown=null}
+  var stackEl=$('#stack');if(stackEl)stackEl.style.display='none';
 }
 function startGame(k){
   if(k==='catch')gCatch();
   if(k==='wind')gWind();
+  if(k==='stack')gStack();
   if(k==='memo')gMemo();
 }
 
@@ -1591,6 +1601,46 @@ function windInit(){
   };
 }
 
+/* --- ③ 영등할망의 바람탑 (자체 완결 게임을 iframe으로 임베드, wind-game-v3와 동일 패턴) --- */
+var stackTeardown=null;
+var stackRewardedAttempt=null;
+function gStack(){
+  openStage('영등할망의 바람탑');
+  cv.style.display='none';
+  $('#canvasWrap').style.display='none';
+  var p=$('#stack');p.style.display='flex';
+  stackMount();
+}
+function stackMount(){
+  var p=$('#stack');
+  stackRewardedAttempt=null;
+  p.innerHTML='<iframe id="stFrame" title="영등할망의 바람탑" allow="autoplay" '+
+    'src="assets/wind-stack/index.html?ts='+Date.now()+'" '+
+    'style="width:100%;max-width:420px;height:100%;border:0;border-radius:var(--radius-xl);box-shadow:var(--shadow-md);background:#122f34"></iframe>';
+  stackInit();
+}
+function stackInit(){
+  var frame=$('#stFrame');
+  function onLoad(){
+    var w=frame.contentWindow;
+    if(!w)return;
+    w.onGameComplete=function(result){
+      if(!result||stackRewardedAttempt===result.attemptId)return;
+      stackRewardedAttempt=result.attemptId;
+      var isBest=result.score>(S.best.stack||0);
+      if(isBest)S.best.stack=result.score;
+      save();paintGame();
+      sfx(isBest?'fanfare':'bonus',0.7);
+      reward(Math.round(result.score/50),'영등할망의 바람탑 · '+result.placedCount+'개 쌓기 · '+result.score+'점'+(isBest?' · 신기록!':''));
+    };
+  }
+  frame.addEventListener('load',onLoad);
+  stackTeardown=function(){
+    frame.removeEventListener('load',onLoad);
+    var p=$('#stack');if(p)p.innerHTML='';
+  };
+}
+
 /* --- ⑤ 기억력 카드 --- */
 function gMemo(){
   openStage('기억력 카드');
@@ -1717,32 +1767,29 @@ var CARD_DESCS=[ /* {v} 자리에 등급별 수치가 들어간다. 2줄 넘는 
 var CARD_LINES=['좋아, 해보자!','그 정도면 충분하지.','와쿠와쿠!','내가 제일 강하니까.','모험이다!','오늘 주인공은 나야.','한 장 더 찍자!',
   '축제는 이제 시작이야.','귤 하나 먹고 갈까?','바람이 이쪽이래.','최애 발견!','텐션 올려!','포즈 준비 완료.','여기 포토존 맞지?',
   '놓치지 않을 거야.','다 같이 가자!','지금이 제일 빛나.','제주 바람, 좋은데?','각성했다…!','레어 카드 확정!'];
-/* 프레임 5종의 사진창 좌표(0~1) — 실제 첨부 프레임 PNG를 픽셀 분석해 얻은 값 */
-var FRAME_WIN={
-  bronze:  {x0:0.0938,y0:0.1309,x1:0.9053,y1:0.7422},
-  silver:  {x0:0.1025,y0:0.1367,x1:0.9092,y1:0.7155},
-  gold:    {x0:0.0771,y0:0.1211,x1:0.9219,y1:0.7389},
-  platinum:{x0:0.0801,y0:0.1263,x1:0.9199,y1:0.7194},
-  diamond: {x0:0.0918,y0:0.1348,x1:0.9053,y1:0.7161}
+/* 풀아트 카드 레이아웃 — 750x1020 기준 픽셀 좌표(디자인팩 README 그대로). k=W/750로 스케일.
+   레어도 5종 모두 프레임 위치·두께가 같으므로(디자인팩 명시) 좌표는 공용이다. */
+var CARD_LAYOUT={
+  base:750, radius:24,
+  title:{cx:375,topY:59,size:42,maxW:520},
+  icon:{x:637,y:52,size:74},
+  meta:{cx:375,topY:722,size:25,maxW:640},
+  skill:{cx:375,topY:810,size:36,maxW:620},
+  desc:{cx:375,topY:863,size:23,maxW:620,lineH:1.25},
+  quote:{cx:375,topY:905,size:20,maxW:620},
+  foot:{cx:375,topY:962,size:16}
 };
-/* 프레임 5종에 원래 그려진 칸 좌표(800x1200 기준 px) — name/panel:[x0,y0,x1,y1], socket:[cx,cy,r] — 소켓 링 중심(원 피팅)과 안쪽 원판 반지름 */
-/* 속성 아이콘 PNG(300px) 안의 색 원판 중심·반지름 — 아이콘 자체의 은색 테두리는 잘라내고 원판만 소켓에 맞춘다 */
-var ATTR_DISC={fire:[149.5,149.5,117.5],water:[149,149.5,120],wind:[149.5,149,121.5],earth:[149,146.5,118.2],light:[148.5,148,124.7],shadow:[149.5,149,121.5]};
-var FRAME_SLOTS={
-  bronze:  {name:[70,75,655,140], socket:[697.3,106.8,32.1],  panel:[75,908,735,1070]},
-  silver:  {name:[68,83,655,150], socket:[696.6,119,29.5],  panel:[65,870,740,1100]},
-  gold:    {name:[60,50,655,130], socket:[704.4,91.5,38.5],  panel:[55,900,750,1135]},
-  platinum:{name:[60,72,640,150], socket:[704.3,118.6,39],  panel:[60,870,750,1110]},
-  diamond: {name:[65,75,660,145], socket:[703.4,114.6,30.4],  panel:[65,880,740,1110]}
-};
-var CARD_ASSET_BASE='assets/photo-card/', cardAssets=null;
+var CARD_ASSET_BASE='assets/photo-card/layers/', cardAssets=null;
 function loadCardAssets(cb){
   if(cardAssets){cb(cardAssets);return}
   var files={
-    frame_bronze:'frames/bronze.png',frame_silver:'frames/silver.png',frame_gold:'frames/gold.png',
-    frame_platinum:'frames/platinum.png',frame_diamond:'frames/diamond.png',
-    attr_fire:'attributes/fire.png',attr_water:'attributes/water.png',attr_wind:'attributes/wind.png',
-    attr_earth:'attributes/earth.png',attr_light:'attributes/light.png',attr_shadow:'attributes/shadow.png'
+    title_scrim:'title_scrim.png',meta_strip:'meta_strip.png',caption_fade:'caption_fade.png',
+    foil_bronze:'foil_bronze.png',foil_silver:'foil_silver.png',foil_gold:'foil_gold.png',
+    foil_platinum:'foil_platinum.png',foil_diamond:'foil_diamond.png',
+    frame_bronze:'frame_bronze.png',frame_silver:'frame_silver.png',frame_gold:'frame_gold.png',
+    frame_platinum:'frame_platinum.png',frame_diamond:'frame_diamond.png',
+    attr_fire:'icon_fire.png',attr_water:'icon_water.png',attr_wind:'icon_wind.png',
+    attr_earth:'icon_earth.png',attr_light:'icon_light.png',attr_shadow:'icon_dark.png'
   };
   var keys=Object.keys(files), out={}, left=keys.length;
   keys.forEach(function(k){
@@ -1811,102 +1858,100 @@ function fitFont(ctx2,text,weight,family,maxSize,minSize,maxWidth){
   }
   return size;
 }
+/* 텍스트를 살짝 두껍게 — JejuGothic이 굵기 1종뿐이라 외곽선 대신 미세 오프셋 다중칠로 무게감만 준다(스펙: 외곽선 금지) */
+function fillWeighted(ctx2,text,x,y,off){
+  if(off){[[-off,0],[off,0],[0,0]].forEach(function(o){ctx2.fillText(text,x+o[0],y+o[1])})}
+  else ctx2.fillText(text,x,y);
+}
 function drawCard(ctx2,W,H,data,imgs,pos,t){
-  var assets=cardAssets, frameImg=assets['frame_'+data.rarity], win=FRAME_WIN[data.rarity];
-  var wx0=win.x0*W, wy0=win.y0*H, wx1=win.x1*W, wy1=win.y1*H, winW=wx1-wx0, winH=wy1-wy0;
+  var assets=cardAssets, L=CARD_LAYOUT, k=W/L.base, FF='JejuGothic, SCDream, sans-serif', INK='#F4F7F5';
   ctx2.clearRect(0,0,W,H);
   ctx2.fillStyle='#0b0f1a';ctx2.fillRect(0,0,W,H);
-  /* 사진 — 프레임보다 먼저 그려서 창 뒤에 놓는다 */
-  ctx2.save();roundRectPath(ctx2,wx0,wy0,winW,winH,W*0.02);ctx2.clip();
-  var img=imgs[0];
-  if(t!=null)ctx2.globalAlpha=Math.min(1,Math.max(0,t/250)); /* 사진 등장 */
-  if(img){var sc=Math.max(winW/img.width,winH/img.height), dw=img.width*sc, dh=img.height*sc;
-    ctx2.drawImage(img,wx0+(winW-dw)/2,wy0-(dh-winH)*(pos[0]||0),dw,dh);}
-  ctx2.restore();ctx2.globalAlpha=1;
-  /* 명세서 v1.0의 5구역: ① 카드명+속성(프레임 위 이름칸·소켓) ② 사진 ③ META BAR(사진창 맨 아래 얇은 글래스 띠)
-     ④ 기술 칸(프레임 아래 능력칸: 기술명 → 설명 → 대사) ⑤ FOOTER(능력칸 맨 아래). 모든 등급 같은 배치.
-     t(ms)를 주면 등장 순서대로 하나씩 나타난다(없으면 완성본). 좌표는 800x1200 원본 기준 실측값. */
-  var sl=FRAME_SLOTS[data.rarity], k=W/800, FF='JejuGothic, SCDream, sans-serif', INK='#2B2314';
   var T=(t==null)?Infinity:t;
   function A(start,dur){var v=(T-start)/(dur||180);return v<=0?0:v>=1?1:1-Math.pow(1-v,3)}
-  ctx2.textAlign='center';ctx2.textBaseline='middle';ctx2.lineJoin='round';
-  /* ③ META BAR — 사진과 기술 칸을 나누는 얇은 띠: Lv · 캐릭터 · 속성 */
-  var mbH=40*k, mbY=wy1-mbH, a3=A(750);
-  if(a3>0){
-    ctx2.save();ctx2.globalAlpha=a3;roundRectPath(ctx2,wx0,wy0,winW,winH,W*0.02);ctx2.clip();
-    var mg=ctx2.createLinearGradient(0,mbY,0,wy1);mg.addColorStop(0,'rgba(8,12,22,.5)');mg.addColorStop(1,'rgba(8,12,22,.72)');
-    ctx2.fillStyle=mg;ctx2.fillRect(wx0,mbY,winW,mbH);
-    ctx2.fillStyle='rgba(255,255,255,.28)';ctx2.fillRect(wx0,mbY,winW,Math.max(1,k));
-    var meta='Lv.'+data.level+'  ·  '+(data.metaName||data.roleLabel)+'  ·  '+data.attributeLabel+' 속성';
-    ctx2.fillStyle='rgba(255,255,255,.94)';
-    fitFont(ctx2,meta,'400',FF,21*k,16*k,winW*0.9);
-    ctx2.fillText(meta,wx0+winW/2,mbY+mbH*0.54);
-    ctx2.restore();
-  }
-  /* 프레임 — 사진·META BAR 위에 덮는다(원본 비율 2:3 = 캔버스 비율) */
-  if(frameImg)ctx2.drawImage(frameImg,0,0,W,H);
-  /* ① 카드명 — 한 줄. 앞말이 먼저, 뒷말이 0.15초 늦게 붙는다. 공백 빼고 11자 이상이면 90% 크기 */
-  var nb=sl.name, nx0=nb[0]*k, ny0=nb[1]*k, nw=(nb[2]-nb[0])*k, nh=(nb[3]-nb[1])*k, ncy=ny0+nh*0.54;
+  var radius=L.radius*k;
+  /* 1) 사진 — 카드 전체를 object-fit:cover로 채운다(약 85%+가 그대로 사진). 등장 시 페이드인 */
+  var aBase=(t!=null)?Math.min(1,Math.max(0,t/250)):1;
+  ctx2.save();roundRectPath(ctx2,0,0,W,H,radius);ctx2.clip();
+  ctx2.globalAlpha=aBase;
+  var img=imgs[0];
+  if(img){var sc=Math.max(W/img.width,H/img.height), dw=img.width*sc, dh=img.height*sc;
+    ctx2.drawImage(img,(W-dw)/2,-(dh-H)*(pos[0]||0),dw,dh);}
+  ctx2.restore();
+  /* 2~6) 스크림·미터스트립·캡션 그라데이션·레어도 광택(foil)·얇은 테두리(frame) — 디자인팩이 정한 레이어 순서 그대로,
+     텍스트 뒤 대비판·구분선·레어도별 금속결/냉광/온광/홀로그램이 이미 이 PNG들에 들어 있어 별도로 그리지 않는다 */
+  ctx2.save();ctx2.globalAlpha=aBase;
+  ['title_scrim','meta_strip','caption_fade'].forEach(function(k2){if(assets[k2])ctx2.drawImage(assets[k2],0,0,W,H)});
+  var foil=assets['foil_'+data.rarity];if(foil)ctx2.drawImage(foil,0,0,W,H);
+  var frame=assets['frame_'+data.rarity];if(frame)ctx2.drawImage(frame,0,0,W,H);
+  ctx2.restore();
+  /* 7) 텍스트 · 속성 아이콘 — 디자인팩 좌표(750×1020 기준, 상단-y) 그대로 스케일 */
+  ctx2.textAlign='center';ctx2.textBaseline='top';ctx2.fillStyle=INK;
+  /* 카드명: 앞말 먼저, 뒷말 0.15초 뒤 합류. 공백 제외 11자 이상이면 축소 */
   var tp=data.titleParts||[data.displayName,''], title=tp[1]?tp[0]+' '+tp[1]:tp[0];
-  var tBase=nh*0.56*(title.replace(/\s/g,'').length>=11?0.9:1);
-  fitFont(ctx2,title,'400',FF,tBase,nh*0.36,nw*0.86);
-  var fullW=ctx2.measureText(title).width, tx=nx0+nw/2-fullW/2;
-  ctx2.textAlign='left';ctx2.fillStyle=INK;ctx2.strokeStyle=INK;ctx2.lineWidth=Math.max(1,nh*0.016);
-  [[tp[0],tx,A(300,150)],[tp[1],tx+ctx2.measureText(tp[0]+' ').width,A(450,150)]].forEach(function(q){
+  var tBase=L.title.size*k*(title.replace(/\s/g,'').length>=11?0.86:1);
+  var tSize=fitFont(ctx2,title,'700',FF,tBase,L.title.size*k*0.55,L.title.maxW*k);
+  ctx2.font='700 '+Math.round(tSize)+'px '+FF;
+  var fullW=ctx2.measureText(title).width, cxT=L.title.cx*k, cyT=L.title.topY*k;
+  var w0=ctx2.measureText(tp[0]+(tp[1]?' ':'')).width, txL=cxT-fullW/2;
+  ctx2.textAlign='left';
+  [[tp[0],txL,A(300,150)],[tp[1],txL+w0,A(450,150)]].forEach(function(q){
     if(!q[0]||q[2]<=0)return;
-    ctx2.save();ctx2.globalAlpha=q[2];ctx2.translate(0,(1-q[2])*nh*0.12);
-    ctx2.strokeText(q[0],q[1],ncy);ctx2.fillText(q[0],q[1],ncy);ctx2.restore();
+    ctx2.save();ctx2.globalAlpha=q[2];ctx2.translate(0,(1-q[2])*tSize*0.3);
+    fillWeighted(ctx2,q[0],q[1],cyT,tSize*0.012);ctx2.restore();
   });
   ctx2.textAlign='center';
-  /* 속성 아이콘 — 소켓 안쪽 원판에 딱 맞춘다(아이콘 PNG는 원이 캔버스의 약 90%). 글자 없이 아이콘만 */
-  var attrImg=assets['attr_'+data.attribute], sc2=sl.socket, a1=A(600,220);
-  if(attrImg&&a1>0){
-    var cx=sc2[0]*k, cy=sc2[1]*k, cr=sc2[2]*k*1.03, dk=ATTR_DISC[data.attribute]||[150,150,120];
-    var sc3=cr/dk[2]*(0.85+0.15*a1); /* 아이콘 원판 → 소켓 원판 배율(등장 시 살짝 커지며 자리잡음) */
-    ctx2.save();ctx2.globalAlpha=a1;ctx2.beginPath();ctx2.arc(cx,cy,cr,0,Math.PI*2);ctx2.clip();
-    ctx2.drawImage(attrImg,cx-dk[0]*sc3,cy-dk[1]*sc3,300*sc3,300*sc3); /* ATTR_DISC는 300px 원본 기준 */ctx2.restore();
+  /* 속성 아이콘 */
+  var attrImg=assets['attr_'+data.attribute], aIcon=A(600,220);
+  if(attrImg&&aIcon>0){
+    ctx2.save();ctx2.globalAlpha=aIcon;
+    var isz=L.icon.size*k*(0.85+0.15*aIcon);
+    ctx2.drawImage(attrImg,L.icon.x*k+(L.icon.size*k-isz)/2,L.icon.y*k+(L.icon.size*k-isz)/2,isz,isz);
+    ctx2.restore();
   }
-  /* ④ 기술 칸 + ⑤ FOOTER — 기술명(크게) → 구분선 → 설명(최대 2줄) → 대사 → 등급·행사명(가장 작게) */
-  var pb=sl.panel, px0=pb[0]*k, py0=pb[1]*k, pw=(pb[2]-pb[0])*k, ph=(pb[3]-pb[1])*k, pcx=px0+pw/2, tw=pw*0.84;
-  function layout(f){
-    var o={nm:36*k*f, desc:24*k*f, qt:20*k*f, foot:15*k*f, gap:9*k*f};
-    ctx2.font='400 '+Math.round(o.desc)+'px '+FF;
-    /* 단어 단위 줄바꿈(끝 글자 하나만 떨어지는 것 방지), 최대 2줄 */
-    var words=data.abilityText.split(' '), cur='';o.lines=[];
-    words.forEach(function(w){var s2=cur?cur+' '+w:w;if(cur&&ctx2.measureText(s2).width>tw){o.lines.push(cur);cur=w}else cur=s2});
-    if(cur)o.lines.push(cur);o.lines=o.lines.slice(0,2);
-    o.total=o.nm+o.gap*2+o.lines.length*o.desc*1.3+(data.quote?o.gap*0.7+o.qt:0)+o.gap*1.1+o.foot;
-    return o;
+  /* 메타 라인: Lv · 캐릭터 · 속성 */
+  var aMeta=A(750,180);
+  if(aMeta>0){
+    var meta='Lv.'+data.level+'  ·  '+(data.metaName||data.roleLabel)+'  ·  '+data.attributeLabel+' 속성';
+    var msize=fitFont(ctx2,meta,'400',FF,L.meta.size*k,L.meta.size*k*0.64,L.meta.maxW*k);
+    ctx2.save();ctx2.globalAlpha=aMeta;ctx2.font='400 '+Math.round(msize)+'px '+FF;
+    ctx2.fillText(meta,L.meta.cx*k,L.meta.topY*k);ctx2.restore();
   }
-  var L=layout(1);
-  L=layout(Math.max(0.78,Math.min(1.3,ph*0.84/L.total)));
-  var y=py0+(ph-L.total)/2;
-  var a4=A(900,200);
-  if(a4>0){ /* 기술명: 104% → 100% */
-    var sk=1+0.04*(1-a4);
-    ctx2.save();ctx2.globalAlpha=a4;ctx2.translate(pcx,y+L.nm/2);ctx2.scale(sk,sk);
-    ctx2.fillStyle=INK;ctx2.strokeStyle=INK;ctx2.lineWidth=Math.max(1,L.nm*0.03);
-    fitFont(ctx2,data.abilityName,'400',FF,L.nm*(data.abilityName.replace(/\s/g,'').length>=9?0.9:1),L.nm*0.7,tw);
-    ctx2.strokeText(data.abilityName,0,0);ctx2.fillText(data.abilityName,0,0);ctx2.restore();
+  /* 기술명 */
+  var aSkill=A(900,200);
+  if(aSkill>0){
+    var sk=1+0.04*(1-aSkill);
+    var ssize=fitFont(ctx2,data.abilityName,'700',FF,L.skill.size*k*(data.abilityName.replace(/\s/g,'').length>=9?0.9:1),L.skill.size*k*0.6,L.skill.maxW*k);
+    ctx2.save();ctx2.globalAlpha=aSkill;ctx2.font='700 '+Math.round(ssize)+'px '+FF;
+    ctx2.translate(L.skill.cx*k,L.skill.topY*k+ssize*0.5);ctx2.scale(sk,sk);
+    fillWeighted(ctx2,data.abilityName,0,-ssize*0.5,ssize*0.012);ctx2.restore();
   }
-  y+=L.nm+L.gap;
-  var lw=tw*0.5, g=ctx2.createLinearGradient(pcx-lw/2,0,pcx+lw/2,0);
-  g.addColorStop(0,'rgba(43,35,20,0)');g.addColorStop(0.5,'rgba(43,35,20,.3)');g.addColorStop(1,'rgba(43,35,20,0)');
-  ctx2.save();ctx2.globalAlpha=a4;ctx2.fillStyle=g;ctx2.fillRect(pcx-lw/2,y,lw,Math.max(1,1.2*k));ctx2.restore();
-  y+=L.gap;
-  ctx2.save();ctx2.globalAlpha=A(1080,200);ctx2.fillStyle=INK;ctx2.font='400 '+Math.round(L.desc)+'px '+FF;
-  L.lines.forEach(function(line){ctx2.fillText(line,pcx,y+L.desc*0.65);y+=L.desc*1.3});
-  ctx2.restore();
-  if(data.quote){
-    y+=L.gap*0.7;
-    ctx2.save();ctx2.globalAlpha=A(1250,200)*0.82;ctx2.fillStyle=INK;
-    fitFont(ctx2,'“'+data.quote+'”','400',FF,L.qt,L.qt*0.8,tw);
-    ctx2.fillText('“'+data.quote+'”',pcx,y+L.qt/2);ctx2.restore();y+=L.qt;
+  /* 능력 설명 — 최대 2줄. 2줄이 되면 대사·풋터를 그만큼 아래로 민다(1줄일 때는 스펙 좌표와 완전히 일치) */
+  ctx2.font='400 '+Math.round(L.desc.size*k)+'px '+FF;
+  var words=data.abilityText.split(' '), cur='', lines=[];
+  words.forEach(function(w){var s2=cur?cur+' '+w:w;if(cur&&ctx2.measureText(s2).width>L.desc.maxW*k){lines.push(cur);cur=w}else cur=s2});
+  if(cur)lines.push(cur);lines=lines.slice(0,2);
+  var descLineH=L.desc.size*k*L.desc.lineH, extraShift=(lines.length-1)*descLineH;
+  var aDesc=A(1080,200);
+  if(aDesc>0){
+    ctx2.save();ctx2.globalAlpha=aDesc;
+    lines.forEach(function(line,i){ctx2.fillText(line,L.desc.cx*k,L.desc.topY*k+i*descLineH)});
+    ctx2.restore();
   }
-  y+=L.gap*1.1;
-  ctx2.save();ctx2.globalAlpha=A(1400,220)*0.55;ctx2.fillStyle=INK;ctx2.font='400 '+Math.round(L.foot)+'px '+FF;
-  ctx2.fillText((data.rarityEn||data.rarityLabel)+'  ·  탐라문화제 2026',pcx,y+L.foot/2);ctx2.restore();
-  ctx2.textBaseline='alphabetic';
+  /* 대사 */
+  var aQuote=A(1250,200);
+  if(data.quote&&aQuote>0){
+    var qsize=fitFont(ctx2,'“'+data.quote+'”','400',FF,L.quote.size*k,L.quote.size*k*0.7,L.quote.maxW*k);
+    ctx2.save();ctx2.globalAlpha=aQuote*0.88;ctx2.font='400 '+Math.round(qsize)+'px '+FF;
+    ctx2.fillText('“'+data.quote+'”',L.quote.cx*k,L.quote.topY*k+extraShift);ctx2.restore();
+  }
+  /* 등급 · 행사명 */
+  var aFoot=A(1400,220);
+  if(aFoot>0){
+    ctx2.save();ctx2.globalAlpha=aFoot*0.7;ctx2.font='400 '+Math.round(L.foot.size*k)+'px '+FF;
+    ctx2.fillText((data.rarityEn||data.rarityLabel)+'  ·  탐라문화제 2026',L.foot.cx*k,L.foot.topY*k+extraShift);
+    ctx2.restore();
+  }
 }
 var CARD_GEN_STAGES=['사진을 예쁘게 배치하는 중…','카드의 속성을 찾는 중…','이름과 능력을 새기는 중…','마지막 반짝임을 더하는 중…'];
 var cardGenToken=0;
@@ -1957,7 +2002,7 @@ $('#btnMake').onclick=function(){
   var data=rollCard($('#inCardNick').value, S.cardCount%CARD_PITY===0?'diamond':null);
   updateCardPity();
   loadCardAssets(function(assets){
-    var need2=['frame_'+data.rarity,'attr_'+data.attribute];
+    var need2=['frame_'+data.rarity,'foil_'+data.rarity,'attr_'+data.attribute,'title_scrim','meta_strip','caption_fade'];
     if(need2.some(function(k){return !assets[k]})){
       btn.disabled=false;toast('카드 에셋을 불러오지 못했어요. 다시 시도해 주세요.');return;
     }
