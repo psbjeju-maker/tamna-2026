@@ -60,7 +60,19 @@ function landSound(material,strong){beep((MATERIAL_TONE[material]||300)*(strong?
 function windSound(kind){kind==='help'?beep(660,0.5,'sine',0.14):beep(200,0.3,'sawtooth',0.12)}
 function collapseSound(){beep(120,0.5,'sawtooth',0.22);setTimeout(function(){beep(90,0.4,'sawtooth',0.18)},90)}
 function clearSound(){[520,660,780,980].forEach(function(f,i){setTimeout(function(){beep(f,0.28,'sine',0.16)},i*90)})}
-$('#sound').onclick=function(){soundOn=!soundOn;$('#sound').classList.toggle('active',soundOn);$('#sound').textContent=soundOn?'♪':'✕'};
+var bgmEl=null;
+function startBgm(){
+ if(bgmEl)return;
+ try{
+  bgmEl=new Audio('assets/wind_bgm.mp3');
+  bgmEl.loop=true;bgmEl.volume=0.32;bgmEl.muted=!soundOn;
+  bgmEl.play()['catch'](function(){});
+ }catch(e){}
+}
+$('#sound').onclick=function(){
+ soundOn=!soundOn;$('#sound').classList.toggle('active',soundOn);$('#sound').textContent=soundOn?'♪':'✕';
+ if(bgmEl)bgmEl.muted=!soundOn;
+};
 
 /* ---------------- 이미지 로딩 ---------------- */
 var imgCache={};
@@ -143,7 +155,7 @@ function renderSelect(){
   '<div class="itemgrid itemgrid--preview">'+preview+'</div>'+
   '<button class="primary" id="btnStart">내 탑 쌓기 시작</button>';
  var btn=$('#btnStart');
- if(btn)btn.onclick=function(){startRound()};
+ if(btn)btn.onclick=function(){startBgm();startRound()};
 }
 
 /* ---------------- 라운드 진행 ---------------- */
