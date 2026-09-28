@@ -51,7 +51,7 @@ var ITEMS_BY_ID={};ITEMS.forEach(function(it){ITEMS_BY_ID[it.id]=it});
 
 /* 물리에 영향 주는 '바람 불기'는 없앰 — 영등할망이 잠깐 나와 화면을 가리기만 하는 방해 연출로 변경(사장님 지시).
    물건의 낙하·쌓기는 이 이벤트 동안에도 평소와 똑같이 진행된다. */
-var WIND_TIMING={enter:0.25,cover:1.1,exit:0.3};
+var WIND_TIMING={enter:0.1,cover:1.1,exit:0.3}; // enter를 짧게 해서 "확" 튀어나오는 느낌
 var WIND_TOTAL=WIND_TIMING.enter+WIND_TIMING.cover+WIND_TIMING.exit;
 var WIND_EVENTS_BY_SLOT={
  4:{slot:4,line:'짠! 잠깐 안 보이게 할게!'},
@@ -173,10 +173,9 @@ function shuffledTen(){
 }
 function renderSelect(){
  overlay.classList.remove('hidden');
- S.picked=shuffledTen();
- var preview=S.picked.map(function(id){var it=ITEMS_BY_ID[id];return '<img src="'+it.image+'" alt="'+it.name+'" title="'+it.name+'">'}).join('');
+ S.picked=shuffledTen(); // 무엇이 나올지는 시작 전엔 안 보여준다 — 미리보기 없이 깜짝 등장
  panel.innerHTML='<h2>오늘은 무엇을 쌓을까?</h2><p>"어디까지 쌓나 볼까?" 열 가지 물건이 무작위로 정해져요. 크레인이 순서대로 가져다줘요.</p>'+
-  '<div class="itemgrid itemgrid--preview">'+preview+'</div>'+
+  '<img class="startPortrait" src="assets/characters/yeongdeung_smile.png" alt="영등할망">'+
   '<button class="primary" id="btnStart">내 탑 쌓기 시작</button>';
  var btn=$('#btnStart');
  if(btn)btn.onclick=function(){startBgm();startRound()};
@@ -447,15 +446,20 @@ function drawPeekabooCover(){
  var t=S.windTimer,ev=S.windEvent;
  var enterEnd=WIND_TIMING.enter,coverEnd=enterEnd+WIND_TIMING.cover;
  var alpha=1;
- if(t<enterEnd)alpha=t/enterEnd;
+ if(t<enterEnd)alpha=Math.min(1,t/enterEnd);
  else if(t>coverEnd)alpha=Math.max(0,1-(t-coverEnd)/WIND_TIMING.exit);
  if(alpha<=0)return;
- var cx=WORLD.width/2,cy=WORLD.height/2;
- ctx.save();ctx.globalAlpha=alpha*0.94;ctx.fillStyle='#173f45';ctx.fillRect(0,0,WORLD.width,WORLD.height);ctx.restore();
+ // 물건이 '떨어지는 쪽'(탑 꼭대기/착지 지점)을 가린다 — 크레인이 있는 위쪽은 그대로 보이게 둔다.
+ var landingWorldY=S.bodies.length?towerTopY():WORLD.platformTop;
+ var landingScreenY=landingWorldY-S.cameraY;
+ landingScreenY=Math.max(WORLD.height*0.42,Math.min(WORLD.height*0.86,landingScreenY));
+ var bandTop=Math.max(WORLD.height*0.22,landingScreenY-160);
+ ctx.save();ctx.globalAlpha=alpha*0.94;ctx.fillStyle='#173f45';ctx.fillRect(0,bandTop,WORLD.width,WORLD.height-bandTop);ctx.restore();
  var img=CHAR_SMILE;
  if(img.complete&&img.naturalWidth){
-  var scale=(WORLD.width*0.88)/img.naturalWidth;
+  var scale=(WORLD.width*0.82)/img.naturalWidth;
   var w=img.naturalWidth*scale,h=img.naturalHeight*scale;
+  var cx=WORLD.width/2,cy=Math.min(landingScreenY+30,WORLD.height-h*0.3);
   ctx.save();ctx.globalAlpha=alpha;
   ctx.drawImage(img,cx-w/2,cy-h/2,w,h);
   ctx.restore();
@@ -466,7 +470,7 @@ function drawPeekabooCover(){
   windBubble.textContent=ev.line;
   windBubble.classList.add('on');
   windBubble.style.left=Math.max(6,stage.clientWidth/2-windBubble.offsetWidth/2)+'px';
-  windBubble.style.top=(stage.clientHeight*0.16)+'px';
+  windBubble.style.top=Math.max(6,(bandTop/WORLD.height)*stage.clientHeight-6)+'px';
  } else windBubble.classList.remove('on');
 }
 
