@@ -49,12 +49,14 @@ var ITEMS=[
 ];
 var ITEMS_BY_ID={};ITEMS.forEach(function(it){ITEMS_BY_ID[it.id]=it});
 
-var WIND_TIMING={enter:0.25,warning:1,anticipation:0.15,active:1.4,exit:0.4};
-var WIND_TOTAL=WIND_TIMING.enter+WIND_TIMING.warning+WIND_TIMING.anticipation+WIND_TIMING.active+WIND_TIMING.exit;
+/* 물리에 영향 주는 '바람 불기'는 없앰 — 영등할망이 잠깐 나와 화면을 가리기만 하는 방해 연출로 변경(사장님 지시).
+   물건의 낙하·쌓기는 이 이벤트 동안에도 평소와 똑같이 진행된다. */
+var WIND_TIMING={enter:0.25,cover:1.1,exit:0.3};
+var WIND_TOTAL=WIND_TIMING.enter+WIND_TIMING.cover+WIND_TIMING.exit;
 var WIND_EVENTS_BY_SLOT={
- 4:{slot:4,kind:'gust',direction:1,acceleration:24,line:'후후, 이번엔 이쪽으로 불어 볼까?'},
- 7:{slot:7,kind:'help',gravityScale:0.75,line:'살살… 이번엔 내가 받쳐 주마.'},
- 9:{slot:9,kind:'gust',direction:-1,acceleration:40,line:'이번엔 반대쪽이란다!'}
+ 4:{slot:4,line:'짠! 잠깐 안 보이게 할게!'},
+ 7:{slot:7,line:'후훗, 눈 감고 있어 볼까?'},
+ 9:{slot:9,line:'또 나왔지롱!'}
 };
 
 var $=function(s){return document.querySelector(s)};
@@ -78,7 +80,7 @@ function beep(freq,dur,type,vol){
 }
 var MATERIAL_TONE={wood:320,stone:180,metal:520,ceramic:420,soft:260};
 function landSound(material,strong){beep((MATERIAL_TONE[material]||300)*(strong?0.85:1),strong?0.22:0.09,'triangle',strong?0.22:0.11)}
-function windSound(kind){kind==='help'?beep(660,0.5,'sine',0.14):beep(200,0.3,'sawtooth',0.12)}
+function windSound(){beep(520,0.12,'sine',0.15);setTimeout(function(){beep(660,0.14,'sine',0.13)},110)}
 function collapseSound(){beep(120,0.5,'sawtooth',0.22);setTimeout(function(){beep(90,0.4,'sawtooth',0.18)},90)}
 function clearSound(){[520,660,780,980].forEach(function(f,i){setTimeout(function(){beep(f,0.28,'sine',0.16)},i*90)})}
 var bgmEl=null;
@@ -103,9 +105,8 @@ function loadImg(url){
 }
 ITEMS.forEach(function(it){loadImg(it.image)});
 var CHAR_SMILE=loadImg('assets/characters/yeongdeung_smile.png');
-var CHAR_BLOW=loadImg('assets/characters/yeongdeung_blow.png');
 var BG=loadImg('assets/backgrounds/jeju_coast.png');
-var UI={};['crane_rail','crane_trolley','crane_claw_open','crane_claw_closed','platform','wind_gust','wind_help','impact_ring','sparkle'].forEach(function(n){UI[n]=loadImg('assets/ui/'+n+'.svg')});
+var UI={};['crane_rail','crane_trolley','crane_claw_open','crane_claw_closed','platform','impact_ring','sparkle'].forEach(function(n){UI[n]=loadImg('assets/ui/'+n+'.svg')});
 
 /* ---------------- 상태 ---------------- */
 var S={
@@ -115,7 +116,7 @@ var S={
  released:0, // count of items dropped so far
  score:0, itemScore:0, heightPx:0,
  craneX:CRANE.minX, craneDir:1, heldY:0, cameraTargetY:0, cameraY:0,
- windEvent:null, windTimer:0, windSide:1,
+ windEvent:null, windTimer:0,
  settlingElapsed:0, stableTimer:0, shownStuckToast:false,
  bodies:[], currentBody:null,
  attemptId:null, seed:null, startedAt:0, collapseTimer:0,
@@ -248,44 +249,16 @@ function applyCustomForces(dt){
   if(S.craneX>CRANE.maxX){S.craneX=CRANE.maxX;S.craneDir=-1}
   if(S.craneX<CRANE.minX){S.craneX=CRANE.minX;S.craneDir=1}
  }
- // 바람 타임라인
+ // 영등할망 화면가림 타이머 — 물리에는 관여하지 않음(순수 시각 연출)
  if(S.windEvent){
   S.windTimer+=dt;
-  var t=S.windTimer;
-  var activeStart=WIND_TIMING.enter+WIND_TIMING.warning+WIND_TIMING.anticipation;
-  var activeEnd=activeStart+WIND_TIMING.active;
-  if(t>=activeStart&&t<activeEnd){
-   applyWindForce(dt,S.windEvent);
-  }
-  if(t>=WIND_TOTAL){S.windEvent=null}
- }
-}
-/* 바람/도움 힘은 전부 Matter.Body.applyForce로 적용한다(엔진 내장 중력과 동일한 force/mass*dt^2 적분 경로를
-   타므로 안전함). setVelocity를 매 틱 반복 호출하면 Matter의 Verlet 적분(baseDelta 기준 스케일)과
-   충돌해 값이 폭주한다 — 실기기 테스트에서 실제로 발견한 버그, 재도입 금지. */
-var WIND_FORCE_PER_ACCEL=GRAVITY_SCALE/1380; // acceleration(px/s^2 근사치) → gravity.scale과 동일 축척의 힘 계수
-function applyWindForce(dt,ev){
- if(ev.kind==='gust'){
-  windSoundOnce(ev);
-  S.bodies.forEach(function(b){
-   if(b.isStatic)return;
-   var wr=(b.plugin&&b.plugin.item&&b.plugin.item.windResponse)||1;
-   var f=b.mass*ev.acceleration*wr*ev.direction*WIND_FORCE_PER_ACCEL;
-   Matter.Body.applyForce(b,b.position,{x:f,y:0});
-  });
- } else if(ev.kind==='help'){
-  windSoundOnce(ev);
-  var target=S.currentBody;
-  if(target && S.bodies.indexOf(target)>=0){
-   var relief=(1-ev.gravityScale)*target.mass*engine.gravity.y*engine.gravity.scale;
-   Matter.Body.applyForce(target,target.position,{x:0,y:-relief});
-   target.anglePrev=target.angle-(target.angle-target.anglePrev)*0.94;
-  }
+  if(S.windTimer>=WIND_TOTAL){S.windEvent=null}
+  else if(S.windTimer>=WIND_TIMING.enter)windSoundOnce(S.windEvent);
  }
 }
 var _windSoundFired=null;
 function windSoundOnce(ev){
- if(_windSoundFired===ev)return;_windSoundFired=ev;windSound(ev.kind);
+ if(_windSoundFired===ev)return;_windSoundFired=ev;windSound();
  setTimeout(function(){if(_windSoundFired===ev)_windSoundFired=null},1500);
 }
 
@@ -468,55 +441,32 @@ function drawBodies(){
   drawSourceItem(img,pl.item,px,py,b.angle);
  });
 }
-function faceAnchorDraw(img,anchorPx,previewScale,cx,cy,flip){
- if(!img.complete||!img.naturalWidth)return;
- var scale=previewScale*1.55;
- var w=img.naturalWidth*scale,h=img.naturalHeight*scale;
- var ax=anchorPx[0]*scale,ay=anchorPx[1]*scale;
- ctx.save();
- ctx.translate(cx,cy);
- if(flip)ctx.scale(-1,1);
- ctx.drawImage(img,-ax,-ay,w,h);
- ctx.restore();
-}
-function drawWindCharacter(){
+/* 화면 좌표계(카메라 이동 영향 없음)에 그린다 — 탑이 아무리 높아져도 항상 화면 전체를 가려야 하므로. */
+function drawPeekabooCover(){
  if(!S.windEvent)return;
  var t=S.windTimer,ev=S.windEvent;
- var enterEnd=WIND_TIMING.enter,warnEnd=enterEnd+WIND_TIMING.warning,antEnd=warnEnd+WIND_TIMING.anticipation,activeEnd=antEnd+WIND_TIMING.active;
- var visY=S.heldY-40;
- var dir=ev.direction||1;
- var fromRight=dir>0; // 방향으로 부는 바람: 캐릭터는 반대편(부는 방향의 시작점)에 위치
- var sideX=fromRight?40:WORLD.width-40;
- var enterProgress=Math.min(1,t/Math.max(0.001,enterEnd));
+ var enterEnd=WIND_TIMING.enter,coverEnd=enterEnd+WIND_TIMING.cover;
  var alpha=1;
- if(t<enterEnd)alpha=enterProgress;
- else if(t>activeEnd)alpha=Math.max(0,1-(t-activeEnd)/WIND_TIMING.exit);
+ if(t<enterEnd)alpha=t/enterEnd;
+ else if(t>coverEnd)alpha=Math.max(0,1-(t-coverEnd)/WIND_TIMING.exit);
  if(alpha<=0)return;
- var blowing=t>=warnEnd;
- var img=blowing?CHAR_BLOW:CHAR_SMILE;
- var anchor=blowing?[607,435]:[495,525];
- ctx.save();ctx.globalAlpha=alpha;
- faceAnchorDraw(img,anchor,0.135,sideX,visY,!fromRight);
- ctx.restore();
- // 바람선 (active 구간)
- if(t>=antEnd&&t<activeEnd){
-  var wimg=ev.kind==='help'?UI.wind_help:UI.wind_gust;
-  if(wimg.complete&&wimg.naturalWidth){
-   ctx.save();ctx.globalAlpha=0.85;
-   var wx=fromRight?sideX+20:sideX-340;
-   ctx.drawImage(wimg,wx,visY-40,320,120);
-   ctx.restore();
-  }
+ var cx=WORLD.width/2,cy=WORLD.height/2;
+ ctx.save();ctx.globalAlpha=alpha*0.94;ctx.fillStyle='#173f45';ctx.fillRect(0,0,WORLD.width,WORLD.height);ctx.restore();
+ var img=CHAR_SMILE;
+ if(img.complete&&img.naturalWidth){
+  var scale=(WORLD.width*0.88)/img.naturalWidth;
+  var w=img.naturalWidth*scale,h=img.naturalHeight*scale;
+  ctx.save();ctx.globalAlpha=alpha;
+  ctx.drawImage(img,cx-w/2,cy-h/2,w,h);
+  ctx.restore();
  }
  // 말풍선(DOM)
- var showBubble=t<activeEnd;
+ var showBubble=t<coverEnd;
  if(showBubble){
   windBubble.textContent=ev.line;
   windBubble.classList.add('on');
-  var screenX=(sideX/WORLD.width)*stage.clientWidth;
-  var screenY=((visY-S.cameraY)/WORLD.height)*stage.clientHeight;
-  windBubble.style.left=Math.max(6,Math.min(stage.clientWidth-windBubble.offsetWidth-6,screenX-20))+'px';
-  windBubble.style.top=Math.max(4,screenY-70)+'px';
+  windBubble.style.left=Math.max(6,stage.clientWidth/2-windBubble.offsetWidth/2)+'px';
+  windBubble.style.top=(stage.clientHeight*0.16)+'px';
  } else windBubble.classList.remove('on');
 }
 
@@ -540,8 +490,8 @@ function render(){
  drawPlatform();
  drawBodies();
  drawCrane();
- drawWindCharacter();
  ctx.restore();
+ drawPeekabooCover();
  ctx.restore();
  updateHud();
 }
