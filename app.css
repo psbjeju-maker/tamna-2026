@@ -188,108 +188,78 @@ p{margin:0}
 .result.on{display:block}
 .result img{width:100%;border-radius:12px;box-shadow:var(--shadow-md)}
 
-/* 포토카드 탄생 연출 (2026-09-28 개편) — idle→gathering→combining→suspense→reveal→settle→result,
-   최소 8초, 사용자가 저장/다시뽑기/닫기 중 하나를 누를 때까지 결과 유지. 카드 자체를 3D로 뒤집어
-   앞면(실제 카드 캔버스)·뒷면(실루엣+후보 문구 깜빡임)을 전환한다. */
-.flipCard{position:relative;width:100%;max-width:300px;margin:0 auto;aspect-ratio:750/1020;perspective:1400px}
-.flipCard__inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform 1000ms cubic-bezier(.3,.08,.2,1)}
+/* 포토카드 탄생 연출 (2026-09-28 그래픽 FX팩 적용) — idle→gathering→combining→suspense→reveal→settle→result.
+   결과는 사용자가 저장/다시뽑기/닫기 중 하나를 누를 때까지 자동으로 닫히지 않는다.
+   무대(1200×1400 기준, stage_*)가 카드 뒤에서 돌고, 카드(750×1020 기준)는 3D로 뒤집혀
+   뒷면(card_00_sealed_back 실루엣+후보 문구)에서 앞면(실제 카드 캔버스+rarity/card_* 레이어)으로 전환된다. */
+/* 카드 너비 = min(92vw, 68vh*750/1020) = min(92vw,50vh), 스테이지는 그 1.6배(750/1200=62.5%의 역수).
+   스테이지가 카드보다 넓어 좁은 화면에서 뷰포트보다 커질 수 있으므로 margin:auto 대신
+   left:50%+translateX(-50%)로 중앙 고정 — 넘치는 양쪽은 body의 overflow-x:hidden이 잘라낸다(카드 자체는 항상 92vw 이내라 안 잘림) */
+.revealStage{position:relative;left:50%;transform:translateX(-50%);
+  width:calc(min(92vw,50vh) * 1.6);max-width:480px;aspect-ratio:1200/1400}
+.revealStage__layer{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;
+  opacity:0;transition:opacity 600ms var(--ease)}
+.revealStage__layer--ambient{z-index:1}
+.revealStage__layer--orbit{z-index:2}
+.revealStage__layer--rays{z-index:3}
+.revealStage__layer--impact{z-index:3}
+.revealStage.stage--ambient .revealStage__layer--ambient{opacity:.9;animation:fx-breathe 5000ms ease-in-out infinite}
+.revealStage.stage--orbit .revealStage__layer--orbit{opacity:.85;animation:fx-orbit 1700ms ease-in-out 1}
+.revealStage.stage--rays .revealStage__layer--rays{animation:fx-rays 550ms ease-out 1 forwards}
+.revealStage.stage--impact .revealStage__layer--impact{animation:fx-impact 800ms ease-out 1 forwards}
+@keyframes fx-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes fx-orbit{0%{transform:rotate(0deg)}100%{transform:rotate(16deg)}}
+@keyframes fx-rays{0%{opacity:0;transform:scale(.75)}35%{opacity:1}100%{opacity:0;transform:scale(1.18)}}
+@keyframes fx-impact{0%{opacity:.9;transform:scale(.6)}100%{opacity:0;transform:scale(1.6)}}
+
+.flipCard{position:absolute;left:18.75%;top:13.5714%;width:62.5%;height:72.8571%;max-width:none;margin:0;
+  perspective:1400px;z-index:10}
+.flipCard__inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform 550ms cubic-bezier(.3,.08,.2,1)}
 .flipCard--instant .flipCard__inner{transition:none}
 .flipCard--flipped .flipCard__inner{transform:rotateY(180deg)}
 .flipCard__face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
   border-radius:var(--radius-lg);overflow:hidden}
 .flipCard__face--front{transform:rotateY(180deg)}
-.flipCard__face--back{transform:rotateY(0deg);background:radial-gradient(120% 90% at 50% 18%,#1c2338,#0b0f1a 72%);
+.flipCard__face--back{transform:rotateY(0deg);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-3);
   border:1px solid var(--color-border-strong);text-align:center;padding:var(--space-5)}
+.flipCard__sealed{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
 .flipCard .cardWrap{position:absolute;inset:0;max-width:none;margin:0;border-radius:0}
 .flipCard .cardWrap canvas{width:100%;height:auto;display:block;filter:drop-shadow(0 18px 40px rgba(0,0,0,.55))}
-.flipCard__glow{position:absolute;inset:-25%;border-radius:50%;pointer-events:none;
-  background:radial-gradient(circle,var(--rarity-glow,rgba(245,179,49,.5)) 0%,transparent 65%);
-  opacity:0;filter:blur(6px);transition:opacity 700ms var(--ease)}
-.flipCard--glow .flipCard__glow{opacity:.85}
-.flipCard--glowBurst .flipCard__glow{opacity:1;animation:glow-burst 1000ms var(--ease) forwards}
-@keyframes glow-burst{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.5)}}
-.flipCard.rarity-bronze{--rarity-glow:rgba(176,137,104,.55)}
-.flipCard.rarity-silver{--rarity-glow:rgba(200,214,230,.6)}
-.flipCard.rarity-gold{--rarity-glow:rgba(245,197,66,.65)}
-.flipCard.rarity-platinum{--rarity-glow:rgba(180,225,255,.65)}
-.flipCard.rarity-diamond{--rarity-glow:rgba(255,255,255,.75)}
-/* 다이아 = "이거밖에 안 돼?" 피드백(2026-09-28) 반영해서 확실히 세게: 도는 무지개 글로우(더 진하고
-   또렷하게) + 방사형 무지개 레이 + 공개 순간 밝기 펄스 + 16방향 큼직한 컨페티 폭죽 */
-.flipCard.rarity-diamond .flipCard__glow{
-  inset:-40%;filter:blur(3px);
-  background:conic-gradient(from 0deg,#ff5b5b,#ffb648,#ffe14d,#59e07a,#4fd0ff,#6f8bff,#c27bff,#ff6ec9,#ff5b5b);
-  animation:rainbow-spin 4s linear infinite}
-.flipCard.rarity-diamond.flipCard--glowBurst .flipCard__glow{
-  opacity:1;animation:rainbow-spin 700ms linear infinite,glow-burst-big 1300ms var(--ease) forwards}
-@keyframes rainbow-spin{to{transform:rotate(360deg)}}
-@keyframes glow-burst-big{0%{opacity:1;transform:scale(.7)}40%{opacity:1;transform:scale(1.3)}100%{opacity:0;transform:scale(2.1)}}
-.flipCard__rays{position:absolute;inset:-45%;pointer-events:none;opacity:0;border-radius:50%;z-index:1;
-  background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.9) 0deg 4deg,transparent 4deg 20deg)}
-.flipCard.rarity-diamond.flipCard--glowBurst .flipCard__rays{
-  animation:rays-burst 900ms ease-out forwards}
-@keyframes rays-burst{0%{opacity:.9;transform:scale(.4) rotate(0deg)}100%{opacity:0;transform:scale(1.6) rotate(50deg)}}
-.flipCard.rarity-diamond.flipCard--glowBurst{animation:diamond-flash 650ms ease-out}
-@keyframes diamond-flash{0%{filter:brightness(1) saturate(1)}30%{filter:brightness(1.8) saturate(1.5)}100%{filter:brightness(1) saturate(1)}}
-.flipCard__confetti{position:absolute;inset:0;pointer-events:none;display:none;z-index:3}
-.flipCard.rarity-diamond.flipCard--glowBurst .flipCard__confetti{display:block}
-.flipCard__confetti span{position:absolute;top:50%;left:50%;width:13px;height:13px;border-radius:3px;
-  transform:translate(-50%,-50%);opacity:0;box-shadow:0 0 6px currentColor;
-  animation:confetti-burst 1300ms cubic-bezier(.15,.7,.3,1) forwards}
-.flipCard__confetti span:nth-child(1){background:#ff5b5b;color:#ff5b5b;--ang:0deg}
-.flipCard__confetti span:nth-child(2){background:#ff8a3d;color:#ff8a3d;--ang:22.5deg;animation-delay:20ms}
-.flipCard__confetti span:nth-child(3){background:#ffb648;color:#ffb648;--ang:45deg}
-.flipCard__confetti span:nth-child(4){background:#ffe14d;color:#ffe14d;--ang:67.5deg;animation-delay:20ms}
-.flipCard__confetti span:nth-child(5){background:#c8ea5e;color:#c8ea5e;--ang:90deg}
-.flipCard__confetti span:nth-child(6){background:#59e07a;color:#59e07a;--ang:112.5deg;animation-delay:20ms}
-.flipCard__confetti span:nth-child(7){background:#4de0c0;color:#4de0c0;--ang:135deg}
-.flipCard__confetti span:nth-child(8){background:#4fd0ff;color:#4fd0ff;--ang:157.5deg;animation-delay:20ms}
-.flipCard__confetti span:nth-child(9){background:#5ab0ff;color:#5ab0ff;--ang:180deg}
-.flipCard__confetti span:nth-child(10){background:#6f8bff;color:#6f8bff;--ang:202.5deg;animation-delay:20ms}
-.flipCard__confetti span:nth-child(11){background:#9a7bff;color:#9a7bff;--ang:225deg}
-.flipCard__confetti span:nth-child(12){background:#c27bff;color:#c27bff;--ang:247.5deg;animation-delay:20ms}
-.flipCard__confetti span:nth-child(13){background:#ff6ec9;color:#ff6ec9;--ang:270deg}
-.flipCard__confetti span:nth-child(14){background:#ff5b9c;color:#ff5b9c;--ang:292.5deg;animation-delay:20ms}
-.flipCard__confetti span:nth-child(15){background:#ffffff;color:#ffffff;--ang:315deg}
-.flipCard__confetti span:nth-child(16){background:#ffe9a8;color:#ffe9a8;--ang:337.5deg;animation-delay:20ms}
-@keyframes confetti-burst{
-  0%{opacity:1;transform:translate(-50%,-50%) rotate(var(--ang)) translateY(0) scale(1) rotate(0deg)}
-  70%{opacity:1}
-  100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--ang)) translateY(-230px) scale(.5) rotate(220deg)}
-}
-@media (prefers-reduced-motion: reduce){
-  .flipCard.rarity-diamond .flipCard__glow{animation:none}
-  .flipCard.rarity-diamond.flipCard--glowBurst{animation:none}
-  .flipCard__confetti,.flipCard__rays{display:none!important}
-}
-.flipCard__emblem{width:52px;height:52px;border-radius:50%;border:2px solid rgba(255,255,255,.35);
-  display:flex;align-items:center;justify-content:center;animation:flip-spin 5.5s linear infinite;position:relative;z-index:1}
-.flipCard__emblem::before{content:'';width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.5)}
-@keyframes flip-spin{to{transform:rotateZ(360deg)}}
 .flipCard__candidate{font-family:var(--font-display);font-size:21px;font-weight:800;color:var(--color-text);
-  min-height:1.3em;position:relative;z-index:1}
+  min-height:1.3em;position:relative;z-index:1;text-shadow:0 2px 10px rgba(0,0,0,.65)}
 .flipCard__label{font-size:14px;font-weight:700;color:var(--color-text-secondary);min-height:1.4em;position:relative;z-index:1;
-  transition:opacity 300ms var(--ease)}
+  transition:opacity 300ms var(--ease);text-shadow:0 2px 10px rgba(0,0,0,.65)}
 .flipCard--dim .flipCard__label,.flipCard--dim .flipCard__candidate{opacity:.35}
-.flipCard__spark{position:absolute;width:5px;height:5px;border-radius:50%;background:#fff;opacity:0;
-  animation:flip-spark 2.2s ease-in-out infinite}
-.flipCard__spark:nth-child(2){top:22%;left:18%;animation-delay:0s}
-.flipCard__spark:nth-child(3){top:65%;left:78%;animation-delay:.6s}
-.flipCard__spark:nth-child(4){top:78%;left:24%;animation-delay:1.2s}
-@keyframes flip-spark{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1.3)}}
 .revealStage__skip:not([hidden]){display:block;margin:var(--space-3) auto 0}
-/* 정착(settle) 단계 — 실버 이상만 은은한 잔광이 카드 위를 천천히 훑는다(브론즈는 생략) */
-.cardWrap.settle::after{content:'';position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.22) 50%,transparent 58%);background-size:220% 220%;
-  animation:card-sweep-loop 3.6s linear infinite}
-.cardWrap.settle.reveal--bronze::after{display:none}
-@keyframes card-sweep-loop{0%{background-position:-60% -60%}100%{background-position:120% 120%}}
-.cardWrap.reveal::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:0;
-  background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.55) 48%,transparent 60%);background-size:220% 220%;background-position:-40% -40%}
-.cardWrap.reveal--gold:not(.settle)::after,.cardWrap.reveal--platinum:not(.settle)::after,.cardWrap.reveal--diamond:not(.settle)::after{
-  animation:card-sweep 900ms var(--ease) 1}
-.cardWrap.reveal--diamond::after{background:linear-gradient(115deg,transparent 30%,rgba(255,120,220,.35) 40%,rgba(120,200,255,.4) 50%,rgba(255,230,120,.35) 60%,transparent 70%);background-size:260% 260%}
-@keyframes card-sweep{0%{opacity:0;background-position:-40% -40%}30%{opacity:1}100%{opacity:0;background-position:60% 60%}}
+
+/* 카드 앞면 FX(card_00~04, rarity_*_reveal) — 캔버스 위에 겹치는 레이어. 저장용 캔버스 자체엔 굽지 않는다 */
+.cardFx{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;opacity:0}
+.cardFx--rarity{z-index:2}
+.cardFx--flare{z-index:3}
+.cardFx--sweep{z-index:4;left:-50%;width:200%;transform:translateX(-45%)}
+.cardFx--prism{z-index:2}
+.cardFx--flecks{z-index:2}
+.cardWrap.fx-reveal .cardFx--rarity{animation:fx-rarity-in 500ms ease-out forwards}
+.cardWrap.fx-reveal .cardFx--flare{animation:fx-flare 500ms ease-out forwards}
+.cardWrap.fx-reveal .cardFx--sweep{animation:fx-sweep 650ms ease-in forwards}
+.cardWrap.fx-settle .cardFx--rarity{animation:fx-rarity-settle 600ms ease-out forwards}
+.cardWrap.fx-settle .cardFx--prism{animation:fx-prism 800ms ease-out forwards}
+.cardWrap.fx-settle .cardFx--flecks{animation:fx-flecks 4000ms ease-out forwards}
+.flipCard.rarity-diamond .cardWrap.fx-settle .cardFx--rarity,
+.flipCard.rarity-platinum .cardWrap.fx-settle .cardFx--rarity{animation-name:fx-rarity-settle-strong}
+.cardWrap.fx-noanim .cardFx--rarity{animation:none;opacity:.5}
+.cardWrap.fx-noanim .cardFx--flare,.cardWrap.fx-noanim .cardFx--sweep{animation:none;opacity:0}
+.cardWrap.fx-noanim .cardFx--prism{animation:none;opacity:.55}
+.cardWrap.fx-noanim .cardFx--flecks{animation:none;opacity:.35}
+@keyframes fx-rarity-in{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes fx-rarity-settle{from{opacity:1}to{opacity:.5}}
+@keyframes fx-rarity-settle-strong{from{opacity:1}to{opacity:.68}}
+@keyframes fx-flare{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
+@keyframes fx-sweep{0%{opacity:0;transform:translateX(-45%)}12%{opacity:.9}88%{opacity:.9}100%{opacity:0;transform:translateX(75%)}}
+@keyframes fx-prism{0%{opacity:0}40%{opacity:1}100%{opacity:.55}}
+@keyframes fx-flecks{0%{opacity:0;transform:translateY(0)}18%{opacity:.85}100%{opacity:.35;transform:translateY(-14px)}}
+
 .cardActions{opacity:0;transform:translateY(6px);transition:opacity 400ms var(--ease),transform 400ms var(--ease);pointer-events:none}
 .cardActions .btn{font-size:14px;padding:0 8px;white-space:nowrap} /* "탄생 연출 다시 보기" 같은 긴 라벨이 좁은 2열에서 줄바꿈되던 문제 */
 .result.settled .cardActions{opacity:1;transform:none;pointer-events:auto}
@@ -298,14 +268,17 @@ p{margin:0}
 .result.settled .cardRevealTag{animation:tag-in var(--transition-normal) var(--ease) forwards}
 @keyframes tag-in{to{opacity:1;transform:none}}
 @media (prefers-reduced-motion: reduce){
+  .revealStage__layer{transition:none}
+  .revealStage.stage--ambient .revealStage__layer--ambient,.revealStage.stage--orbit .revealStage__layer--orbit{animation:none;opacity:.5}
+  .revealStage.stage--rays .revealStage__layer--rays,.revealStage.stage--impact .revealStage__layer--impact{animation:none;opacity:0}
   .flipCard__inner{transition:opacity 250ms linear!important;transform:none!important}
   .flipCard__face--back{transform:none;opacity:1;transition:opacity 250ms linear}
   .flipCard__face--front{transform:none;opacity:0;transition:opacity 250ms linear}
   .flipCard--flipped .flipCard__face--back{opacity:0}
   .flipCard--flipped .flipCard__face--front{opacity:1}
-  .flipCard__emblem,.flipCard__spark{animation:none;opacity:0}
-  .cardWrap.settle::after,.cardWrap.reveal--gold::after,.cardWrap.reveal--platinum::after,.cardWrap.reveal--diamond::after{animation:none;display:none}
-  .flipCard--glowBurst .flipCard__glow{animation:none;opacity:0}
+  .cardWrap.fx-reveal .cardFx--sweep,.cardWrap.fx-reveal .cardFx--flare{animation:none;opacity:0}
+  .cardWrap.fx-reveal .cardFx--rarity{animation:none;opacity:1}
+  .cardWrap.fx-settle .cardFx--flecks{animation:none;opacity:.35}
 }
 
 /* shop / tickets */

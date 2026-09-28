@@ -204,25 +204,29 @@
     <button class="btn btn--primary btn--block" id="btnMake" style="margin-top:12px">카드 탄생시키기</button>
 
     <div class="result" id="result">
-      <div class="flipCard" id="flipCard">
-        <div class="flipCard__glow" id="flipGlow"></div>
-        <div class="flipCard__rays"></div>
-        <div class="flipCard__inner" id="flipInner">
-          <div class="flipCard__face flipCard__face--back">
-            <div class="flipCard__spark"></div><div class="flipCard__spark"></div><div class="flipCard__spark"></div>
-            <div class="flipCard__emblem"></div>
-            <div class="flipCard__candidate" id="flipCandidate"></div>
-            <div class="flipCard__label" id="flipLabel">당신의 카드가 만들어지고 있어요</div>
-          </div>
-          <div class="flipCard__face flipCard__face--front">
-            <div class="cardWrap" id="cardWrap">
-              <canvas id="cardCanvas" width="1500" height="2040"></canvas>
+      <div class="revealStage" id="revealStage">
+        <img class="revealStage__layer revealStage__layer--ambient" src="assets/photo-card/birth-fx/stage_01_ambient.png" alt="">
+        <img class="revealStage__layer revealStage__layer--orbit" src="assets/photo-card/birth-fx/stage_02_orbit.png" alt="">
+        <img class="revealStage__layer revealStage__layer--rays" src="assets/photo-card/birth-fx/stage_03_reveal_rays.png" alt="">
+        <img class="revealStage__layer revealStage__layer--impact" src="assets/photo-card/birth-fx/stage_04_impact_ring.png" alt="">
+        <div class="flipCard" id="flipCard">
+          <div class="flipCard__inner" id="flipInner">
+            <div class="flipCard__face flipCard__face--back">
+              <img class="flipCard__sealed" src="assets/photo-card/birth-fx/card_00_sealed_back.png" alt="">
+              <div class="flipCard__candidate" id="flipCandidate"></div>
+              <div class="flipCard__label" id="flipLabel">당신의 카드가 만들어지고 있어요</div>
+            </div>
+            <div class="flipCard__face flipCard__face--front">
+              <div class="cardWrap" id="cardWrap">
+                <canvas id="cardCanvas" width="1500" height="2040"></canvas>
+                <img class="cardFx cardFx--rarity" id="fxRarity" src="" alt="">
+                <img class="cardFx cardFx--flare" src="assets/photo-card/birth-fx/card_04_corner_flare.png" alt="">
+                <img class="cardFx cardFx--sweep" src="assets/photo-card/birth-fx/card_01_light_sweep.png" alt="">
+                <img class="cardFx cardFx--prism" src="assets/photo-card/birth-fx/card_02_prism_edge.png" alt="">
+                <img class="cardFx cardFx--flecks" src="assets/photo-card/birth-fx/card_03_crystal_flecks.png" alt="">
+              </div>
             </div>
           </div>
-        </div>
-        <div class="flipCard__confetti">
-          <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-          <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
         </div>
       </div>
       <button class="btn btn--tertiary revealStage__skip" id="btnRevealSkip" hidden>건너뛰기</button>
@@ -1973,46 +1977,52 @@ function fadeStopAmbient(ms){
     if(i>=steps){clearInterval(iv);sfxStopAmbient()}
   },stepMs);
 }
-/* 카드 탄생 연출 — idle→gathering→combining→suspense→reveal→settle→result 상태로 진행(최소 8초).
+/* 카드 탄생 연출 — idle→gathering→combining→suspense→reveal→settle→result 상태로 진행.
    결과는 사용자가 저장/다시뽑기/새카드/건너뛰기 중 하나를 누를 때까지 자동으로 닫지 않는다.
    audio.onended/animationend/setTimeout(음악 길이) 무엇도 결과를 닫거나 카드 DOM을 지우지 않는다 —
-   여기서 만드는 타이머들은 오직 "다음 단계로 넘어가기"만 하고, 마지막 단계(result) 이후로는 아무 것도 스스로 실행되지 않는다. */
+   여기서 만드는 타이머들은 오직 "다음 단계로 넘어가기"만 하고, 마지막 단계(result) 이후로는 아무 것도 스스로 실행되지 않는다.
+   무대(stage_01~04)·카드 뒷면(card_00_sealed_back)·카드 앞면 FX(card_01~04, rarity_*_reveal)는
+   탐라문화제_포토카드_탄생이펙트팩의 클로드_구현지시.md 시간표(0~4.35초 조합, 4.35초 공개, ~6.8초 정착)를 따른다. */
 var revealToken=0, currentReveal=null;
 function playCardReveal(data,photos,pos){
   var token=++revealToken;
   var reduced=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
   var flip=$('#flipCard'), cand=$('#flipCandidate'), label=$('#flipLabel');
   var canvas=$('#cardCanvas'), ctx2=canvas.getContext('2d');
-  var wrap=$('#cardWrap'), result=$('#result'), skipBtn=$('#btnRevealSkip'), tag=$('#cardRevealTag');
+  var wrap=$('#cardWrap'), stage=$('#revealStage'), fxRarity=$('#fxRarity');
+  var result=$('#result'), skipBtn=$('#btnRevealSkip'), tag=$('#cardRevealTag');
   var timers=[], settled=false;
   function live(){return token===revealToken}
   function at(ms,fn){timers.push(setTimeout(function(){if(live())fn()},reduced?Math.round(ms*0.45):ms))}
   function clearAll(){timers.forEach(clearTimeout);timers=[]}
 
-  /* 초기화 */
+  /* 초기화 — 무대·카드 FX 클래스를 전부 걷어내고 봉인된 뒷면부터 다시 시작 */
   flip.className='flipCard rarity-'+data.rarity;
   wrap.className='cardWrap';
+  stage.className='revealStage';
+  fxRarity.src='assets/photo-card/birth-fx/rarity_'+data.rarity+'_reveal.png';
   result.classList.remove('settled');
   tag.textContent='';
   cand.textContent='';label.textContent='';
   skipBtn.hidden=true;
   drawCard(ctx2,canvas.width,canvas.height,data,photos,pos,0);
 
-  /* 0.0~0.6 시작 */
+  /* 0~0.7초 — 무대 암전, 앰비언트(stage_01) 서서히 켜짐 */
   sfx('pop',0.4);
-  /* 건너뛰기는 2초 후부터 노출 */
+  stage.classList.add('stage--ambient');
   at(2000,function(){skipBtn.hidden=false});
 
-  /* 0.6~2.0 탐색 — 실루엣 회전 + 안내문구 + 배경음악 시작 */
-  at(600,function(){
+  /* 0.7~2.4초 — 궤도(stage_02) 회전 시작, 안내문구, 배경음악 도입(epic-cinematic-logo-reveal, 약 7.8초 ≈ 공개 시퀀스 전체 길이) */
+  at(700,function(){
     label.textContent='당신의 카드가 만들어지고 있어요';
-    sfxAmbient('evolve',0.32);
+    sfxAmbient('reveal_bgm',0.4);
+    stage.classList.add('stage--orbit');
   });
 
-  /* 2.0~3.5 조합 — 후보 이름이 빠르게 스쳐가다 실제 카드명에 고정, 이어서 레벨→속성 순서로 공개(틱 2회) */
+  /* 2.4~3.8초 — 후보 이름이 빠르게 스쳐가다 실제 카드명에 고정, 이어서 레벨→속성 순서로 공개 */
   var flickerPool=CARD_CHARS.concat(CARD_KEYWORDS);
   var flickerIv=null;
-  at(2000,function(){
+  at(2400,function(){
     var n=0;
     flickerIv=setInterval(function(){
       if(!live()){clearInterval(flickerIv);return}
@@ -2020,41 +2030,48 @@ function playCardReveal(data,photos,pos){
       if(++n>=6)clearInterval(flickerIv);
     },130);
   });
-  at(2780,function(){cand.textContent=data.displayName});
-  at(2780,function(){beep(880,0.08,'sine',0.18)});
-  at(3140,function(){label.textContent='Lv.'+data.level});
-  at(3140,function(){beep(1046,0.09,'sine',0.2)});
-  at(3320,function(){label.textContent=data.attributeLabel+' 속성'});
+  at(3180,function(){cand.textContent=data.displayName});
+  at(3180,function(){beep(880,0.08,'sine',0.18)});
+  at(3400,function(){label.textContent='Lv.'+data.level});
+  at(3400,function(){beep(1046,0.09,'sine',0.2)});
+  at(3600,function(){label.textContent=data.attributeLabel+' 속성'});
 
-  /* 3.5~4.3 정적 — 화면·소리를 살짝 눌러주고 레어도색 빛이 서서히 모인다(등급은 아직 안 보여줌) */
-  at(3500,function(){
+  /* 3.8~4.35초 — 정적. 화면·소리를 살짝 눌러주고 마법 기운(magic-spell)이 모이는 소리, 레어도는 아직 숨김 */
+  at(3800,function(){
     flip.classList.add('flipCard--dim');
-    flip.classList.add('flipCard--glow');
     if(ambientEl)ambientEl.volume=(ambientEl.volume||0.32)*0.5;
+    sfx('reveal_spell',0.45);
   });
 
-  /* 4.3~5.3 공개 — 카드가 앞으로 돌아오며 등급색 빛이 한 번 퍼진다. 이 순간에만 가장 큰 효과음 */
-  at(4300,function(){
+  /* 4.35초 — 공개: 카드 반전(sealed_back 사라짐) + rays/impact_ring/corner_flare/rarity 동시 시작.
+     dark-hit-logo(임팩트 타격음) + wind-whoosh(light_sweep과 맞춘 스치는 소리) + 등급별 효과음이 함께 터진다 */
+  at(4350,function(){
     clearInterval(flickerIv);
     flip.classList.remove('flipCard--dim');
-    flip.classList.remove('flipCard--glow');
-    flip.classList.add('flipCard--flipped','flipCard--glowBurst');
-    wrap.className='cardWrap reveal reveal--'+data.rarity;
-    sfx(data.rarity==='platinum'||data.rarity==='diamond'?'fanfare':data.rarity==='gold'?'bonus':'pop',0.65);
+    flip.classList.add('flipCard--flipped','flipCard--reveal');
+    wrap.className='cardWrap reveal reveal--'+data.rarity+' fx-reveal';
+    stage.classList.remove('stage--ambient','stage--orbit');
+    stage.classList.add('stage--rays','stage--impact');
+    sfx('reveal_hit',0.55);
+    sfx('reveal_whoosh',0.35);
+    sfx(data.rarity==='platinum'||data.rarity==='diamond'?'fanfare':data.rarity==='gold'?'bonus':'pop',0.5);
   });
 
-  /* 5.3~6.7 카드 완성 — 제목→아이콘→기술명→설명·대사가 drawCard(t)의 자체 타임라인으로 약 0.2초 간격 등장 */
-  at(5300,function(){
+  /* 5.25~6.8초 — light_sweep 지나간 뒤 prism_edge·crystal_flecks만 은은히 남기고,
+     제목→아이콘→기술명→설명·대사가 drawCard(t)의 자체 타임라인(약 1.4초)으로 등장 */
+  at(5250,function(){
+    wrap.classList.remove('fx-reveal');
+    wrap.classList.add('fx-settle');
     currentCardImgs=[photos,pos];
     animateCard(canvas,data,photos,pos);
   });
 
-  /* 6.7~8.2 감상 — 카드 고정, 은은한 잔광, 음악 자연스럽게 잦아들고, 저장/다시뽑기 버튼 등장 */
-  at(6700,function(){
+  /* 6.8초 이후 — 카드 고정, 음악 자연스럽게 잦아들고, 저장/다시뽑기 버튼 등장 */
+  at(6800,function(){
     wrap.classList.add('settle');
     fadeStopAmbient(900);
   });
-  at(8200,function(){enterResult()});
+  at(7300,function(){enterResult()});
 
   function enterResult(){
     if(settled)return;
@@ -2064,16 +2081,17 @@ function playCardReveal(data,photos,pos){
     result.classList.add('settled');
     var btn=$('#btnMake');if(btn)btn.disabled=false;
   }
-  /* 건너뛰기 — 2초 뒤부터 노출(위 skipBtn.hidden=false가 즉시라 버튼 자체는 CSS로 항상 있고 여기선 로직만),
-     눌리면 진행 중인 모든 타이머를 취소하고 곧장 완성본으로 이동, 결과는 똑같이 유지된다(자동 종료 아님) */
+  /* 건너뛰기 — 2초 뒤부터 노출, 눌리면 진행 중인 모든 타이머를 취소하고 곧장 완성본으로 이동,
+     결과는 똑같이 유지된다(자동 종료 아님) */
   function finishNow(){
     if(!live()||settled)return;
     clearAll();clearInterval(flickerIv);sfxStopAmbient();
-    flip.classList.add('flipCard--instant'); /* 건너뛰기는 1초짜리 뒤집기 연출 없이 즉시 완성본으로 */
-    flip.classList.remove('flipCard--dim','flipCard--glow');
+    flip.classList.add('flipCard--instant'); /* 건너뛰기는 뒤집기 연출 없이 즉시 완성본으로 */
+    flip.classList.remove('flipCard--dim');
     flip.classList.add('flipCard--flipped');
-    flip.classList.remove('flipCard--glowBurst');
-    wrap.className='cardWrap reveal reveal--'+data.rarity+' settle';
+    flip.classList.remove('flipCard--reveal');
+    stage.className='revealStage';
+    wrap.className='cardWrap reveal reveal--'+data.rarity+' fx-settle fx-noanim settle';
     currentCardImgs=[photos,pos];
     drawCard(ctx2,canvas.width,canvas.height,data,photos,pos); /* t 없이 = 완성본 즉시 */
     enterResult();
