@@ -58,7 +58,7 @@ var WIND_LINES=['짠! 잠깐 안 보이게 할게!','후훗, 눈 감고 있어 �
 /* 단계별 화면가림은 '그 단계 안에서 몇 번째 물건을 잡을 때'로 정한다(단계마다 물건 수가 같아서 절대 슬롯 번호로 충분).
    3단계(가장 어려움)만 한 번 더 넣는다. */
 var WIND_SLOTS_BY_STAGE={1:[3],2:[3],3:[2,4]};
-var STAGE_ITEM_COUNTS=[5,5,5]; // 1/2/3단계 각각 몇 개를 쌓는지
+var STAGE_ITEM_COUNTS=[8,9,10]; // 1/2/3단계 각각 몇 개를 쌓는지
 
 var $=function(s){return document.querySelector(s)};
 var stage=$('#stage'),cv=$('#game'),ctx=cv.getContext('2d'),overlay=$('#overlay'),panel=$('#panel'),windBubble=$('#windBubble'),toastEl=$('#toast');
@@ -187,7 +187,7 @@ function pickStageItems(stageNum){
 }
 function renderIntro(){
  overlay.classList.remove('hidden');
- panel.innerHTML='<h2>어디까지 쌓을 수 있을까?</h2><p>1단계는 평평한 물건으로 기초를 다지고, 2·3단계로 갈수록 점점 뒤섞인 물건이 나와요. 판마다 새로 시작해요.</p>'+
+ panel.innerHTML='<h2>어디까지 쌓을 수 있을까?</h2>'+
   '<img class="startPortrait" src="assets/characters/yeongdeung_smile.png" alt="영등할망">'+
   '<button class="primary" id="btnStart">1단계 시작</button>';
  var btn=$('#btnStart');
@@ -407,7 +407,7 @@ function sendStageReward(placedCount){
 }
 function renderStageClear(placedCount){
  overlay.classList.remove('hidden');
- panel.innerHTML='<h2>'+S.stage+'단계 클리어!</h2><p>'+(S.stage===1?'제법인데? 다음부터는 물건이 좀 더 섞여 나와요.':'대단해! 마지막 단계엔 다 뒤섞여 나와요.')+'</p>'+
+ panel.innerHTML='<h2>'+S.stage+'단계 클리어!</h2>'+
   '<div class="big-score">'+S.score+'<small> 점</small></div>'+
   '<div class="stats"><div><b>'+Math.round(S.heightPx)+'px</b>높이</div><div><b>'+placedCount+'/'+S.order.length+'</b>쌓은 개수</div></div>'+
   '<button class="primary" id="btnNextStage">'+(S.stage+1)+'단계로</button>';
