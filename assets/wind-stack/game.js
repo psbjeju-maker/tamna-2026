@@ -95,6 +95,7 @@ var GRAVITY_SCALE=0.0015; // Matter 엔진 중력 스케일(px 단위, 실측 �
 function initPhysics(){
  engine=Matter.Engine.create();
  engine.gravity.y=1;engine.gravity.scale=GRAVITY_SCALE;
+ engine.enableSleeping=true; // 느려진 물건을 확실히 재워서 "계속 흔들림/굴러감" 방지 — Sleeping.set이 speed/angularSpeed를 0으로 고정
  world=engine.world;
  platformBody=Matter.Bodies.rectangle(195,WORLD.platformTop+WORLD.platformHeight/2,WORLD.platformWidth,WORLD.platformHeight,{isStatic:true,friction:0.85,label:'platform'});
  Matter.World.add(world,[platformBody]);
@@ -110,7 +111,8 @@ function verticesFromNormalized(norm,w,h){
 }
 function spawnItemBody(item,x,y){
  var w=item.renderSize.width,h=item.renderSize.height,body,off;
- var opts={friction:item.friction,restitution:item.restitution,frictionAir:0.012,label:item.id};
+ // frictionAir를 디자인팩 원안(0.012)보다 높여 회전·미끄러짐이 더 빨리 잦아들게 함(둥근 물건이 계속 구르는 문제 완화)
+ var opts={friction:item.friction,restitution:item.restitution,frictionAir:0.045,sleepThreshold:30,label:item.id};
  if(item.collision.type==='circle'){
   var r=item.collision.radius*Math.min(w,h);
   var cx=(item.collision.center[0]-0.5)*w,cy=(item.collision.center[1]-0.5)*h;
@@ -252,18 +254,24 @@ function windSoundOnce(ev){
  setTimeout(function(){if(_windSoundFired===ev)_windSoundFired=null},1500);
 }
 
+/* engine.pairs.list는 쓰지 않는다 — Matter는 두 바디가 모두 static/sleeping이면 그 쌍을
+   브로드페이즈에서 아예 건너뛰어(Detector.collisions) 잠든 물건의 접촉쌍이 곧 stale해진다
+   (재현: 물건이 잠들자마자 연결이 끊긴 것처럼 보여 안정 판정이 영원히 리셋되는 버그 발견).
+   대신 매 틱 바운딩박스 근접 여부로 직접 연결 그래프를 만든다 — sleep 상태와 무관하게 항상 정확함. */
+function boundsTouching(a,b,eps){
+ return !(a.max.x<b.min.x-eps||a.min.x>b.max.x+eps||a.max.y<b.min.y-eps||a.min.y>b.max.y+eps);
+}
 function buildContactGraph(){
- var adj={};
- function addEdge(a,b){adj[a]=adj[a]||[];adj[a].push(b);adj[b]=adj[b]||[];adj[b].push(a)}
- var pairs=engine.pairs.list;
- for(var i=0;i<pairs.length;i++){
-  var p=pairs[i];if(!p.isActive)continue;
-  addEdge(p.bodyA.id,p.bodyB.id);
- }
- var visited={};var queue=[platformBody.id];visited[platformBody.id]=true;
+ var all=S.bodies.concat([platformBody]);
+ var visited={};visited[platformBody.id]=true;
+ var queue=[platformBody];
+ var eps=2.5;
  while(queue.length){
-  var id=queue.shift();
-  (adj[id]||[]).forEach(function(n){if(!visited[n]){visited[n]=true;queue.push(n)}});
+  var cur=queue.shift();
+  all.forEach(function(b){
+   if(visited[b.id])return;
+   if(boundsTouching(cur.bounds,b.bounds,eps)){visited[b.id]=true;queue.push(b)}
+  });
  }
  return visited;
 }
