@@ -205,9 +205,10 @@
 
     <div class="result" id="result">
       <div class="flipCard" id="flipCard">
+        <div class="flipCard__glow" id="flipGlow"></div>
+        <div class="flipCard__rays"></div>
         <div class="flipCard__inner" id="flipInner">
           <div class="flipCard__face flipCard__face--back">
-            <div class="flipCard__glow" id="flipGlow"></div>
             <div class="flipCard__spark"></div><div class="flipCard__spark"></div><div class="flipCard__spark"></div>
             <div class="flipCard__emblem"></div>
             <div class="flipCard__candidate" id="flipCandidate"></div>
@@ -218,6 +219,10 @@
               <canvas id="cardCanvas" width="1500" height="2040"></canvas>
             </div>
           </div>
+        </div>
+        <div class="flipCard__confetti">
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
         </div>
       </div>
       <button class="btn btn--tertiary revealStage__skip" id="btnRevealSkip" hidden>건너뛰기</button>

@@ -214,6 +214,54 @@ p{margin:0}
 .flipCard.rarity-gold{--rarity-glow:rgba(245,197,66,.65)}
 .flipCard.rarity-platinum{--rarity-glow:rgba(180,225,255,.65)}
 .flipCard.rarity-diamond{--rarity-glow:rgba(255,255,255,.75)}
+/* 다이아 = "이거밖에 안 돼?" 피드백(2026-09-28) 반영해서 확실히 세게: 도는 무지개 글로우(더 진하고
+   또렷하게) + 방사형 무지개 레이 + 공개 순간 밝기 펄스 + 16방향 큼직한 컨페티 폭죽 */
+.flipCard.rarity-diamond .flipCard__glow{
+  inset:-40%;filter:blur(3px);
+  background:conic-gradient(from 0deg,#ff5b5b,#ffb648,#ffe14d,#59e07a,#4fd0ff,#6f8bff,#c27bff,#ff6ec9,#ff5b5b);
+  animation:rainbow-spin 4s linear infinite}
+.flipCard.rarity-diamond.flipCard--glowBurst .flipCard__glow{
+  opacity:1;animation:rainbow-spin 700ms linear infinite,glow-burst-big 1300ms var(--ease) forwards}
+@keyframes rainbow-spin{to{transform:rotate(360deg)}}
+@keyframes glow-burst-big{0%{opacity:1;transform:scale(.7)}40%{opacity:1;transform:scale(1.3)}100%{opacity:0;transform:scale(2.1)}}
+.flipCard__rays{position:absolute;inset:-45%;pointer-events:none;opacity:0;border-radius:50%;z-index:1;
+  background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.9) 0deg 4deg,transparent 4deg 20deg)}
+.flipCard.rarity-diamond.flipCard--glowBurst .flipCard__rays{
+  animation:rays-burst 900ms ease-out forwards}
+@keyframes rays-burst{0%{opacity:.9;transform:scale(.4) rotate(0deg)}100%{opacity:0;transform:scale(1.6) rotate(50deg)}}
+.flipCard.rarity-diamond.flipCard--glowBurst{animation:diamond-flash 650ms ease-out}
+@keyframes diamond-flash{0%{filter:brightness(1) saturate(1)}30%{filter:brightness(1.8) saturate(1.5)}100%{filter:brightness(1) saturate(1)}}
+.flipCard__confetti{position:absolute;inset:0;pointer-events:none;display:none;z-index:3}
+.flipCard.rarity-diamond.flipCard--glowBurst .flipCard__confetti{display:block}
+.flipCard__confetti span{position:absolute;top:50%;left:50%;width:13px;height:13px;border-radius:3px;
+  transform:translate(-50%,-50%);opacity:0;box-shadow:0 0 6px currentColor;
+  animation:confetti-burst 1300ms cubic-bezier(.15,.7,.3,1) forwards}
+.flipCard__confetti span:nth-child(1){background:#ff5b5b;color:#ff5b5b;--ang:0deg}
+.flipCard__confetti span:nth-child(2){background:#ff8a3d;color:#ff8a3d;--ang:22.5deg;animation-delay:20ms}
+.flipCard__confetti span:nth-child(3){background:#ffb648;color:#ffb648;--ang:45deg}
+.flipCard__confetti span:nth-child(4){background:#ffe14d;color:#ffe14d;--ang:67.5deg;animation-delay:20ms}
+.flipCard__confetti span:nth-child(5){background:#c8ea5e;color:#c8ea5e;--ang:90deg}
+.flipCard__confetti span:nth-child(6){background:#59e07a;color:#59e07a;--ang:112.5deg;animation-delay:20ms}
+.flipCard__confetti span:nth-child(7){background:#4de0c0;color:#4de0c0;--ang:135deg}
+.flipCard__confetti span:nth-child(8){background:#4fd0ff;color:#4fd0ff;--ang:157.5deg;animation-delay:20ms}
+.flipCard__confetti span:nth-child(9){background:#5ab0ff;color:#5ab0ff;--ang:180deg}
+.flipCard__confetti span:nth-child(10){background:#6f8bff;color:#6f8bff;--ang:202.5deg;animation-delay:20ms}
+.flipCard__confetti span:nth-child(11){background:#9a7bff;color:#9a7bff;--ang:225deg}
+.flipCard__confetti span:nth-child(12){background:#c27bff;color:#c27bff;--ang:247.5deg;animation-delay:20ms}
+.flipCard__confetti span:nth-child(13){background:#ff6ec9;color:#ff6ec9;--ang:270deg}
+.flipCard__confetti span:nth-child(14){background:#ff5b9c;color:#ff5b9c;--ang:292.5deg;animation-delay:20ms}
+.flipCard__confetti span:nth-child(15){background:#ffffff;color:#ffffff;--ang:315deg}
+.flipCard__confetti span:nth-child(16){background:#ffe9a8;color:#ffe9a8;--ang:337.5deg;animation-delay:20ms}
+@keyframes confetti-burst{
+  0%{opacity:1;transform:translate(-50%,-50%) rotate(var(--ang)) translateY(0) scale(1) rotate(0deg)}
+  70%{opacity:1}
+  100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--ang)) translateY(-230px) scale(.5) rotate(220deg)}
+}
+@media (prefers-reduced-motion: reduce){
+  .flipCard.rarity-diamond .flipCard__glow{animation:none}
+  .flipCard.rarity-diamond.flipCard--glowBurst{animation:none}
+  .flipCard__confetti,.flipCard__rays{display:none!important}
+}
 .flipCard__emblem{width:52px;height:52px;border-radius:50%;border:2px solid rgba(255,255,255,.35);
   display:flex;align-items:center;justify-content:center;animation:flip-spin 5.5s linear infinite;position:relative;z-index:1}
 .flipCard__emblem::before{content:'';width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.5)}
