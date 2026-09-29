@@ -54,3 +54,28 @@ footer{display:flex;justify-content:space-between;font-size:10px;color:#a8c4b8;f
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 /* 진짜로 짧은 화면(가로 모드, 아주 작은 폰 등)에서만 한 단계 더 줄인다 */
 @media(max-height:600px){.panel{padding:13px}.startPortrait{max-height:14vh;margin:2px auto 6px}.panel h2{font-size:19px;margin:0 0 5px}.panel p{font-size:11.5px;margin:0 0 7px}.primary{min-height:42px}}
+
+/* ---- 영등할망 빼꼼 연출(평상시 idlePeek) — 게임 입력을 막지 않는 순수 장식 레이어 ---- */
+#charLayer{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:inherit}
+.peek{position:absolute;display:block;height:auto;max-width:none;opacity:0;visibility:hidden;object-fit:contain;user-select:none;-webkit-user-drag:none;
+ filter:drop-shadow(0 6px 10px #0a252b55);will-change:transform,opacity;
+ transition:transform var(--peek-dur,.25s) cubic-bezier(.2,.9,.3,1),opacity var(--peek-dur,.25s) ease-out,visibility 0s linear var(--peek-dur,.25s)}
+.peek.on{opacity:1;visibility:visible;transform:translate(var(--ox,0),var(--oy,0))!important;transition:transform var(--peek-dur,.25s) cubic-bezier(.2,.9,.3,1),opacity var(--peek-dur,.25s) ease-out,visibility 0s}
+.peek.snap{transition:none!important}
+.peek--left{left:-3%;top:43%;width:29%;transform:translateX(-100%)}
+.peek--right{right:-3%;top:43%;width:29%;transform:translateX(100%)}
+.peek--bottom{bottom:0;left:-7%;width:30%;transform:translateY(100%)}
+.peek--top{top:0;left:-2%;width:30%;--oy:-30%;transform:translateY(-100%)}
+.peek--left{-webkit-mask-image:linear-gradient(to bottom,transparent,#000 7%,#000 78%,transparent),linear-gradient(to right,#000 80%,transparent);mask-image:linear-gradient(to bottom,transparent,#000 7%,#000 78%,transparent),linear-gradient(to right,#000 80%,transparent);-webkit-mask-composite:source-in;mask-composite:intersect}
+.peek--right{-webkit-mask-image:linear-gradient(to bottom,transparent,#000 7%,#000 78%,transparent),linear-gradient(to left,#000 80%,transparent);mask-image:linear-gradient(to bottom,transparent,#000 7%,#000 78%,transparent),linear-gradient(to left,#000 80%,transparent);-webkit-mask-composite:source-in;mask-composite:intersect}
+/* 결과 화면 축하: 패널 뒤에서 고개를 내밀도록 패널 아래 레이어에 둔다(버튼·점수를 가리지 않음) */
+#overlay .panel{position:relative;z-index:1}
+.cheer{position:absolute;z-index:0;height:auto;max-width:none;pointer-events:none;user-select:none;-webkit-user-drag:none;opacity:0;transform:translateX(-40%);
+ filter:drop-shadow(0 8px 14px #0a252b66);transition:transform .45s cubic-bezier(.2,.9,.3,1),opacity .35s ease-out}
+.cheer.in{opacity:1;transform:none}
+.cheer{-webkit-mask-image:linear-gradient(to bottom,#000 72%,transparent),linear-gradient(to right,#000 82%,transparent);mask-image:linear-gradient(to bottom,#000 72%,transparent),linear-gradient(to right,#000 82%,transparent);-webkit-mask-composite:source-in;mask-composite:intersect}
+@media(prefers-reduced-motion:reduce){
+ .peek{transition:opacity .2s linear,visibility 0s linear .2s!important;transform:translate(var(--ox,0),var(--oy,0))!important}
+ .peek.on{transition:opacity .2s linear,visibility 0s!important}
+ .cheer{transition:opacity .25s linear!important;transform:none!important}
+}

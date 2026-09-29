@@ -105,7 +105,9 @@ function loadImg(url){
  var img=new Image();img.src=url;imgCache[url]=img;return img;
 }
 ITEMS.forEach(function(it){loadImg(it.image)});
-var CHAR_SMILE=loadImg('assets/characters/yeongdeung_smile.png');
+var CHAR_SRC={smile:'assets/characters/yeongdeung_smile.png',blow:'assets/characters/yeongdeung_blow.png',puff:'assets/characters/yeongdeung_wind_puff.png',cheer:'assets/characters/yeongdeung_cheer.png'};
+var CHAR_SMILE=loadImg(CHAR_SRC.smile),CHAR_BLOW=loadImg(CHAR_SRC.blow),CHAR_PUFF=loadImg(CHAR_SRC.puff);
+loadImg(CHAR_SRC.cheer);
 var BG=loadImg('assets/backgrounds/jeju_coast.png');
 var UI={};['crane_rail','crane_trolley','crane_claw_open','crane_claw_closed','platform','impact_ring','sparkle'].forEach(function(n){UI[n]=loadImg('assets/ui/'+n+'.svg')});
 
@@ -124,6 +126,111 @@ var S={
  attemptId:null, seed:null, startedAt:0, collapseTimer:0,
  best:0, paused:false, toastUntil:0, shakeUntil:0
 };
+
+/* ---------------- 영등할망 캐릭터 연출 관리자 ---------------- */
+/* idlePeek(평상시 빼꼼) / windActive(화면가림, 캔버스) / resultCheer(결과 화면 축하)는 서로 겹치지 않는다.
+   idlePeek는 게임 시간(tick의 dt)으로만 돌아 백그라운드 복귀 때 옛 연출이 튀어나오지 않고, 물리·점수에는 관여하지 않는다. */
+var PEEK={enter:0.25,stay:1.0,exit:0.25,quickExit:0.2,minGap:8,maxPerStage:3,earlyItems:3,widthPx:117,craneClear:95,chance:0.5,
+ weights:{left:40,right:40,bottom:30,top:10}};
+var DIR={now:0,lastEnd:-99,count:0,lastPose:null,active:null,heldT:0,plan:null};
+var peekEls={};
+[].forEach.call(document.querySelectorAll('#charLayer .peek'),function(el){
+ peekEls[el.getAttribute('data-pose')]=el;
+ el.addEventListener('error',function(){if(!el._fb){el._fb=true;el.src=CHAR_SRC.smile}});
+});
+function peekReset(el){el.classList.add('snap');el.classList.remove('on');void el.offsetWidth;el.classList.remove('snap')}
+function directorKill(){
+ if(DIR.active){peekReset(DIR.active.el);DIR.active=null;DIR.lastEnd=DIR.now}
+ DIR.plan=null;
+}
+function directorPlanHeld(){
+ DIR.heldT=0;DIR.plan=null;
+ if(DIR.count>=PEEK.maxPerStage)return;
+ if(Math.random()<PEEK.chance)DIR.plan={at:0.9+Math.random()*1.6};
+}
+function craneClearOf(side,dur){
+ var x=S.craneX,d=S.craneDir;
+ for(var t=0;t<=dur+0.1;t+=0.1){
+  x+=CRANE.speed*d*0.1;
+  if(x>CRANE.maxX){x=2*CRANE.maxX-x;d=-1}
+  if(x<CRANE.minX){x=2*CRANE.minX-x;d=1}
+  var edgeDist=side==='left'?x:WORLD.width-x;
+  if(edgeDist<PEEK.widthPx+PEEK.craneClear)return false;
+ }
+ return true;
+}
+function canPeek(){
+ if(S.phase!=='HELD'||S.windEvent||S.paused||DIR.active)return false;
+ if(!S.bodies.some(function(b){return b.plugin&&b.plugin.stableAwarded}))return false;
+ if(DIR.count>=PEEK.maxPerStage)return false;
+ if(S.released<PEEK.earlyItems&&DIR.count>=1)return false;
+ if(DIR.now-DIR.lastEnd<PEEK.minGap)return false;
+ return true;
+}
+function startPeek(){
+ if(!canPeek())return;
+ var total=PEEK.enter+PEEK.stay+PEEK.exit,topSide=null,pool=[];
+ ['left','right','bottom','top'].forEach(function(pose){
+  if(pose===DIR.lastPose)return;
+  if(pose==='top'){
+   topSide=craneClearOf('left',total)?'left':(craneClearOf('right',total)?'right':null);
+   if(!topSide)return;
+  }
+  pool.push(pose);
+ });
+ if(!pool.length)return;
+ var sum=0;pool.forEach(function(k){sum+=PEEK.weights[k]});
+ var r=Math.random()*sum,pose=pool[pool.length-1];
+ for(var i=0;i<pool.length;i++){r-=PEEK.weights[pool[i]];if(r<=0){pose=pool[i];break}}
+ var el=peekEls[pose];if(!el)return;
+ peekReset(el);
+ if(pose==='top'){el.style.left=topSide==='left'?'-2%':'auto';el.style.right=topSide==='right'?'-2%':'auto'}
+ el.style.setProperty('--peek-dur',PEEK.enter+'s');
+ void el.offsetWidth;el.classList.add('on');
+ DIR.active={pose:pose,el:el,t:0,state:'enter',exitAt:0,exitDur:PEEK.exit};
+ DIR.count++;DIR.lastPose=pose;
+}
+function peekBeginExit(a,dur){
+ a.state='exit';a.exitAt=a.t;a.exitDur=dur;
+ a.el.style.setProperty('--peek-dur',dur+'s');a.el.classList.remove('on');
+}
+function directorTick(dt){
+ DIR.now+=dt;
+ var a=DIR.active;
+ if(a){
+  a.t+=dt;
+  if(S.windEvent){directorKill();return}
+  if(a.state!=='exit'&&S.phase!=='HELD')peekBeginExit(a,PEEK.quickExit);
+  else if(a.state==='enter'&&a.t>=PEEK.enter)a.state='stay';
+  if(a.state==='stay'&&a.t>=PEEK.enter+PEEK.stay)peekBeginExit(a,PEEK.exit);
+  if(a.state==='exit'&&a.t>=a.exitAt+a.exitDur){DIR.active=null;DIR.lastEnd=DIR.now}
+  return;
+ }
+ if(S.phase==='HELD'&&DIR.plan){
+  DIR.heldT+=dt;
+  if(DIR.heldT>=DIR.plan.at){DIR.plan=null;startPeek()}
+ }
+}
+/* 결과 화면 축하: 패널(z-index 1) 뒤에서 고개를 내밀어 점수·버튼을 가리지 않는다 */
+var cheerEl=null;
+function hideCheer(){if(cheerEl){cheerEl.remove();cheerEl=null}}
+function layoutCheer(img){
+ var sr=stage.getBoundingClientRect(),pr=panel.getBoundingClientRect();
+ var sw=sr.width,panelTop=pr.top-sr.top,asp=640/1246;
+ var H=Math.min(Math.max(140,(panelTop-6)*2),sw*0.6/asp);
+ img.style.height=H+'px';
+ img.style.left=-Math.round(sw*0.05)+'px';
+ img.style.top=Math.max(4,Math.round(panelTop-H*0.5))+'px';
+}
+function showCheer(){
+ hideCheer();
+ var img=new Image();img.className='cheer';img.alt='';img.decoding='async';
+ img.onerror=function(){if(!img._fb){img._fb=true;img.src=CHAR_SRC.smile}};
+ img.src=CHAR_SRC.cheer;
+ overlay.insertBefore(img,panel);cheerEl=img;
+ layoutCheer(img);
+ requestAnimationFrame(function(){requestAnimationFrame(function(){img.classList.add('in')})});
+}
 
 /* ---------------- Matter 세팅 ---------------- */
 var engine,world,platformBody;
@@ -186,6 +293,7 @@ function pickStageItems(stageNum){
  return pool.slice(0,STAGE_ITEM_COUNTS[stageNum-1]);
 }
 function renderIntro(){
+ hideCheer();directorKill();
  overlay.classList.remove('hidden');
  panel.innerHTML='<h2>어디까지 쌓을 수 있을까?</h2>'+
   '<img class="startPortrait" src="assets/characters/yeongdeung_smile.png" alt="영등할망">'+
@@ -202,6 +310,7 @@ function renderIntro(){
 
 /* ---------------- 라운드 진행 ---------------- */
 function beginStage(){
+ hideCheer();directorKill();DIR.count=0;
  clearPhysics();initPhysics(); // 단계마다 판(플랫폼)을 새로 시작
  S.order=pickStageItems(S.stage);
  S.released=0;S.score=0;S.itemScore=0;S.heightPx=0;
@@ -234,7 +343,9 @@ function setPhase(p){
    S.windUsedSlots[slot]=true;
    S.windEvent={slot:slot,line:WIND_LINES[Math.floor(Math.random()*WIND_LINES.length)]};
    S.windTimer=0;
+   directorKill();DIR.lastEnd=DIR.now+WIND_TOTAL;
   }
+  directorPlanHeld();
   $('#phase').textContent=S.stage+'단계 ('+slot+'/'+S.order.length+') · '+item.name+' · '+item.description;
  }
 }
@@ -317,6 +428,7 @@ function checkFailure(dt){
 
 function tick(dt){
  if(S.paused)return;
+ directorTick(dt);
  if(S.phase==='HELD'||S.phase==='FALLING'||S.phase==='SETTLING'){
   applyCustomForces(dt);
   Matter.Engine.update(engine,dt*1000);
@@ -391,6 +503,7 @@ function finishStage(outcome){
   } else {
    renderGameClear();
   }
+  showCheer(); // 탑이 안정화된 클리어에서만 — 실패 화면에는 축하 포즈를 쓰지 않는다
  } else {
   S.phase=outcome==='fall'?'RESULT_FAIL':'RESULT_UNSTABLE';
   renderStageFail(outcome,placedCount);
@@ -423,6 +536,7 @@ function renderGameClear(){
  $('#btnRestart').onclick=function(){renderIntro()};
 }
 function renderStageFail(outcome,placedCount){
+ hideCheer();
  overlay.classList.remove('hidden');
  var title=outcome==='fall'?'아이고, 와르르!':'아직 흔들려요';
  var sub=outcome==='fall'?(S.stage+'단계, 이번엔 순서를 바꿔 볼까?'):'시간이 다 되어 여기서 마무리할게요.';
@@ -492,6 +606,17 @@ function drawBodies(){
   drawSourceItem(img,pl.item,px,py,b.angle);
  });
 }
+var PUFF_HAND=[0.93,0.365]; // wind_puff.png에서 펼친 손바닥 위치(가로·세로 비율) — 바람이 여기서 시작
+function drawPuffWind(hx,hy,t,alpha){
+ ctx.save();ctx.lineCap='round';
+ for(var i=0;i<4;i++){
+  var p=((t*1.7+i*0.27)%1),len=30+i*9,dy=(i-1.5)*15+Math.sin(t*6+i)*3;
+  var x0=hx+(WORLD.width-hx+len)*p*0.98,a=Math.sin(Math.PI*p)*0.8*alpha;
+  ctx.globalAlpha=a;ctx.strokeStyle='#f2fbf7';ctx.lineWidth=3.2-i*0.3;
+  ctx.beginPath();ctx.moveTo(x0-len,hy+dy);ctx.quadraticCurveTo(x0-len*0.4,hy+dy-5,x0,hy+dy);ctx.stroke();
+ }
+ ctx.restore();
+}
 /* 화면 좌표계(카메라 이동 영향 없음)에 그린다 — 탑이 아무리 높아져도 항상 화면 전체를 가려야 하므로. */
 function drawPeekabooCover(){
  if(!S.windEvent)return;
@@ -507,14 +632,16 @@ function drawPeekabooCover(){
  landingScreenY=Math.max(WORLD.height*0.42,Math.min(WORLD.height*0.86,landingScreenY));
  var bandTop=Math.max(WORLD.height*0.22,landingScreenY-160);
  ctx.save();ctx.globalAlpha=alpha*0.94;ctx.fillStyle='#173f45';ctx.fillRect(0,bandTop,WORLD.width,WORLD.height-bandTop);ctx.restore();
- var img=CHAR_SMILE;
- if(img.complete&&img.naturalWidth){
+ var ok=function(im){return im.complete&&im.naturalWidth>0};
+ var img=ok(CHAR_PUFF)?CHAR_PUFF:(ok(CHAR_BLOW)?CHAR_BLOW:CHAR_SMILE);
+ if(ok(img)){
   var scale=(WORLD.width*0.82)/img.naturalWidth;
   var w=img.naturalWidth*scale,h=img.naturalHeight*scale;
-  var cx=WORLD.width/2,cy=Math.min(landingScreenY+30,WORLD.height-h*0.3);
+  var cx=WORLD.width/2-(img===CHAR_PUFF?18:0),cy=Math.min(landingScreenY+30,WORLD.height-h*0.3);
   ctx.save();ctx.globalAlpha=alpha;
   ctx.drawImage(img,cx-w/2,cy-h/2,w,h);
   ctx.restore();
+  if(img===CHAR_PUFF)drawPuffWind(cx-w/2+w*PUFF_HAND[0],cy-h/2+h*PUFF_HAND[1],t,alpha);
  }
  // 말풍선(DOM)
  var showBubble=t<coverEnd;
@@ -582,7 +709,7 @@ function loop(t){
  render();
  raf=requestAnimationFrame(loop);
 }
-document.addEventListener('visibilitychange',function(){S.paused=document.hidden;if(!document.hidden)lastT=null});
+document.addEventListener('visibilitychange',function(){S.paused=document.hidden;if(document.hidden)directorKill();if(!document.hidden)lastT=null});
 
 /* ---------------- 시작 ---------------- */
 resizeCanvas();

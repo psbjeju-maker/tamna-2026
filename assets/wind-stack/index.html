@@ -14,6 +14,12 @@
 <div id="board-wrap">
   <section id="stage">
     <canvas id="game"></canvas>
+    <div id="charLayer" aria-hidden="true">
+      <img class="peek peek--left" data-pose="left" src="assets/characters/yeongdeung_peek_left.png" alt="">
+      <img class="peek peek--right" data-pose="right" src="assets/characters/yeongdeung_peek_right.png" alt="">
+      <img class="peek peek--bottom" data-pose="bottom" src="assets/characters/yeongdeung_peek_bottom.png" alt="">
+      <img class="peek peek--top" data-pose="top" src="assets/characters/yeongdeung_peek_top.png" alt="">
+    </div>
     <div id="windBubble" class="windBubble"></div>
     <div id="toast" class="toast"></div>
     <div id="overlay"><div id="panel" class="panel"></div></div>
