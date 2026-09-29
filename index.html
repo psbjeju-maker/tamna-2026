@@ -2018,6 +2018,18 @@ function fadeStopAmbient(ms){
     if(i>=steps){clearInterval(iv);sfxStopAmbient()}
   },stepMs);
 }
+/* 볼륨을 순간적으로 뚝 바꾸지 않고 목표값까지 부드럽게 램프 — "정적" 구간에서 음악이 갑자기
+   끊기는 느낌(특히 다이아 배경음처럼 곡 느낌이 강한 트랙)을 없애기 위해 사용 */
+function fadeAmbientTo(targetVol,ms){
+  if(!ambientEl){return}
+  var el=ambientEl, startVol=el.volume, steps=6, stepMs=Math.max(20,ms/steps), i=0;
+  var iv=setInterval(function(){
+    i++;
+    if(!el){clearInterval(iv);return}
+    el.volume=Math.max(0,startVol+(targetVol-startVol)*(i/steps));
+    if(i>=steps)clearInterval(iv);
+  },stepMs);
+}
 /* 카드 탄생 연출 — idle→gathering→combining→suspense→reveal→settle→result 상태로 진행.
    결과는 사용자가 저장/다시뽑기/새카드/건너뛰기 중 하나를 누를 때까지 자동으로 닫지 않는다.
    audio.onended/animationend/setTimeout(음악 길이) 무엇도 결과를 닫거나 카드 DOM을 지우지 않는다 —
@@ -2085,10 +2097,10 @@ function playCardReveal(data,photos,pos){
   at(3400,function(){beep(1046,0.09,'sine',0.2)});
   at(3600,function(){label.textContent=data.attributeLabel+' 속성'});
 
-  /* 3.8~4.35초 — 정적. 화면·소리를 살짝 눌러주고, 레어도는 아직 숨김 */
+  /* 3.8~4.35초 — 정적. 화면을 살짝 눌러주고, 소리도 뚝 끊기지 않게 부드럽게 절반으로 낮춘다(레어도는 아직 숨김) */
   at(3800,function(){
     flip.classList.add('flipCard--dim');
-    if(ambientEl)ambientEl.volume=(ambientEl.volume||0.32)*0.5;
+    if(ambientEl)fadeAmbientTo((ambientEl.volume||0.32)*0.5,400);
   });
 
   /* 4.35초 — 공개: 카드 반전(sealed_back 사라짐) + rays/impact_ring/corner_flare/rarity 동시 시작.
@@ -2113,10 +2125,12 @@ function playCardReveal(data,photos,pos){
   });
 
   /* 6.8초 이후 — 카드 고정, 음악 자연스럽게 잦아들고, 저장/다시뽑기 버튼 등장.
+     페이드를 900ms→1800ms로 늘림 — 다이아 배경음(epic-cinematic-logo-reveal, 7.8초)이 900ms짜리
+     빠른 페이드에 여운(꼬리음)까지 잘려서 "노래가 갑자기 끝나는 느낌"이 난다는 피드백 반영.
      등급 체감은 이제 drawCard()가 캔버스에 굽는 rfx_* 레이어가 전담(통합 디자인팩) */
   at(6800,function(){
     wrap.classList.add('settle');
-    fadeStopAmbient(900);
+    fadeStopAmbient(1800);
   });
   at(7300,function(){enterResult()});
 
