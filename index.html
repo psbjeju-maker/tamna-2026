@@ -1745,7 +1745,9 @@ var CARD_LAYOUT={
   fontDisplay:'JejuGothic, sans-serif', fontBody:'SCDream, sans-serif',
   title:{cx:375,topY:51,size:48,maxW:440,lineH:1.12,weight:'400'}, /* maxW를 넉넉히 줄여 우측 속성 배지(x=637~)와 항상 간격 확보 */
   icon:{x:637,y:52,size:74},
-  meta:{cx:375,topY:719,size:30,maxW:640,lineH:1.15,weight:'600'}, /* 700 요청 → 실존 웨이트 중 가장 가까운 600 */
+  meta:{cx:375,midY:737.5,size:30,maxW:640,lineH:1.15,weight:'600'}, /* 700 요청 → 실존 웨이트 중 가장 가까운 600.
+    midY=737.5는 meta_strip.png 바의 실측 세로 중심(픽셀 스캔 결과 y=713~762) — top 기준 눈대중 좌표 대신
+    바 중앙에 텍스트 실제 글리프 높이(actualBoundingBox)를 정확히 맞춰 위아래 여백을 동일하게 만든다 */
   skill:{cx:375,topY:790,size:44,maxW:620,lineH:1.13,weight:'400'},
   desc:{cx:375,size:30,maxW:620,lineH:1.28,weight:'600',gap:12},
   quote:{cx:375,size:26,maxW:620,lineH:1.25,weight:'400',gap:12}, /* 500 요청 → 400 사용(더 가벼운 인상이 대사에 어울림) */
@@ -1904,8 +1906,9 @@ function drawCard(ctx2,W,H,data,imgs,pos,t){
   if(aMeta>0){
     var meta='Lv.'+data.level+'   ·   '+(data.metaName||data.roleLabel)+'   ·   '+data.attributeLabel+' 속성';
     var msize=fitFont(ctx2,meta,ML.weight,FB,ML.size*k,ML.size*k*0.8,ML.maxW*k);
-    ctx2.save();ctx2.globalAlpha=aMeta;ctx2.font=ML.weight+' '+Math.round(msize)+'px '+FB;
-    ctx2.fillText(meta,ML.cx*k,ML.topY*k);ctx2.restore();
+    ctx2.save();ctx2.globalAlpha=aMeta;ctx2.font=ML.weight+' '+Math.round(msize)+'px '+FB;ctx2.textBaseline='alphabetic';
+    var mtm=ctx2.measureText(meta), mAsc=mtm.actualBoundingBoxAscent||msize*0.36, mDesc=mtm.actualBoundingBoxDescent||msize*0.06;
+    ctx2.fillText(meta,ML.cx*k,ML.midY*k+(mAsc-mDesc)/2);ctx2.restore();
   }
   /* 기술명 → 설명 → 대사: 개별 y좌표로 고정하지 않고, 기술명 아래부터 gap을 두고 세로로 흘려 쌓는다 */
   var SK=L.skill, DE=L.desc, QT=L.quote, FO=L.foot;
@@ -2012,10 +2015,18 @@ function playCardReveal(data,photos,pos){
   stage.classList.add('stage--ambient');
   at(2000,function(){skipBtn.hidden=false});
 
-  /* 0.7~2.4초 — 궤도(stage_02) 회전 시작, 안내문구, 배경음악 도입(epic-cinematic-logo-reveal, 약 7.8초 ≈ 공개 시퀀스 전체 길이) */
+  /* 0.7~2.4초 — 궤도(stage_02) 회전 시작, 안내문구, 배경음악 도입.
+     노래 4곡을 매번 겹쳐 틀면 시끄럽다는 피드백 반영 — 등급 하나당 곡 하나만 재생(레이어링 X):
+     브론즈·실버=wind-whoosh(절제된 바람), 골드=magic-spell(기운이 모이는 신비감),
+     플래티넘=dark-hit-logo(묵직한 드라마), 다이아=epic-cinematic-logo-reveal(가장 화려함,
+     길이 7.8초가 공개 시퀀스 전체 길이와 거의 일치) */
   at(700,function(){
     label.textContent='당신의 카드가 만들어지고 있어요';
-    sfxAmbient('reveal_bgm',0.4);
+    var track=data.rarity==='diamond'?['reveal_bgm',0.45]
+      :data.rarity==='platinum'?['reveal_hit',0.4]
+      :data.rarity==='gold'?['reveal_spell',0.42]
+      :['reveal_whoosh',0.22];
+    sfxAmbient(track[0],track[1]);
     stage.classList.add('stage--orbit');
   });
 
@@ -2036,15 +2047,14 @@ function playCardReveal(data,photos,pos){
   at(3400,function(){beep(1046,0.09,'sine',0.2)});
   at(3600,function(){label.textContent=data.attributeLabel+' 속성'});
 
-  /* 3.8~4.35초 — 정적. 화면·소리를 살짝 눌러주고 마법 기운(magic-spell)이 모이는 소리, 레어도는 아직 숨김 */
+  /* 3.8~4.35초 — 정적. 화면·소리를 살짝 눌러주고, 레어도는 아직 숨김 */
   at(3800,function(){
     flip.classList.add('flipCard--dim');
     if(ambientEl)ambientEl.volume=(ambientEl.volume||0.32)*0.5;
-    sfx('reveal_spell',0.45);
   });
 
   /* 4.35초 — 공개: 카드 반전(sealed_back 사라짐) + rays/impact_ring/corner_flare/rarity 동시 시작.
-     dark-hit-logo(임팩트 타격음) + wind-whoosh(light_sweep과 맞춘 스치는 소리) + 등급별 효과음이 함께 터진다 */
+     배경음은 이미 등급별로 다르게 깔려 있으니 여기선 등급별 짧은 클라이맥스 효과음 하나만 겹친다(믹싱 정리) */
   at(4350,function(){
     clearInterval(flickerIv);
     flip.classList.remove('flipCard--dim');
@@ -2052,9 +2062,7 @@ function playCardReveal(data,photos,pos){
     wrap.className='cardWrap reveal reveal--'+data.rarity+' fx-reveal';
     stage.classList.remove('stage--ambient','stage--orbit');
     stage.classList.add('stage--rays','stage--impact');
-    sfx('reveal_hit',0.55);
-    sfx('reveal_whoosh',0.35);
-    sfx(data.rarity==='platinum'||data.rarity==='diamond'?'fanfare':data.rarity==='gold'?'bonus':'pop',0.5);
+    sfx(data.rarity==='platinum'||data.rarity==='diamond'?'fanfare':data.rarity==='gold'?'bonus':'pop',0.65);
   });
 
   /* 5.25~6.8초 — light_sweep 지나간 뒤 prism_edge·crystal_flecks만 은은히 남기고,
@@ -2066,9 +2074,11 @@ function playCardReveal(data,photos,pos){
     animateCard(canvas,data,photos,pos);
   });
 
-  /* 6.8초 이후 — 카드 고정, 음악 자연스럽게 잦아들고, 저장/다시뽑기 버튼 등장 */
+  /* 6.8초 이후 — 카드 고정, 음악 자연스럽게 잦아들고, 저장/다시뽑기 버튼 등장.
+     플래티넘·다이아는 결과 화면에서도 배경 오라가 계속 은은히 숨쉬게(등급 체감 차이) */
   at(6800,function(){
     wrap.classList.add('settle');
+    if(data.rarity==='platinum'||data.rarity==='diamond')stage.classList.add('stage--settle-glow');
     fadeStopAmbient(900);
   });
   at(7300,function(){enterResult()});
@@ -2090,7 +2100,7 @@ function playCardReveal(data,photos,pos){
     flip.classList.remove('flipCard--dim');
     flip.classList.add('flipCard--flipped');
     flip.classList.remove('flipCard--reveal');
-    stage.className='revealStage';
+    stage.className='revealStage'; /* 건너뛰기는 정적인 결과로 즉시 — 숨쉬는 배경 오라도 애니메이션이라 생략 */
     wrap.className='cardWrap reveal reveal--'+data.rarity+' fx-settle fx-noanim settle';
     currentCardImgs=[photos,pos];
     drawCard(ctx2,canvas.width,canvas.height,data,photos,pos); /* t 없이 = 완성본 즉시 */

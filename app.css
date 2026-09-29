@@ -207,6 +207,8 @@ p{margin:0}
 .revealStage.stage--orbit .revealStage__layer--orbit{opacity:.85;animation:fx-orbit 1700ms ease-in-out 1}
 .revealStage.stage--rays .revealStage__layer--rays{animation:fx-rays 550ms ease-out 1 forwards}
 .revealStage.stage--impact .revealStage__layer--impact{animation:fx-impact 800ms ease-out 1 forwards}
+/* 플래티넘·다이아 전용 — 정착 후에도 배경 오라가 은은하게 계속 숨쉬어서 "결과 화면에서도 확실히 특별해 보이게" */
+.revealStage.stage--settle-glow .revealStage__layer--ambient{opacity:.5;animation:fx-breathe 6000ms ease-in-out infinite}
 @keyframes fx-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 @keyframes fx-orbit{0%{transform:rotate(0deg)}100%{transform:rotate(16deg)}}
 @keyframes fx-rays{0%{opacity:0;transform:scale(.75)}35%{opacity:1}100%{opacity:0;transform:scale(1.18)}}
@@ -245,20 +247,38 @@ p{margin:0}
 .cardWrap.fx-reveal .cardFx--sweep{animation:fx-sweep 650ms ease-in forwards}
 .cardWrap.fx-settle .cardFx--rarity{animation:fx-rarity-settle 600ms ease-out forwards}
 .cardWrap.fx-settle .cardFx--prism{animation:fx-prism 800ms ease-out forwards}
-.cardWrap.fx-settle .cardFx--flecks{animation:fx-flecks 4000ms ease-out forwards}
+.cardWrap.fx-settle .cardFx--flecks{animation:fx-flecks-in 1200ms ease-out forwards}
+/* 등급 사다리 — "카드 다 나온 뒤에도 높은 등급이 확실히 달라 보여야 한다"는 피드백 반영.
+   브론즈/실버는 fx-settle 기본값(잔광 고정)만, 골드부터는 prism_edge가 계속 은은히 숨쉬고,
+   플래티넘·다이아는 레어도 레이어 자체도 계속 맥동+반짝이 입자가 멈추지 않고 떠다닌다 */
+.flipCard.rarity-gold .cardWrap.fx-settle .cardFx--prism,
+.flipCard.rarity-platinum .cardWrap.fx-settle .cardFx--prism,
+.flipCard.rarity-diamond .cardWrap.fx-settle .cardFx--prism{
+  animation:fx-prism 800ms ease-out forwards,fx-prism-pulse 2600ms ease-in-out 800ms infinite}
+.flipCard.rarity-gold .cardWrap.fx-settle .cardFx--flecks,
+.flipCard.rarity-platinum .cardWrap.fx-settle .cardFx--flecks,
+.flipCard.rarity-diamond .cardWrap.fx-settle .cardFx--flecks{
+  animation:fx-flecks-in 1200ms ease-out forwards,fx-flecks-loop 4200ms ease-in-out 1200ms infinite}
 .flipCard.rarity-diamond .cardWrap.fx-settle .cardFx--rarity,
-.flipCard.rarity-platinum .cardWrap.fx-settle .cardFx--rarity{animation-name:fx-rarity-settle-strong}
-.cardWrap.fx-noanim .cardFx--rarity{animation:none;opacity:.5}
-.cardWrap.fx-noanim .cardFx--flare,.cardWrap.fx-noanim .cardFx--sweep{animation:none;opacity:0}
-.cardWrap.fx-noanim .cardFx--prism{animation:none;opacity:.55}
-.cardWrap.fx-noanim .cardFx--flecks{animation:none;opacity:.35}
+.flipCard.rarity-platinum .cardWrap.fx-settle .cardFx--rarity{
+  animation:fx-rarity-settle-strong 600ms ease-out forwards,fx-rarity-breathe 3200ms ease-in-out 600ms infinite}
+/* fx-noanim(건너뛰기 전용) — 등급별 무한루프보다 항상 우선해서 완전히 정적이어야 하므로 !important로 고정 */
+.cardWrap.fx-noanim .cardFx--rarity{animation:none!important;opacity:.5}
+.flipCard.rarity-diamond .cardWrap.fx-noanim .cardFx--rarity,
+.flipCard.rarity-platinum .cardWrap.fx-noanim .cardFx--rarity{opacity:.7}
+.cardWrap.fx-noanim .cardFx--flare,.cardWrap.fx-noanim .cardFx--sweep{animation:none!important;opacity:0}
+.cardWrap.fx-noanim .cardFx--prism{animation:none!important;opacity:.55}
+.cardWrap.fx-noanim .cardFx--flecks{animation:none!important;opacity:.35}
 @keyframes fx-rarity-in{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
 @keyframes fx-rarity-settle{from{opacity:1}to{opacity:.5}}
-@keyframes fx-rarity-settle-strong{from{opacity:1}to{opacity:.68}}
+@keyframes fx-rarity-settle-strong{from{opacity:1}to{opacity:.7}}
+@keyframes fx-rarity-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
 @keyframes fx-flare{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
 @keyframes fx-sweep{0%{opacity:0;transform:translateX(-45%)}12%{opacity:.9}88%{opacity:.9}100%{opacity:0;transform:translateX(75%)}}
 @keyframes fx-prism{0%{opacity:0}40%{opacity:1}100%{opacity:.55}}
-@keyframes fx-flecks{0%{opacity:0;transform:translateY(0)}18%{opacity:.85}100%{opacity:.35;transform:translateY(-14px)}}
+@keyframes fx-prism-pulse{0%,100%{opacity:.45}50%{opacity:.8}}
+@keyframes fx-flecks-in{0%{opacity:0;transform:translateY(0)}18%{opacity:.85}100%{opacity:.35;transform:translateY(-14px)}}
+@keyframes fx-flecks-loop{0%,100%{opacity:.3;transform:translateY(-14px)}50%{opacity:.65;transform:translateY(-24px)}}
 
 .cardActions{opacity:0;transform:translateY(6px);transition:opacity 400ms var(--ease),transform 400ms var(--ease);pointer-events:none}
 .cardActions .btn{font-size:14px;padding:0 8px;white-space:nowrap} /* "탄생 연출 다시 보기" 같은 긴 라벨이 좁은 2열에서 줄바꿈되던 문제 */
@@ -271,6 +291,7 @@ p{margin:0}
   .revealStage__layer{transition:none}
   .revealStage.stage--ambient .revealStage__layer--ambient,.revealStage.stage--orbit .revealStage__layer--orbit{animation:none;opacity:.5}
   .revealStage.stage--rays .revealStage__layer--rays,.revealStage.stage--impact .revealStage__layer--impact{animation:none;opacity:0}
+  .revealStage.stage--settle-glow .revealStage__layer--ambient{animation:none;opacity:.3}
   .flipCard__inner{transition:opacity 250ms linear!important;transform:none!important}
   .flipCard__face--back{transform:none;opacity:1;transition:opacity 250ms linear}
   .flipCard__face--front{transform:none;opacity:0;transition:opacity 250ms linear}
@@ -278,7 +299,15 @@ p{margin:0}
   .flipCard--flipped .flipCard__face--front{opacity:1}
   .cardWrap.fx-reveal .cardFx--sweep,.cardWrap.fx-reveal .cardFx--flare{animation:none;opacity:0}
   .cardWrap.fx-reveal .cardFx--rarity{animation:none;opacity:1}
-  .cardWrap.fx-settle .cardFx--flecks{animation:none;opacity:.35}
+  .cardWrap.fx-settle .cardFx--flecks,
+  .flipCard.rarity-gold .cardWrap.fx-settle .cardFx--flecks,
+  .flipCard.rarity-platinum .cardWrap.fx-settle .cardFx--flecks,
+  .flipCard.rarity-diamond .cardWrap.fx-settle .cardFx--flecks{animation:none;opacity:.35}
+  .flipCard.rarity-gold .cardWrap.fx-settle .cardFx--prism,
+  .flipCard.rarity-platinum .cardWrap.fx-settle .cardFx--prism,
+  .flipCard.rarity-diamond .cardWrap.fx-settle .cardFx--prism{animation:none;opacity:.55}
+  .flipCard.rarity-diamond .cardWrap.fx-settle .cardFx--rarity,
+  .flipCard.rarity-platinum .cardWrap.fx-settle .cardFx--rarity{animation:none;opacity:.7}
 }
 
 /* shop / tickets */
