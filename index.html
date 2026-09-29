@@ -224,6 +224,7 @@
                 <img class="cardFx cardFx--sweep" src="assets/photo-card/birth-fx/card_01_light_sweep.png" alt="">
                 <img class="cardFx cardFx--prism" src="assets/photo-card/birth-fx/card_02_prism_edge.png" alt="">
                 <img class="cardFx cardFx--flecks" src="assets/photo-card/birth-fx/card_03_crystal_flecks.png" alt="">
+                <img class="cardFx cardFx--diasheen" src="assets/photo-card/rarity-fx/diamond/diamond_07_sheen_sweep.png" alt="">
               </div>
             </div>
           </div>
@@ -1754,16 +1755,37 @@ var CARD_LAYOUT={
   foot:{cx:375,topY:962,size:19,lineH:1.1,weight:'600'}
 };
 var CARD_ASSET_BASE='assets/photo-card/layers/', cardAssets=null;
+/* 등급별 "완성 카드 상시 이펙트" 스택 순서 — 통합디자인팩 README/지시서 그대로.
+   4등급 공통: 빛결→등급장식→재질테두리→상시입자. 다이아만 6장, 별도 순서(더 화려한 레이어가 아래) */
+var RARITY_FX_ORDER={
+  bronze:['sheen','decor','border','particles'],
+  silver:['sheen','decor','border','particles'],
+  gold:['sheen','decor','border','particles'],
+  platinum:['sheen','decor','border','particles'],
+  diamond:['prism','corner','shards','border','starlight','seal']
+};
 function loadCardAssets(cb){
   if(cardAssets){cb(cardAssets);return}
+  var RFX='assets/photo-card/rarity-fx/', BADGE='assets/photo-card/badges/';
   var files={
     title_scrim:'title_scrim.png',meta_strip:'meta_strip.png',caption_fade:'caption_fade.png',
     foil_bronze:'foil_bronze.png',foil_silver:'foil_silver.png',foil_gold:'foil_gold.png',
     foil_platinum:'foil_platinum.png',foil_diamond:'foil_diamond.png',
     frame_bronze:'frame_bronze.png',frame_silver:'frame_silver.png',frame_gold:'frame_gold.png',
     frame_platinum:'frame_platinum.png',frame_diamond:'frame_diamond.png',
-    attr_fire:'icon_fire.png',attr_water:'icon_water.png',attr_wind:'icon_wind.png',
-    attr_earth:'icon_earth.png',attr_light:'icon_light.png',attr_shadow:'icon_dark.png'
+    attr_fire:BADGE+'badge_fire.png',attr_water:BADGE+'badge_water.png',attr_wind:BADGE+'badge_wind.png',
+    attr_earth:BADGE+'badge_earth.png',attr_light:BADGE+'badge_light.png',attr_shadow:BADGE+'badge_dark.png',
+    rfx_bronze_border:RFX+'bronze/bronze_01_border.png',rfx_bronze_sheen:RFX+'bronze/bronze_02_sheen.png',
+    rfx_bronze_decor:RFX+'bronze/bronze_03_decor.png',rfx_bronze_particles:RFX+'bronze/bronze_04_particles.png',
+    rfx_silver_border:RFX+'silver/silver_01_border.png',rfx_silver_sheen:RFX+'silver/silver_02_sheen.png',
+    rfx_silver_decor:RFX+'silver/silver_03_decor.png',rfx_silver_particles:RFX+'silver/silver_04_particles.png',
+    rfx_gold_border:RFX+'gold/gold_01_border.png',rfx_gold_sheen:RFX+'gold/gold_02_sheen.png',
+    rfx_gold_decor:RFX+'gold/gold_03_decor.png',rfx_gold_particles:RFX+'gold/gold_04_particles.png',
+    rfx_platinum_border:RFX+'platinum/platinum_01_border.png',rfx_platinum_sheen:RFX+'platinum/platinum_02_sheen.png',
+    rfx_platinum_decor:RFX+'platinum/platinum_03_decor.png',rfx_platinum_particles:RFX+'platinum/platinum_04_particles.png',
+    rfx_diamond_border:RFX+'diamond/diamond_01_gem_border.png',rfx_diamond_shards:RFX+'diamond/diamond_02_gem_shards.png',
+    rfx_diamond_prism:RFX+'diamond/diamond_03_prism.png',rfx_diamond_starlight:RFX+'diamond/diamond_04_starlight.png',
+    rfx_diamond_corner:RFX+'diamond/diamond_05_corner_refract.png',rfx_diamond_seal:RFX+'diamond/diamond_06_side_seal.png'
   };
   var keys=Object.keys(files), out={}, left=keys.length;
   keys.forEach(function(k){
@@ -1771,7 +1793,7 @@ function loadCardAssets(cb){
     function done(){if(--left===0){cardAssets=out;cb(out)}}
     im.onload=function(){out[k]=im;done()};
     im.onerror=function(){out[k]=null;done()};
-    im.src=CARD_ASSET_BASE+files[k];
+    im.src=/^assets\//.test(files[k])?files[k]:CARD_ASSET_BASE+files[k];
   });
 }
 /* 천장: 5장째마다 최고 등급(다이아) 확정. 누적 장수는 S.cardCount에 저장 */
@@ -1954,6 +1976,22 @@ function drawCard(ctx2,W,H,data,imgs,pos,t){
     ctx2.restore();
   }
   clearTextShadow(ctx2);
+  /* 8) 등급별 "완성 카드 상시 이펙트"(통합디자인팩) — 텍스트 위 최상단, 저장 PNG에도 그대로 굽는다.
+     탄생 연출용 rarity_*_reveal/card_02·03(카드 앞 FX)과 달리 사라지지 않는다 */
+  drawRarityFX(ctx2,W,H,data);
+}
+/* 다이아 shards·플래티넘 particles는 "측면과 하단에 고정"이라 설명 문구가 길면 끝 글자와 겹친다(실측 확인됨) —
+   지시서대로 폰트는 그대로 두고 이 두 레이어만 투명도를 살짝 낮춰 글자를 가리지 않게 한다 */
+var RARITY_FX_ALPHA={diamond_shards:0.72,platinum_particles:0.72};
+function drawRarityFX(ctx2,W,H,data){
+  var order=RARITY_FX_ORDER[data.rarity];if(!order)return;
+  order.forEach(function(part){
+    var img=cardAssets&&cardAssets['rfx_'+data.rarity+'_'+part];
+    if(!img)return;
+    var a=RARITY_FX_ALPHA[data.rarity+'_'+part];
+    if(a!=null){ctx2.save();ctx2.globalAlpha=a;ctx2.drawImage(img,0,0,W,H);ctx2.restore();return}
+    ctx2.drawImage(img,0,0,W,H);
+  });
 }
 /* 등장 연출: 사진/텍스트 순서로 그리는 drawCard(t) 자체는 "④ 카드 완성" 구간(약 1.4초) 안에서만 돈다.
    rAF가 멈추는 환경(백그라운드 탭 등)에서도 마지막엔 반드시 완성본을 그린다. */
@@ -2075,10 +2113,9 @@ function playCardReveal(data,photos,pos){
   });
 
   /* 6.8초 이후 — 카드 고정, 음악 자연스럽게 잦아들고, 저장/다시뽑기 버튼 등장.
-     플래티넘·다이아는 결과 화면에서도 배경 오라가 계속 은은히 숨쉬게(등급 체감 차이) */
+     등급 체감은 이제 drawCard()가 캔버스에 굽는 rfx_* 레이어가 전담(통합 디자인팩) */
   at(6800,function(){
     wrap.classList.add('settle');
-    if(data.rarity==='platinum'||data.rarity==='diamond')stage.classList.add('stage--settle-glow');
     fadeStopAmbient(900);
   });
   at(7300,function(){enterResult()});
@@ -2132,7 +2169,8 @@ $('#btnMake').onclick=function(){
   var data=rollCard($('#inCardNick').value, S.cardCount%CARD_PITY===0?'diamond':null);
   updateCardPity();
   loadCardAssets(function(assets){
-    var need2=['frame_'+data.rarity,'foil_'+data.rarity,'attr_'+data.attribute,'title_scrim','meta_strip','caption_fade'];
+    var need2=['frame_'+data.rarity,'foil_'+data.rarity,'attr_'+data.attribute,'title_scrim','meta_strip','caption_fade']
+      .concat((RARITY_FX_ORDER[data.rarity]||[]).map(function(p){return 'rfx_'+data.rarity+'_'+p}));
     if(need2.some(function(k){return !assets[k]})){
       btn.disabled=false;toast('카드 에셋을 불러오지 못했어요. 다시 시도해 주세요.');return;
     }
