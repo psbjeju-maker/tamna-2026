@@ -75,11 +75,11 @@
           <input id="inName" placeholder="예) 감귤" maxlength="12" autocomplete="nickname"></div>
         <div class="field"><label for="inPhone">전화번호</label>
           <input id="inPhone" type="tel" inputmode="numeric" placeholder="010-0000-0000" maxlength="13" autocomplete="tel"></div>
-        <p class="caption">기록을 잃어버렸을 때 되찾기 위해서만 씁니다. 등록하면 <b>복구 코드 8자리</b>가 딱 한 번 보여요. 꼭 적어 두세요.</p>
+        <p class="caption">기록을 잃어버렸을 때 되찾기 위해서만 씁니다. 같은 전화번호를 입력하면 언제든 이어서 할 수 있어요.</p>
         <p class="caption" id="introNet" style="color:var(--color-accent-strong);font-weight:700" hidden></p>
       </div>
       <button class="btn btn--primary btn--block" id="btnStart">시작하기</button>
-      <button class="btn btn--tertiary btn--block" id="btnRecover" style="margin-top:8px">이미 등록했어요 (복구 코드로 이어하기)</button>
+      <button class="btn btn--tertiary btn--block" id="btnRecover" style="margin-top:8px">이미 등록했어요 (전화번호로 이어하기)</button>
     </div>
   </section>
 
@@ -295,7 +295,7 @@
       <div class="divider"></div>
       <p class="caption">참가자 <b id="meName">-</b> · 참가코드 <b id="meCode">-</b></p>
       <button class="btn btn--tertiary btn--block" id="btnReset" style="margin-top:8px"><svg class="icon"><use href="#i-trash"/></svg>이 기기에서 로그아웃</button>
-      <p class="caption caption--center" style="margin-top:8px;opacity:.6">로그아웃해도 서버 기록은 그대로예요. 복구 코드로 다시 이어할 수 있어요.</p>
+      <p class="caption caption--center" style="margin-top:8px;opacity:.6">로그아웃해도 서버 기록은 그대로예요. 전화번호로 다시 이어할 수 있어요.</p>
     </div>
   </section>
 </div>
@@ -629,7 +629,7 @@ function lostRegistration(){
   $('#hud').classList.remove('on');$('#tabs').classList.remove('on');
   $$('.screen').forEach(function(s){s.classList.remove('on')});
   $('#s-intro').classList.add('on');
-  toast('이 기기에서 내 기록을 찾지 못했어요. 복구 코드로 이어하기를 눌러 주세요');
+  toast('이 기기에서 내 기록을 찾지 못했어요. 전화번호로 이어하기를 눌러 주세요');
 }
 
 /* ---- 미션 요청 — 성공(서버가 응답)해야만 기록으로 취급한다 ----
@@ -723,8 +723,7 @@ $('#btnStart').onclick=function(){
   EV.register(n,p).then(function(r){
     b.disabled=false;b.textContent='시작하기';
     S.name=r.nickname||n;S.code=r.code;save();
-    if(r.recoveryCode)showRecoveryCode(r.recoveryCode,enter);
-    else enter();
+    enter();
   },function(e){
     b.disabled=false;b.textContent='시작하기';
     if(e.reason==='phone-registered'||e.code==='already-exists'){
@@ -732,37 +731,22 @@ $('#btnStart').onclick=function(){
     } else toast(e.message||'등록하지 못했어요. 잠시 후 다시 해 주세요');
   });
 };
-function showRecoveryCode(code,onDone){
-  modalLock=true;
-  sheet('<h3>복구 코드</h3>'+
-    '<p>기록을 잃어버렸을 때 이 코드와 전화번호로 이어할 수 있어요. <b>이 화면에서 딱 한 번만 보여요.</b> 캡처하거나 적어 두세요.</p>'+
-    '<div class="reward"><div class="reward__num" style="letter-spacing:.12em;user-select:all">'+esc(code)+'</div><div class="reward__label">복구 코드 8자리</div></div>'+
-    '<button class="btn btn--secondary btn--block" id="rcCopy" style="margin-top:10px">코드 복사</button>'+
-    '<button class="btn btn--primary btn--block" id="rcDone" style="margin-top:8px">적어 뒀어요</button>');
-  $('#rcCopy').onclick=function(){
-    try{navigator.clipboard.writeText(code).then(function(){toast('복사했어요')},function(){toast('복사하지 못했어요. 직접 적어 주세요')})}
-    catch(e){toast('복사하지 못했어요. 직접 적어 주세요')}
-  };
-  $('#rcDone').onclick=function(){modalLock=false;closeModal();onDone&&onDone()};
-}
 function openRecover(phoneVal){
-  sheet('<h3>복구 코드로 이어하기</h3>'+
-    '<p>처음 등록할 때 받은 복구 코드 8자리와 전화번호를 입력하세요.</p>'+
+  sheet('<h3>전화번호로 이어하기</h3>'+
+    '<p>처음 등록할 때 쓴 전화번호를 입력하세요.</p>'+
     '<div class="field" style="margin-top:12px"><label for="rcPhone">전화번호</label><input id="rcPhone" type="tel" inputmode="numeric" placeholder="010-0000-0000" maxlength="13" autocomplete="tel"></div>'+
-    '<div class="field"><label for="rcCode">복구 코드</label><input id="rcCode" placeholder="8자리" maxlength="8" autocapitalize="characters" autocomplete="off"></div>'+
     '<button class="btn btn--primary btn--block" id="rcGo" style="margin-top:8px">이어하기</button>'+
     '<button class="btn btn--tertiary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">닫기</button>');
   $('#rcPhone').addEventListener('input',fmtPhone);
   if(phoneVal)$('#rcPhone').value=phoneVal;
   $('#rcGo').onclick=function(){
-    var p=$('#rcPhone').value.trim(), c=$('#rcCode').value.trim();
+    var p=$('#rcPhone').value.trim();
     if(p.replace(/\D/g,'').length<10){toast('전화번호를 정확히 입력해 주세요');return}
-    if(c.length<4){toast('복구 코드를 입력해 주세요');return}
     var b=$('#rcGo');b.disabled=true;b.textContent='확인하는 중…';
-    EV.recover(p,c).then(function(r){
+    EV.recover(p).then(function(r){
       b.disabled=false;b.textContent='이어하기';
       if(r&&r.ok){S.name=r.nickname||'';S.code=r.code;save();closeModal();toast('기록을 이어서 불러왔어요');enter()}
-      else toast((r&&r.error)||'전화번호나 복구 코드가 맞지 않아요');
+      else toast((r&&r.error)||'등록된 번호를 찾지 못했어요');
     },function(e){b.disabled=false;b.textContent='이어하기';toast(e.message||'잠시 후 다시 해 주세요')});
   };
 }
@@ -2437,7 +2421,7 @@ $('#btnShare').onclick=function(){
 
 /* ---------------- 초기화 ---------------- */
 $('#btnReset').onclick=function(){
-  sheet('<h3>이 기기에서 로그아웃할까요?</h3><p>이 기기에 저장된 내 정보(닉네임, 게임 최고기록, 사진 슬롯)만 지워져요. 서버에 저장된 코인·미션 기록은 그대로이고, 복구 코드와 전화번호로 다시 이어할 수 있어요.</p>'+
+  sheet('<h3>이 기기에서 로그아웃할까요?</h3><p>이 기기에 저장된 내 정보(닉네임, 게임 최고기록, 사진 슬롯)만 지워져요. 서버에 저장된 코인·미션 기록은 그대로이고, 전화번호로 다시 이어할 수 있어요.</p>'+
     (pendingIds().length?'<div class="note note--danger">서버에 아직 전달되지 않은 미션 '+pendingIds().length+'건이 있어요. 지금 로그아웃하면 그 기록은 전달되지 않을 수 있어요.</div>':'')+
     '<button class="btn btn--danger btn--block" id="okReset">로그아웃</button>'+
     '<button class="btn btn--tertiary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">취소</button>');
