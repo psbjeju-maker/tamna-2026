@@ -367,7 +367,8 @@
 <script src="config.js?v=taste1"></script>
 <script src="live.js"></script>
 <script src="ev-client.js?v=1"></script>
-<script src="mhcards.js?v=3"></script>
+<script src="mhcards.js?v=4"></script>
+<script src="kujiboard.js?v=1"></script>
 <script>
 (function(){
 'use strict';
@@ -933,9 +934,29 @@ function paintStaff(){
   var sd=$('#snsDesc');if(sd)sd.textContent=done?'스태프 확인 완료':'스태프가 확인하면 서버에 기록돼요';
 }
 function openCodeSheet(){
-  sheet('<h3>내 참가코드</h3><p>스태프에게 이 코드를 보여주세요. 스태프가 확인하면 서버에 기록돼요.</p>'+
+  var done=missionDone('sns');
+  sheet('<h3>내 참가코드</h3><p>스태프에게 이 코드를 보여주세요. 스태프가 SNS 게시물을 확인하고 PIN 을 입력하면 카드가 지급돼요.</p>'+
     '<div class="reward"><div class="reward__num" style="letter-spacing:.12em">'+esc(S.code||'-')+'</div><div class="reward__label">참가코드</div></div>'+
+    (done||!window.KB?'':'<button class="btn btn--secondary btn--block" id="btnStaffPin" style="margin-bottom:8px">스태프 확인 (PIN 입력)</button>')+
     '<button class="btn btn--primary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">닫기</button>');
+  var bp=$('#btnStaffPin');
+  if(bp)bp.onclick=function(){closeModal();askStaffPin()};
+}
+function askStaffPin(){
+  var bookBefore=JSON.parse(JSON.stringify((V&&V.cardBook)||{}));
+  KB.askPin({
+    title:'스태프 확인',
+    desc:'SNS 게시물을 확인했다면 스태프 PIN 을 입력해 주세요. 카드가 바로 지급돼요.',
+    submit:function(pin){return EV.confirmMission(EID,'sns',pin)},
+    onDone:function(r){
+      sync().then(function(){
+        paint();paintStaff();paintTaste();
+        toast('스태프 확인 완료 — 카드가 지급됐어요');
+        var cards=(r&&(r.cards||(r.play&&r.play.cards)))||[];
+        if(cards.length&&window.MH)setTimeout(function(){MH.reveal(cards,{book:bookBefore,title:'SNS 인증 카드',onClose:paintAlbum})},300);
+      });
+    }
+  });
 }
 function dokSheetHtml(face,text){
   return '<div class="dok" style="margin-top:6px"><img class="dok__face" src="dokebi/exp_'+face+'.png" alt="도채비">'+
@@ -995,8 +1016,33 @@ $('#btnTaste').onclick=function(){
   if(window.MH&&MH.pick&&cost>0&&cost<=10&&have>=cost){MH.pick(JSON.parse(JSON.stringify(bk)),cost,{title:'쿠지에 넣을 카드 '+cost+'장을 골라 주세요',onDone:playTaste});return}
   playTaste();
 };
+function afterPlay(r,bookBefore){
+  lastPlay=r.play;
+  return sync().then(function(){paintTaste();
+    if(r.play&&r.play.cards&&r.play.cards.length&&window.MH)setTimeout(function(){MH.reveal(r.play.cards,{book:bookBefore,title:'아쉽! 대신 '+coinName()+' 카드',onClose:paintAlbum})},500);
+    var el=$('#tasteResultBox');if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'center'});
+    toast(r.play&&r.play.demo?'시연 결과가 나왔어요':'결과가 서버에 기록됐어요');
+  });
+}
 function playTaste(){
   var b=$('#btnTaste');if(b.disabled)return;
+  var k0=kujiCfg();
+  if(k0&&k0.pickNumber&&window.KB){
+    b.disabled=true;b.textContent='번호 고르는 중…';
+    var bb=JSON.parse(JSON.stringify((V&&V.cardBook)||{}));
+    KB.open({
+      title:'쿠지 번호를 골라 주세요',
+      board:function(){return EV.kujiBoard(EID)},
+      play:function(n){return EV.playKuji(EID,'coin',n)},
+      onResult:function(r){afterPlay(r,bb)},
+      onError:function(e){
+        if(e&&e.reason==='not-registered'){lostRegistration();return}
+        paintTaste();sync();toast((e&&e.message)||'뽑지 못했어요');
+      },
+      onCancel:function(){paintTaste()}
+    });
+    return;
+  }
   b.disabled=true;b.textContent='뽑는 중…';
   var bookBefore=JSON.parse(JSON.stringify((V&&V.cardBook)||{}));
   EV.playKuji(EID,'coin').then(function(r){
