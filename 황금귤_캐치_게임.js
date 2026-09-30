@@ -10,7 +10,7 @@
    · openStage(title) / stopGame()          게임 화면 열기/닫기
    · sfx(name,vol) / beep(freq,dur,type,vol) 효과음
      → sfx/slice.mp3, sfx/pop.mp3, sfx/boom.mp3, sfx/bonus.mp3, sfx/fanfare.mp3 필요
-   · reward(rawPoint,label)                 보상 시트
+   · reward(missionId,label)                 서버 미션 요청+결과 시트
    · S.best.catch                           오늘 최고 점수 저장소
    · assets/catch-game/*.png                이미지 에셋(없어도 도형 폴백으로 동작)
    ============================================================ */
@@ -386,7 +386,7 @@ function gCatch(){
     drawText(score.toLocaleString(),0,y,66,'#E5A11C','rgba(120,60,0,.35)');y+=56*U;
     drawText(catchRank(score),0,y,24,'#3A2A18',null,600);y+=48*U;
     if(isBest){ctx.save();ctx.translate(0,y);ctx.scale(1+Math.sin(resultT/120)*0.04,1+Math.sin(resultT/120)*0.04);drawText('NEW RECORD!',0,0,32,'#F0605A','rgba(255,255,255,.9)');ctx.restore();y+=44*U}
-    if(resultReady){ctx.globalAlpha=ease*(0.6+Math.sin(resultT/200)*0.4);drawText('화면을 눌러 복 받기',0,ch/2-40*U,20,'#8A6A4A',null,600)}
+    if(resultReady){ctx.globalAlpha=ease*(0.6+Math.sin(resultT/200)*0.4);drawText('화면을 눌러 계속',0,ch/2-40*U,20,'#8A6A4A',null,600)}
     ctx.restore();
   }
 
@@ -463,5 +463,5 @@ function finishCatch(score){
   var isBest=score>(S.best.catch||0);
   if(isBest)S.best.catch=score;
   sfx(isBest?'fanfare':'bonus',0.7);
-  reward(score/4,'황금귤 캐치 · '+score+'점'+(isBest?' · 신기록!':''));
+  reward('catch','황금귤 캐치 · '+score+'점'+(isBest?' · 신기록!':''));
 }

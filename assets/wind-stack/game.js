@@ -497,7 +497,7 @@ function finishStage(outcome){
   S.score+=SCORE.clearBonus;clearSound();
   S.totalScore+=S.score;S.totalPlaced+=placedCount;
   S.phase='RESULT_CLEAR';
-  sendStageReward(placedCount); // 실패는 보상 없음, 클리어한 단계마다 그 자리에서 바로 보상(복 포인트를 단계별로 나눠 지급)
+  sendStageReward(placedCount); // 실패는 보상 없음, 클리어한 단계마다 그 자리에서 바로 보상(부모 앱이 미션 요청은 한 판에 한 번만 보낸다)
   if(S.stage<3){
    renderStageClear(placedCount);
   } else {
