@@ -58,7 +58,7 @@ var WIND_LINES=['짠! 잠깐 안 보이게 할게!','후훗, 눈 감고 있어 �
 /* 단계별 화면가림은 '그 단계 안에서 몇 번째 물건을 잡을 때'로 정한다(단계마다 물건 수가 같아서 절대 슬롯 번호로 충분).
    3단계(가장 어려움)만 한 번 더 넣는다. */
 var WIND_SLOTS_BY_STAGE={1:[3],2:[3],3:[2,4]};
-var STAGE_ITEM_COUNTS=[8,9,10]; // 1/2/3단계 각각 몇 개를 쌓는지
+var STAGE_ITEM_COUNTS=[6,8,10]; // 1/2/3단계 각각 몇 개를 쌓는지
 
 var $=function(s){return document.querySelector(s)};
 var stage=$('#stage'),cv=$('#game'),ctx=cv.getContext('2d'),overlay=$('#overlay'),panel=$('#panel'),windBubble=$('#windBubble'),toastEl=$('#toast');

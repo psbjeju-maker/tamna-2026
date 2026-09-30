@@ -208,7 +208,8 @@
     </div>
 
     <div class="slots slots--one" id="slots"></div>
-    <p class="caption" style="margin-top:8px">사진을 넣은 뒤 칸 안에서 원하는 방향으로 끌면 보이는 위치를 맞출 수 있어요.</p>
+    <div class="slotAdj" id="slotAdj"><button type="button" data-dy="-0.15">▲ 사진 위로</button><button type="button" data-dy="0.15">▼ 사진 아래로</button></div>
+    <p class="caption" style="margin-top:8px">사진을 넣은 뒤 좌우로 끌거나 위·아래 버튼으로 보이는 위치를 맞출 수 있어요. 화면은 위아래로 밀면 내려가요.</p>
 
     <div class="field" style="margin-top:16px">
       <label for="inCardNick">닉네임 (선택, 최대 8자)</label>
@@ -362,13 +363,14 @@
 
 <div id="toast" role="status" aria-live="polite"></div>
 
+<script>['gesturestart','gesturechange','gestureend'].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault()},{passive:false})});var _lt=0;document.addEventListener('touchend',function(e){var n=Date.now();if(n-_lt<300)e.preventDefault();_lt=n},{passive:false});</script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="config.js?v=taste1"></script>
 <script src="live.js"></script>
-<script src="ev-client.js?v=1"></script>
-<script src="mhcards.js?v=4"></script>
-<script src="kujiboard.js?v=1"></script>
+<script src="ev-client.js?v=3"></script>
+<script src="mhcards.js?v=5"></script>
+<script src="kujiboard.js?v=2"></script>
 <script>
 (function(){
 'use strict';
@@ -635,20 +637,21 @@ function lostRegistration(){
 /* ---- 미션 요청 — 성공(서버가 응답)해야만 기록으로 취급한다 ----
    연결 문제(retryable)면 "전달 대기"로 남기고 자동 재시도한다. 같은 요청번호(ev.rid.*)를 계속 써서
    서버가 한 번만 처리한다. */
-function claim(missionId,label){
-  return EV.claimMission(EID,missionId).then(function(r){
-    if(S.pending&&S.pending[missionId]){delete S.pending[missionId]}
+function claim(missionId,label,tier){
+  var pkey=tier?missionId+'#'+tier:missionId;
+  return EV.claimMission(EID,missionId,tier).then(function(r){
+    if(S.pending&&S.pending[pkey]){delete S.pending[pkey]}
     C.crew.forEach(function(c){ if(c.missionId===missionId)S.crew[c.id]=today() });
     save();
     var before=JSON.parse(JSON.stringify((V&&V.cardBook)||{}));
-    return sync().then(function(){
-      if(r&&r.cards&&r.cards.length&&window.MH)setTimeout(function(){MH.reveal(r.cards,{book:before,title:coinName()+' 카드를 받았어요!',onClose:paintAlbum})},400);
-      return {ok:true,r:r};
-    });
+    /* 카드는 서버 응답에 이미 있으니 동기화를 기다리지 않고 바로 보여 준다 */
+    if(r&&r.cards&&r.cards.length&&window.MH)setTimeout(function(){MH.reveal(r.cards,{book:before,title:coinName()+' 카드를 받았어요!',onClose:paintAlbum})},150);
+    sync();
+    return {ok:true,r:r};
   },function(e){
     if(e.reason==='not-registered'){lostRegistration();return {ok:false,e:e}}
-    if(e.retryable){S.pending[missionId]=label||missionId;save();net.offline=true;paint();return {ok:false,queued:true,e:e}}
-    if(S.pending&&S.pending[missionId]){delete S.pending[missionId];save()}
+    if(e.retryable){S.pending[pkey]=label||missionId;save();net.offline=true;paint();return {ok:false,queued:true,e:e}}
+    if(S.pending&&S.pending[pkey]){delete S.pending[pkey];save()}
     return {ok:false,e:e};
   });
 }
@@ -660,7 +663,8 @@ function retryPending(){
   (function next(i){
     if(i>=ids.length){retrying=false;paint();return}
     var id=ids[i], label=S.pending[id];
-    claim(id,label).then(function(res){
+    var pm=id.split('#');
+    claim(pm[0],label,pm[1]?+pm[1]:undefined).then(function(res){
       if(res.ok){
         toast(res.r.awarded>0?'다시 전달됨 · +'+res.r.awarded+' '+coinName()+' ('+label+')':'다시 전달됨 · '+label);
         next(i+1);
@@ -734,19 +738,21 @@ $('#btnStart').onclick=function(){
 function openRecover(phoneVal){
   sheet('<h3>전화번호로 이어하기</h3>'+
     '<p>처음 등록할 때 쓴 전화번호를 입력하세요.</p>'+
+    '<div class="field" style="margin-top:12px"><label for="rcNick">닉네임</label><input id="rcNick" placeholder="등록한 닉네임" maxlength="20" autocomplete="off"></div>'+
     '<div class="field" style="margin-top:12px"><label for="rcPhone">전화번호</label><input id="rcPhone" type="tel" inputmode="numeric" placeholder="010-0000-0000" maxlength="13" autocomplete="tel"></div>'+
     '<button class="btn btn--primary btn--block" id="rcGo" style="margin-top:8px">이어하기</button>'+
     '<button class="btn btn--tertiary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">닫기</button>');
   $('#rcPhone').addEventListener('input',fmtPhone);
   if(phoneVal)$('#rcPhone').value=phoneVal;
   $('#rcGo').onclick=function(){
-    var p=$('#rcPhone').value.trim();
+    var p=$('#rcPhone').value.trim(), nk=$('#rcNick').value.trim();
+    if(!nk){toast('닉네임을 입력해 주세요');return}
     if(p.replace(/\D/g,'').length<10){toast('전화번호를 정확히 입력해 주세요');return}
     var b=$('#rcGo');b.disabled=true;b.textContent='확인하는 중…';
-    EV.recover(p).then(function(r){
+    EV.recover(p,nk).then(function(r){
       b.disabled=false;b.textContent='이어하기';
       if(r&&r.ok){S.name=r.nickname||'';S.code=r.code;save();closeModal();toast('기록을 이어서 불러왔어요');enter()}
-      else toast((r&&r.error)||'등록된 번호를 찾지 못했어요');
+      else toast((r&&r.error)||'번호와 닉네임이 맞지 않아요');
     },function(e){b.disabled=false;b.textContent='이어하기';toast(e.message||'잠시 후 다시 해 주세요')});
   };
 }
@@ -911,8 +917,8 @@ function paintStaff(){
     el.innerHTML='<p class="caption">지금 열려 있는 스태프 인증이 없어요.</p>';
   } else {
     el.innerHTML='<div class="quest'+(done?' quest--done':'')+'"><svg class="icon"><use href="#i-'+(done?'check':'message')+'"/></svg>'+
-      '<div><div class="quest__title">SNS 인증</div><div class="quest__desc">'+(done?'스태프 확인 완료':'포토카드를 SNS에 올리고 스태프에게 내 참가코드를 보여주세요')+'</div></div>'+
-      (done?'':'<button class="btn btn--secondary btn--sm quest__action" data-staff="sns">내 코드 보기</button>')+'</div>';
+      '<div><div class="quest__title">SNS 인증</div><div class="quest__desc">'+(done?'스태프 확인 완료 · 새 게시물을 올리면 또 받을 수 있어요':'포토카드를 SNS에 올리고 스태프에게 내 참가코드를 보여주세요')+'</div></div>'+
+      '<button class="btn btn--secondary btn--sm quest__action" data-staff="sns">내 코드 보기</button></div>';
   }
   $$('[data-staff]').forEach(function(b){b.onclick=openCodeSheet});
   var sd=$('#snsDesc');if(sd)sd.textContent=done?'스태프 확인 완료':'스태프가 확인하면 서버에 기록돼요';
@@ -921,7 +927,7 @@ function openCodeSheet(){
   var done=missionDone('sns');
   sheet('<h3>내 참가코드</h3><p>스태프에게 이 코드를 보여주세요. 스태프가 SNS 게시물을 확인하고 PIN 을 입력하면 카드가 지급돼요.</p>'+
     '<div class="reward"><div class="reward__num" style="letter-spacing:.12em">'+esc(S.code||'-')+'</div><div class="reward__label">참가코드</div></div>'+
-    (done||!window.KB?'':'<button class="btn btn--secondary btn--block" id="btnStaffPin" style="margin-bottom:8px">스태프 확인 (PIN 입력)</button>')+
+    (!window.KB?'':'<button class="btn btn--secondary btn--block" id="btnStaffPin" style="margin-bottom:8px">스태프 확인 (PIN 입력)</button>')+
     '<button class="btn btn--primary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">닫기</button>');
   var bp=$('#btnStaffPin');
   if(bp)bp.onclick=function(){closeModal();askStaffPin()};
@@ -933,12 +939,10 @@ function askStaffPin(){
     desc:'SNS 게시물을 확인했다면 스태프 PIN 을 입력해 주세요. 카드가 바로 지급돼요.',
     submit:function(pin){return EV.confirmMission(EID,'sns',pin)},
     onDone:function(r){
-      sync().then(function(){
-        paint();paintStaff();paintTaste();
-        toast('스태프 확인 완료 — 카드가 지급됐어요');
-        var cards=(r&&(r.cards||(r.play&&r.play.cards)))||[];
-        if(cards.length&&window.MH)setTimeout(function(){MH.reveal(cards,{book:bookBefore,title:'SNS 인증 카드',onClose:paintAlbum})},300);
-      });
+      toast('스태프 확인 완료 — 카드가 지급됐어요');
+      var cards=(r&&(r.cards||(r.play&&r.play.cards)))||[];
+      if(cards.length&&window.MH)setTimeout(function(){MH.reveal(cards,{book:bookBefore,title:'SNS 인증 카드',onClose:paintAlbum})},200);
+      sync().then(function(){paint();paintStaff();paintTaste()});
     }
   });
 }
@@ -996,8 +1000,8 @@ function playHtml(p){
 $('#btnTaste').onclick=function(){
   var b=$('#btnTaste');if(b.disabled)return;
   var k=kujiCfg(),w=V&&V.wallet,cost=(w&&w.kujiCost!=null)?w.kujiCost:(k&&k.cost!=null?k.cost:null),bk=(V&&V.cardBook)||{},have=0;
-  Object.keys(bk).forEach(function(x){if(/^M\d+$/.test(x))have+=(bk[x].given||0)+(bk[x].pending||0)});
-  if(window.MH&&MH.pick&&cost>0&&cost<=10&&have>=cost){MH.pick(JSON.parse(JSON.stringify(bk)),cost,{title:'쿠지에 넣을 카드 '+cost+'장을 골라 주세요',onDone:playTaste});return}
+  Object.keys(bk).forEach(function(x){if(/^M\d+$/.test(x))have+=MH.held(bk,x)});
+  if(window.MH&&MH.pick&&cost>0&&cost<=10&&have>=cost){MH.pick(JSON.parse(JSON.stringify(bk)),cost,{title:'쿠지에 넣을 카드 '+cost+'장을 골라 주세요',onDone:function(ids){playTaste(ids)}});return}
   playTaste();
 };
 function afterPlay(r,bookBefore){
@@ -1008,7 +1012,7 @@ function afterPlay(r,bookBefore){
     toast(r.play&&r.play.demo?'시연 결과가 나왔어요':'결과가 서버에 기록됐어요');
   });
 }
-function playTaste(){
+function playTaste(cardIds){
   var b=$('#btnTaste');if(b.disabled)return;
   var k0=kujiCfg();
   if(k0&&k0.pickNumber&&window.KB){
@@ -1017,7 +1021,7 @@ function playTaste(){
     KB.open({
       title:'쿠지 번호를 골라 주세요',
       board:function(){return EV.kujiBoard(EID)},
-      play:function(n){return EV.playKuji(EID,'coin',n)},
+      play:function(n){return EV.playKuji(EID,'coin',n,cardIds)},
       onResult:function(r){afterPlay(r,bb)},
       onError:function(e){
         if(e&&e.reason==='not-registered'){lostRegistration();return}
@@ -1029,7 +1033,7 @@ function playTaste(){
   }
   b.disabled=true;b.textContent='뽑는 중…';
   var bookBefore=JSON.parse(JSON.stringify((V&&V.cardBook)||{}));
-  EV.playKuji(EID,'coin').then(function(r){
+  EV.playKuji(EID,'coin',null,cardIds).then(function(r){
     lastPlay=r.play;
     return sync().then(function(){paintTaste();
       if(r.play&&r.play.cards&&r.play.cards.length&&window.MH)setTimeout(function(){MH.reveal(r.play.cards,{book:bookBefore,title:'아쉽! 대신 '+coinName()+' 카드',onClose:paintAlbum})},500);
@@ -1237,11 +1241,11 @@ function paintGame(){
   $('#best-memo').textContent=S.best.memo?'최고 '+S.best.memo+'초':'최고 기록 없음';
 }
 /* 게임 클리어 → 서버에 미션 요청. 코인 수량은 서버 응답값만 보여준다. */
-function reward(missionId,label){
+function reward(missionId,label,tier){
   save();paintGame();
   sheet('<h3>'+esc(label)+'</h3><div id="rwBody">'+CLAIMING+'</div>'+
     '<button class="btn btn--primary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">확인</button>');
-  claim(missionId,label).then(function(res){fillRw(res);paint()});
+  claim(missionId,label,tier).then(function(res){fillRw(res);paint()});
 }
 $$('[data-game]').forEach(function(b){b.onclick=function(){startGame(b.dataset.game)}});
 $('#stClose').onclick=function(){stopGame()};
@@ -1750,12 +1754,20 @@ function finishCatch(score){
   var isBest=score>(S.best.catch||0);
   if(isBest)S.best.catch=score;
   sfx(isBest?'fanfare':'bonus',0.7);
-  reward('catch','황금귤 캐치 · '+score+'점'+(isBest?' · 신기록!':''));
+  var tier=score>=7000?3:score>=5000?2:score>=3000?1:0;
+  var lbl='황금귤 캐치 · '+score+'점'+(isBest?' · 신기록!':'');
+  if(!tier){
+    save();paintGame();
+    sheet('<h3>'+esc(lbl)+'</h3><p style="text-align:center;line-height:1.6">3,000점부터 '+coinName()+'을 받을 수 있어요.<br>3,000점 1개 · 5,000점 2개 · 7,000점 3개</p>'+
+      '<button class="btn btn--primary btn--block" onclick="document.getElementById('modal').classList.remove('on')">확인</button>');
+    return;
+  }
+  reward('catch',lbl,tier);
 }
 
 /* --- ② 영등할망의 바람탑 (자체 완결 게임을 iframe으로 임베드) --- */
 var stackTeardown=null;
-var stackRewardedAttempt=null;
+var stackRewardedAttempt={};
 function gStack(){
   openStage('영등할망의 바람탑');
   cv.style.display='none';
@@ -1765,7 +1777,7 @@ function gStack(){
 }
 function stackMount(){
   var p=$('#stack');
-  stackRewardedAttempt=null;
+  stackRewardedAttempt={};
   p.innerHTML='<iframe id="stFrame" title="영등할망의 바람탑" allow="autoplay" '+
     'src="assets/wind-stack/index.html?ts='+Date.now()+'" '+
     'style="width:100%;max-width:420px;height:100%;border:0;border-radius:var(--radius-xl);box-shadow:var(--shadow-md);background:#122f34"></iframe>';
@@ -1778,15 +1790,14 @@ function stackInit(){
     if(!w)return;
     w.onGameComplete=function(result){
       if(!result)return;
-      var base=String(result.attemptId).replace(/-sd+$/,'');
       var isBest=result.score>(S.best.stack||0);
       if(isBest)S.best.stack=result.score;
       save();paintGame();
-      if(stackRewardedAttempt===base)return; /* 단계마다 결과가 오지만 미션 요청은 한 판에 한 번만 */
-      stackRewardedAttempt=base;
+      if(stackRewardedAttempt[result.attemptId])return; /* 같은 단계 결과 중복 방지 */
+      stackRewardedAttempt[result.attemptId]=1;
       sfx(isBest?'fanfare':'bonus',0.7);
       var label=(result.stage===3?'3단계 완주':result.stage+'단계 클리어');
-      reward('stack','영등할망의 바람탑 · '+label+' · '+result.placedCount+'개 쌓기 · '+result.score+'점'+(isBest?' · 신기록!':''));
+      reward('stack','영등할망의 바람탑 · '+label+' · '+result.placedCount+'개 쌓기 · '+result.score+'점'+(isBest?' · 신기록!':''),result.stage);
     };
   }
   frame.addEventListener('load',onLoad);
@@ -1855,7 +1866,7 @@ function roundRectPath(ctx2,px,py,pw,ph,r){
     var r=new FileReader();
     r.onload=function(){var img=new Image();img.onload=function(){slots[i]=img;slotPos[i]={x:0.5,y:0.18};
       el.innerHTML='';view=document.createElement('img');view.src=img.src;view.draggable=false;
-      el.appendChild(view);el.appendChild(inp);applyPos();el.classList.add('slot--filled');};
+      el.appendChild(view);el.appendChild(inp);applyPos();el.classList.add('slot--filled');$('#slotAdj').classList.add('on');};
       img.src=r.result;};
     r.readAsDataURL(f);
   };
@@ -1878,6 +1889,10 @@ function roundRectPath(ctx2,px,py,pw,ph,r){
   el.addEventListener('pointerup',endDrag);el.addEventListener('pointercancel',endDrag);
   el.addEventListener('click',function(e){ if(moved){e.preventDefault();moved=false} });
   w.appendChild(el);
+  $('#slotAdj').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b||!slots[i])return;
+    slotPos[i].y=Math.max(0,Math.min(1,slotPos[i].y+parseFloat(b.dataset.dy)));applyPos();
+  });
 })();
 
 /* 레어도 · 속성 · 이름 · 효과 랜덤 테이블 (기획 문서 기준, 속성당 최소 2종으로 시작 —
