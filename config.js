@@ -26,7 +26,7 @@ window.TAMNA = {
   mainEventDate: "2026-10-31T10:00:00+09:00",
   mainEventPlace: "금능석물원",
   drawTime: "10월 31일(토) 15:30",
-  preorderUrl: "https://psbjeju-maker.github.io/gwasuwonpiece-2026/apply.html",
+  preorderUrl: "https://psbjeju-maker.github.io/gwasuwonpiece-2026/presale.html",
   guideUrl: "https://psbjeju-maker.github.io/gwasuwonpiece-2026/guide.html",
 
   /* ---------- 복 포인트(福) — 참가자가 모으는 포인트 ---------- */
