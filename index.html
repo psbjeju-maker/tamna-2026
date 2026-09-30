@@ -94,13 +94,13 @@
 
     <div class="stats">
       <div class="stat"><svg class="icon"><use href="#i-coin"/></svg><div class="stat__label">내 <span class="coinName">mh머니</span></div><div class="stat__num stat__num--luck" id="homeGold">-</div></div>
-      <div class="stat"><svg class="icon"><use href="#i-gift"/></svg><div class="stat__label">쿠지 맛보기</div><div class="stat__num" id="homeTaste">-</div></div>
+      <div class="stat"><svg class="icon"><use href="#i-gift"/></svg><div class="stat__label">쿠지 뽑기</div><div class="stat__num" id="homeTaste">-</div></div>
     </div>
     <p class="caption" id="homeSync" style="margin-top:6px"></p>
 
     <div class="btnrow">
       <button class="btn btn--primary" data-nav="collect"><svg class="icon"><use href="#i-clover"/></svg>코인 모으기</button>
-      <button class="btn btn--secondary" data-nav="taste"><svg class="icon"><use href="#i-gift"/></svg>쿠지 맛보기</button>
+      <button class="btn btn--secondary" data-nav="taste"><svg class="icon"><use href="#i-gift"/></svg>쿠지 뽑기</button>
     </div>
 
     <div class="treasure" id="inviteCard" style="margin-top:20px">
@@ -160,8 +160,8 @@
   <!-- ========== 쿠지 맛보기 ========== -->
   <section class="screen" id="s-taste">
     <div class="hero">
-      <h1 class="hero__title">디지털 쿠지 맛보기</h1>
-      <p class="hero__sub">모은 <span class="coinName">mh머니</span>으로 쿠지를 한 번 맛보세요.</p>
+      <h1 class="hero__title">디지털 쿠지</h1>
+      <p class="hero__sub">모은 <span class="coinName">mh머니</span>으로 쿠지를 한 번 뽑아 보세요.</p>
     </div>
 
     <div class="note" id="tasteDemo" hidden style="margin-bottom:14px">
@@ -174,7 +174,7 @@
       <div class="stat"><svg class="icon"><use href="#i-gift"/></svg><div class="stat__label">필요 코인</div><div class="stat__num" id="tasteCost">-</div></div>
     </div>
 
-    <button class="btn btn--primary btn--block" id="btnTaste">쿠지 맛보기</button>
+    <button class="btn btn--primary btn--block" id="btnTaste">쿠지 뽑기</button>
     <p class="caption caption--center" id="tasteNeed" style="margin-top:10px"></p>
     <p class="caption caption--center" id="tasteLimit"></p>
 
@@ -189,7 +189,7 @@
     </div>
 
     <div class="section">
-      <div class="section__head"><h2 class="section__title" style="font-size:17px">내 맛보기 기록</h2></div>
+      <div class="section__head"><h2 class="section__title" style="font-size:17px">내 쿠지 기록</h2></div>
       <div id="tasteList"></div>
     </div>
 
@@ -367,7 +367,7 @@
 <script src="config.js?v=taste1"></script>
 <script src="live.js"></script>
 <script src="ev-client.js?v=1"></script>
-<script src="mhcards.js?v=1"></script>
+<script src="mhcards.js?v=3"></script>
 <script>
 (function(){
 'use strict';
@@ -942,7 +942,7 @@ function dokSheetHtml(face,text){
     '<div class="bubble"><div class="bubble__who">도채비</div><div class="bubble__text">'+text+'</div></div></div>';
 }
 
-/* ---------------- 디지털 쿠지 맛보기 ----------------
+/* ---------------- 디지털 쿠지 ----------------
    비용·횟수·시연 여부·결과는 전부 서버 설정/응답. 앱은 요청만 보낸다. */
 var lastPlay=null;
 function paintAlbum(){var el=$('#mhAlbum');if(el&&window.MH)MH.album(el,(V&&V.cardBook)||{})}
@@ -959,15 +959,15 @@ function paintTaste(){
   if(!k)why=net.offline?'서버와 연결되면 열려요.':'설정을 불러오는 중이에요.';
   else if(k.enabled===false)why='쿠지가 아직 열려 있지 않아요.';
   else if(cost==null)why='쿠지에 필요한 코인이 아직 정해지지 않았어요.';
-  else if(w&&k.playLimit!=null&&w.playCount>=k.playLimit)why='맛보기 횟수를 모두 썼어요.';
+  else if(w&&k.playLimit!=null&&w.playCount>=k.playLimit)why='쿠지 횟수를 모두 썼어요.';
   else if(w&&c!=null&&c<cost)why='코인이 부족해요. 필요한 코인 '+cost+', 내 코인 '+c+'.';
   var lockedByPass=false;
   var cf=cfgNow();
   if(!why&&cf&&cf.passRequired&&V&&V.pass&&!V.pass.active){why='항해 패스 확인이 필요해요.';lockedByPass=true}
   b.disabled=!!why||!V;
-  b.textContent=demo?'시연으로 맛보기':'쿠지 맛보기';
+  b.textContent=demo?"시연으로 뽑기":"쿠지 뽑기";
   need.textContent=why||(V?'':'서버에서 내 기록을 불러오는 중이에요.');
-  lim.textContent=(w&&k)?('내 맛보기 '+w.playCount+'회'+(k.playLimit!=null?' / 최대 '+k.playLimit+'회':'')):'';
+  lim.textContent=(w&&k)?('내 쿠지 '+w.playCount+'회'+(k.playLimit!=null?' / 최대 '+k.playLimit+'회':'')):'';
   var box=$('#tasteResultBox');
   if(lastPlay){box.hidden=false;$('#tasteResult').innerHTML=playHtml(lastPlay)}
   else box.hidden=true;
@@ -976,7 +976,7 @@ function paintTaste(){
     return '<div class="ticket"><b>'+esc(p.name||'-')+'</b><span>'+(p.demo?'시연':'실물 상품')+' · '+(pl.length-i)+'번째</span></div>';
   }).join(''):'<p class="caption">아직 맛본 기록이 없어요.</p>';
 }
-function safeImg(u){return (typeof u==='string'&&(/^https?:\/\//.test(u)||/^[\w\-\/.]+\.(png|jpe?g|webp|gif)$/i.test(u)))?u:''}
+function safeImg(u){return (typeof u==='string'&&(/^https?:\/\//.test(u)||/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(u)||/^[\w\-\/.]+\.(png|jpe?g|webp|gif)$/i.test(u)))?u:''}
 function playHtml(p){
   var img=safeImg(p.image);
   if(p.kind==='coin')return '<div class="reward"><div class="reward__num" style="font-size:24px">'+esc(coinName())+' '+esc(p.coinReward||1)+'장</div><div class="reward__label">다음 미션으로 카드를 더 모아 보세요</div></div>';
@@ -989,6 +989,13 @@ function playHtml(p){
   return s;
 }
 $('#btnTaste').onclick=function(){
+  var b=$('#btnTaste');if(b.disabled)return;
+  var k=kujiCfg(),w=V&&V.wallet,cost=(w&&w.kujiCost!=null)?w.kujiCost:(k&&k.cost!=null?k.cost:null),bk=(V&&V.cardBook)||{},have=0;
+  Object.keys(bk).forEach(function(x){if(/^M\d+$/.test(x))have+=(bk[x].given||0)+(bk[x].pending||0)});
+  if(window.MH&&MH.pick&&cost>0&&cost<=10&&have>=cost){MH.pick(JSON.parse(JSON.stringify(bk)),cost,{title:'쿠지에 넣을 카드 '+cost+'장을 골라 주세요',onDone:playTaste});return}
+  playTaste();
+};
+function playTaste(){
   var b=$('#btnTaste');if(b.disabled)return;
   b.disabled=true;b.textContent='뽑는 중…';
   var bookBefore=JSON.parse(JSON.stringify((V&&V.cardBook)||{}));
@@ -1067,7 +1074,7 @@ var OPENING_LINES=[
 var TASTE_LINES=[
   {img:'dokebi/exp_smile.png', text:'등록 끝! 여기선 무료로 디지털 쿠지를 맛볼 수 있어.'},
   {img:'dokebi/exp_wink.png', text:'신들께 인사하고, 놀이터에서 놀고, 포토카드를 만들면 코인이 쌓여.'},
-  {img:'dokebi/exp_excited.png', text:'코인이 모이면 맛보기 탭에서 한 번 뽑아봐. 그럼 시작해볼까?'}
+  {img:'dokebi/exp_excited.png', text:'코인이 모이면 쿠지 탭에서 한 번 뽑아봐. 그럼 시작해볼까?'}
 ];
 /* ---- 씨름: 3초 동안 마구 누르기. 결과는 늘 도채비 승(개그) ---- */
 function startSsireum(onDone){
@@ -1116,7 +1123,7 @@ var DOK_RANDOM=[
   {t:function(){return '10월 31일이 '+dday()+'일 뒤야. 한림 금능석물원에서 과수원피스가 열려!'},f:'excited'},
   {t:'포토카드 만들어 봤어? 신이랑 찍은 사진으로 만들면 예뻐.',f:'smile',when:function(){return !missionDone('photo')}},
   {t:'놀이터에서 귤 좀 잘라봐. 재밌어.',f:'laugh'},
-  {t:'코인이 모였으면 맛보기 탭에서 쿠지 한 번 뽑아봐.',f:'wink',when:function(){var c=coins();return c!=null&&c>0}},
+  {t:'코인이 모였으면 쿠지 탭에서 한 번 뽑아봐.',f:'wink',when:function(){var c=coins();return c!=null&&c>0}},
   {t:'탐라문화제 재밌지? 나도 이런 날엔 신난다.',f:'excited'}
 ];
 function pickDok(){
@@ -1133,7 +1140,7 @@ function maybeDokPop(){
 }
 /* ---- 도채비 화면 ---- */
 var DOK_ASK={
-  treasure:{t:function(){var k=kujiCfg();return '디지털 쿠지야. 코인으로 여기서 맛보기로 뽑아볼 수 있어.'+(k&&k.demoMode?' 지금은 시연이라 실물 지급은 없어.':'')},f:'wink'},
+  treasure:{t:function(){var k=kujiCfg();return '디지털 쿠지야. 코인으로 여기서 뽑아볼 수 있어.'+(k&&k.demoMode?' 지금은 시연이라 실물 지급은 없어.':'')},f:'wink'},
   luck:{t:'여섯 신께 인사하고, 놀이터 게임을 하고, 포토카드를 만들면 코인이 쌓여. 얼마나 쌓이는지는 서버가 알려줘.',f:'smile'},
   where:{t:'10월 31일(토) 한림 금능석물원에서 10시 30분부터 4시까지야. 항해 패스는 6,000원.',f:'excited'},
   who:{t:'뿔 달린 거 상상했지? 그건 오니야, 난 도채비라고!',f:'pout'}
