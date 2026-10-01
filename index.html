@@ -370,7 +370,7 @@
 <script src="live.js"></script>
 <script src="ev-client.js?v=3"></script>
 <script src="mhcards.js?v=9"></script>
-<script src="kujiboard.js?v=2"></script>
+<script src="kujiboard.js?v=3"></script>
 <script>
 (function(){
 'use strict';
@@ -973,12 +973,13 @@ function paintTaste(){
   else box.hidden=true;
   var pl=(V&&V.plays)||[];
   $('#tasteList').innerHTML=pl.length?pl.map(function(p,i){
-    return '<div class="ticket"><b>'+esc(p.name||'-')+'</b><span>'+(p.demo?'시연':'실물 상품')+' · '+(pl.length-i)+'번째</span></div>';
+    return '<div class="ticket"><b>'+esc(p.name||'-')+'</b><span>'+(p.demo?'시연':p.kind==='blank'?'꽝':p.kind==='coin'?coinName():'실물 상품')+' · '+(pl.length-i)+'번째</span></div>';
   }).join(''):'<p class="caption">아직 맛본 기록이 없어요.</p>';
 }
 function safeImg(u){return (typeof u==='string'&&(/^https?:\/\//.test(u)||/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(u)||/^[\w\-\/.]+\.(png|jpe?g|webp|gif)$/i.test(u)))?u:''}
 function playHtml(p){
   var img=safeImg(p.image);
+  if(p.kind==='blank')return '<div class="reward"><div class="reward__num" style="font-size:24px">'+esc(p.name||'꽝')+'</div><div class="reward__label">이번엔 아쉽게 꽝이에요. 다음 기회에 또 도전해요</div></div>';
   if(p.kind==='coin')return '<div class="reward"><div class="reward__num" style="font-size:24px">'+esc(coinName())+' '+esc(p.coinReward||1)+'장</div><div class="reward__label">다음 미션으로 카드를 더 모아 보세요</div></div>';
   var s='<div class="reward">'+(img?'<img src="'+esc(img)+'" alt="" style="max-width:160px;max-height:160px;border-radius:12px;margin-bottom:8px">':'')+
     '<div class="reward__num" style="font-size:24px">'+esc(p.name||'-')+'</div>'+
