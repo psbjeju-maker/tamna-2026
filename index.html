@@ -265,7 +265,7 @@
         <div class="quest">
           <svg class="icon"><use href="#i-message"/></svg>
           <div><div class="quest__title">올린 화면을 부스 스태프에게 보여주세요</div><div class="quest__desc" id="snsDesc">스태프가 확인하면 서버에 기록돼요</div></div>
-          <button class="btn btn--secondary btn--sm quest__action" id="btnSns">내 코드 보기</button>
+          <button class="btn btn--secondary btn--sm quest__action" id="btnSns">스태프 확인</button>
         </div>
       </div>
     </div>
@@ -917,20 +917,11 @@ function paintStaff(){
     el.innerHTML='<p class="caption">지금 열려 있는 스태프 인증이 없어요.</p>';
   } else {
     el.innerHTML='<div class="quest'+(done?' quest--done':'')+'"><svg class="icon"><use href="#i-'+(done?'check':'message')+'"/></svg>'+
-      '<div><div class="quest__title">SNS 인증</div><div class="quest__desc">'+(done?'스태프 확인 완료 · 새 게시물을 올리면 또 받을 수 있어요':'포토카드를 SNS에 올리고 스태프에게 내 참가코드를 보여주세요')+'</div></div>'+
-      '<button class="btn btn--secondary btn--sm quest__action" data-staff="sns">내 코드 보기</button></div>';
+      '<div><div class="quest__title">SNS 인증</div><div class="quest__desc">'+(done?'스태프 확인 완료 · 새 게시물을 올리면 또 받을 수 있어요':'포토카드를 SNS에 올리고 스태프에게 보여주세요')+'</div></div>'+
+      '<button class="btn btn--secondary btn--sm quest__action" data-staff="sns">스태프 확인</button></div>';
   }
-  $$('[data-staff]').forEach(function(b){b.onclick=openCodeSheet});
+  $$('[data-staff]').forEach(function(b){b.onclick=function(){if(window.KB)askStaffPin();else toast('잠시 후 다시 눌러 주세요')}});
   var sd=$('#snsDesc');if(sd)sd.textContent=done?'스태프 확인 완료':'스태프가 확인하면 서버에 기록돼요';
-}
-function openCodeSheet(){
-  var done=missionDone('sns');
-  sheet('<h3>내 참가코드</h3><p>스태프에게 이 코드를 보여주세요. 스태프가 SNS 게시물을 확인하고 PIN 을 입력하면 카드가 지급돼요.</p>'+
-    '<div class="reward"><div class="reward__num" style="letter-spacing:.12em">'+esc(S.code||'-')+'</div><div class="reward__label">참가코드</div></div>'+
-    (!window.KB?'':'<button class="btn btn--secondary btn--block" id="btnStaffPin" style="margin-bottom:8px">스태프 확인 (PIN 입력)</button>')+
-    '<button class="btn btn--primary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">닫기</button>');
-  var bp=$('#btnStaffPin');
-  if(bp)bp.onclick=function(){closeModal();askStaffPin()};
 }
 function askStaffPin(){
   var bookBefore=JSON.parse(JSON.stringify((V&&V.cardBook)||{}));
@@ -1075,7 +1066,7 @@ function grantCrew(hit){
 }
 $('#trackClose').onclick=closeTracker;
 $('#trackScanBtn').onclick=greetGod;
-$('#btnSns').onclick=openCodeSheet;
+$('#btnSns').onclick=function(){if(window.KB)askStaffPin();else toast('잠시 후 다시 눌러 주세요')};
 /* 나침반 화면의 "인사하기" — QR/코드 없이 바로 인사 처리 */
 function greetGod(){
   var hit=trackGod;
@@ -2240,6 +2231,7 @@ function fadeAmbientTo(targetVol,ms){
    무대(stage_01~04)·카드 뒷면(card_00_sealed_back)·카드 앞면 FX(card_01~04, rarity_*_reveal)는
    탐라문화제_포토카드_탄생이펙트팩의 클로드_구현지시.md 시간표(0~4.35초 조합, 4.35초 공개, ~6.8초 정착)를 따른다. */
 var revealToken=0, currentReveal=null;
+var onCardSettled=null;
 function playCardReveal(data,photos,pos){
   var token=++revealToken;
   var reduced=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -2344,6 +2336,7 @@ function playCardReveal(data,photos,pos){
     tag.textContent=(data.rarity==='diamond'||data.rarity==='platinum')?data.rarityLabel+' 카드 탄생!':data.rarityLabel+' 카드가 탄생했어요!';
     result.classList.add('settled');
     var btn=$('#btnMake');if(btn)btn.disabled=false;
+    if(onCardSettled){var f=onCardSettled;onCardSettled=null;f()}
   }
   /* 건너뛰기 — 2초 뒤부터 노출, 눌리면 진행 중인 모든 타이머를 취소하고 곧장 완성본으로 이동,
      결과는 똑같이 유지된다(자동 종료 아님) */
@@ -2396,12 +2389,15 @@ $('#btnMake').onclick=function(){
       currentCard=data;
       $('#result').classList.add('on');
       $('#result').scrollIntoView({behavior:'smooth',block:'start'});
+      onCardSettled=function(){
+        if(missionDone('photo'))return;
+        claim('photo','포토카드 완성').then(function(res){
+          if(res.ok){toast(res.r.awarded>0?'포토카드 완성 · +'+res.r.awarded+' '+coinName():'포토카드 완성')}
+          else if(res.queued){toast('서버에 아직 전달되지 않았어요. 연결되면 자동으로 다시 보내요')}
+          paint();
+        });
+      };
       playCardReveal(data,photosSnapshot,posSnapshot);
-      if(!missionDone('photo')){claim('photo','포토카드 완성').then(function(res){
-        if(res.ok){toast(res.r.awarded>0?'포토카드 완성 · +'+res.r.awarded+' '+coinName():'포토카드 완성')}
-        else if(res.queued){toast('서버에 아직 전달되지 않았어요. 연결되면 자동으로 다시 보내요')}
-        paint();
-      })}
     });
   });
 };
