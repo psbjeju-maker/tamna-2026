@@ -1759,8 +1759,8 @@ function finishCatch(score){
   if(!tier){
     save();paintGame();
     sheet('<h3>'+esc(lbl)+'</h3><p style="text-align:center;line-height:1.6">3,000점부터 '+coinName()+'을 받을 수 있어요.<br>3,000점 1개 · 5,000점 2개 · 7,000점 3개</p>'+
-      '<button class="btn btn--primary btn--block" onclick="document.getElementById('modal').classList.remove('on')">확인</button>');
-    return;
+      '<button class="btn btn--primary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">확인</button>');
+return;
   }
   reward('catch',lbl,tier);
 }
