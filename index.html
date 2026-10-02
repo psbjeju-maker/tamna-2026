@@ -973,9 +973,26 @@ function paintTaste(){
   if(lastPlay){box.hidden=false;$('#tasteResult').innerHTML=playHtml(lastPlay)}
   else box.hidden=true;
   var pl=(V&&V.plays)||[];
-  $('#tasteList').innerHTML=pl.length?pl.map(function(p,i){
-    return '<div class="ticket"><b>'+esc(p.name||'-')+'</b><span>'+(p.demo?'시연':p.kind==='blank'?'꽝':p.kind==='coin'?coinName():'실물 상품')+' · '+(pl.length-i)+'번째</span></div>';
-  }).join(''):'<p class="caption">아직 맛본 기록이 없어요.</p>';
+  $('#tasteList').innerHTML=pl.length?tasteSummaryHtml(pl):'<p class="caption">아직 맛본 기록이 없어요.</p>';
+}
+/* 매 판을 한 줄씩 다 나열하면 여러 번 뽑을수록 길어지기만 해서,
+   꽝/카드는 횟수로 합치고 실물 상품만 이름을 남긴다(요약, 2026-10-02). */
+function tasteSummaryHtml(pl){
+  var blanks=0, coinsSum=0, items=[];
+  pl.forEach(function(p){
+    if(p.kind==='blank')blanks++;
+    else if(p.kind==='coin')coinsSum+=(p.coinReward||1);
+    else items.push(p);
+  });
+  var parts=['총 '+pl.length+'회'];
+  if(items.length)parts.push('실물 '+items.length+'개');
+  if(coinsSum)parts.push(coinName()+' '+coinsSum+'장');
+  if(blanks)parts.push('꽝 '+blanks+'번');
+  var html='<p class="caption" style="margin-bottom:10px">'+parts.join(' · ')+'</p>';
+  if(items.length)html+=items.map(function(p){
+    return '<div class="ticket"><b>'+esc(p.name||'-')+'</b><span>'+(p.demo?'시연':'실물 상품')+'</span></div>';
+  }).join('');
+  return html;
 }
 function safeImg(u){return (typeof u==='string'&&(/^https?:\/\//.test(u)||/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(u)||/^[\w\-\/.]+\.(png|jpe?g|webp|gif)$/i.test(u)))?u:''}
 function playHtml(p){

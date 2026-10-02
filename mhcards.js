@@ -170,7 +170,7 @@
       h += '<div class="mh-slot ' + (n ? '' : ev ? 'no seen' : 'no') + '" data-id="' + id + '"><img alt="' + (n ? label(id) + ' 카드' : ev ? label(id) + ' 카드(도감)' : '아직 없는 카드') + '" loading="lazy" src="' + esc(src(id)) + '">' +
         (n > 1 ? '<span class="c">×' + n + '</span>' : '') + '' + '</div>';
     }
-    h += '</div>' + (c === TOTAL ? '<div class="mh-done">🎉 13장 컴플리트!</div>' : '<p style="font-size:13px;opacity:.75;margin:10px 0 0">선명한 카드는 지금 가진 카드, 반투명 카드는 도감에만 있어요, 어두운 카드는 아직 못 만난 카드예요. 숫자는 지금 가진 장수예요.</p>');
+    h += '</div>' + (c === TOTAL ? '<div class="mh-done">🎉 13장 컴플리트!</div>' : '');
     el.innerHTML = h;
     el.onclick = function (e) {
       var slot = e.target.closest && e.target.closest('.mh-slot'); if (!slot) return;
