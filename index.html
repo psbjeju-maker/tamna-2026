@@ -150,7 +150,7 @@
         <button class="btn btn--secondary btn--sm" data-game="stack">도전</button>
       </div>
       <div class="game">
-        <div><div class="game__title">소별왕 — 빼앗긴 하늘을 되찾아라</div><div class="game__desc">가짜 해를 쏘아 어둠을 걷어 내고 제주 하늘을 되찾으세요. 진짜 해는 지켜주세요!</div><div class="game__best" id="best-sun">최고 기록 없음</div></div>
+        <div><div class="game__title">도채비 그림자 대소동</div><div class="game__desc">손전등을 움직이면 그림자가 반대로 뻗어요. 그림자로 먹이를 덮어 꿀꺽, 지나가는 사람 발은 피하세요.</div><div class="game__best" id="best-sun">최고 기록 없음</div></div>
         <button class="btn btn--secondary btn--sm" data-game="sun">도전</button>
       </div>
       <p class="caption" style="margin-top:12px" id="gameNote">게임을 끝까지 깨면 서버에 기록돼요. 지급 여부와 양은 서버가 알려줘요.</p>
@@ -589,7 +589,7 @@ var CFGPUB = null;     // 서버 공개 설정(evCfg) — 로그인 전에도 �
 var net = {offline:false, syncing:false, loaded:false};
 function load(){
   try{var v=JSON.parse(localStorage.getItem(KEY));if(v&&v.v===2)return v;}catch(e){}
-  return {v:2,name:'',code:'',crew:{},pending:{},best:{catch:0,stack:0,memo:0,sobyeolSun:0,skyScore:0,skyPct:0},flags:{},
+  return {v:2,name:'',code:'',crew:{},pending:{},best:{catch:0,stack:0,memo:0,sobyeolSun:0,skyScore:0,skyPct:0,shadowFeast:0},flags:{},
           daily:{}, photos:[null,null,null,null], cardCount:0};
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
@@ -1248,7 +1248,7 @@ function paintGame(){
   $('#decayTag').textContent=pendingIds().length?'서버 전달 대기 '+pendingIds().length+'건':'';
   $('#best-catch').textContent='최고 '+(S.best.catch||0)+'점';
   $('#best-stack').textContent='최고 '+(S.best.stack||0)+'점';
-  $('#best-sun').textContent=S.best.skyScore?'최고 '+S.best.skyScore+'점 · 하늘 '+(S.best.skyPct||0)+'%':'최고 기록 없음';
+  $('#best-sun').textContent=S.best.shadowFeast?'최고 그림자 '+S.best.shadowFeast+'개':'최고 기록 없음';
 }
 /* 게임 클리어 → 서버에 미션 요청. 코인 수량은 서버 응답값만 보여준다. */
 function reward(missionId,label,tier){
@@ -1819,34 +1819,34 @@ function stackInit(){
   };
 }
 
-/* --- ③ 소별왕 — 빼앗긴 하늘을 되찾아라 (v3 하늘 탈환, 자체 완결 게임을 iframe으로 임베드, 기억력 카드 자리) ---
+/* --- ③ 도채비 그림자 대소동 (shadow-feast v1, 자체 완결 게임을 iframe으로 임베드, 기억력 카드→소별왕 자리) ---
    서버 미션 ID는 기억력 카드 슬롯 'memo'를 그대로 쓴다(서버는 missionId만 받음 → 기존 완료자 중복 보상 없음).
-   최고기록은 v3 전용 S.best.skyScore(점수)·S.best.skyPct(회복률). v2 점수 S.best.sobyeolSun, 옛 S.best.memo(초)와 섞지 않는다. */
+   최고기록은 S.best.shadowFeast(먹은 그림자 개수). 소별왕 점수(skyScore 등)와 섞지 않는다.
+   #sun / gSun / sunTeardown 이름은 슬롯 이름으로 그대로 둔다. */
 var sunTeardown=null;
 var sunRewardedAttempt={};
 function gSun(){
-  openStage('소별왕 — 빼앗긴 하늘을 되찾아라');
+  openStage('도채비 그림자 대소동');
   cv.style.display='none';
   $('#canvasWrap').style.display='none';
   var p=$('#sun');p.style.display='flex';
   sunRewardedAttempt={};
-  p.innerHTML='<iframe id="sunFrame" title="소별왕 — 빼앗긴 하늘을 되찾아라" allow="autoplay" '+
-    'src="assets/sobyeol-sun/index.html?ts='+Date.now()+'"></iframe>';
+  p.innerHTML='<iframe id="sunFrame" title="도채비 그림자 대소동" allow="autoplay" '+
+    'src="assets/shadow-feast/index.html?ts='+Date.now()+'"></iframe>';
   var frame=$('#sunFrame');
   function onLoad(){
     var w=frame.contentWindow;
     if(!w)return;
-    w.getBest=function(){return {score:S.best.skyScore||0,pct:S.best.skyPct||0}};
+    w.getBest=function(){return {score:S.best.shadowFeast||0}};
     w.onGameExit=function(){stopGame()};
     w.onGameComplete=function(r){
       if(!r)return;
-      if(r.score>(S.best.skyScore||0))S.best.skyScore=r.score;
-      if(r.recoveryPct>(S.best.skyPct||0))S.best.skyPct=r.recoveryPct;
+      if(r.score>(S.best.shadowFeast||0))S.best.shadowFeast=r.score;
       save();paintGame();
-      if(!r.cleared)return; /* 회복률 미달·도중 종료는 기록만, 보상 요청 없음 */
+      if(!r.cleared)return; /* 미션 개수 미달은 기록만, 보상 요청 없음 */
       if(sunRewardedAttempt[r.attemptId])return; /* 같은 판 중복 요청 방지 */
       sunRewardedAttempt[r.attemptId]=1;
-      reward('memo','소별왕 하늘 탈환 · 하늘 '+r.recoveryPct+'% · '+r.score+'점'+(r.isBestScore?' · 신기록!':''));
+      reward('memo','도채비 그림자 대소동 · 그림자 '+r.score+'개'+(r.isBestScore?' · 신기록!':''));
     };
   }
   frame.addEventListener('load',onLoad);
