@@ -7,7 +7,7 @@
 <title>도채비의 보물찾기 — 탐라문화제 × 메이커앤하비</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Song+Myung&display=swap">
-<link rel="stylesheet" href="app.css?v=13">
+<link rel="stylesheet" href="app.css?v=14">
 </head>
 <body>
 
@@ -150,8 +150,8 @@
         <button class="btn btn--secondary btn--sm" data-game="stack">도전</button>
       </div>
       <div class="game">
-        <div><div class="game__title">기억력 카드</div><div class="game__desc">12장 중 같은 그림 6쌍을 맞춰 보세요.</div><div class="game__best" id="best-memo">최고 기록 없음</div></div>
-        <button class="btn btn--secondary btn--sm" data-game="memo">도전</button>
+        <div><div class="game__title">소별왕의 가짜 해를 쏴라!</div><div class="game__desc">활시위를 당겨 가짜 해를 맞히세요. 진짜 해는 지켜주세요!</div><div class="game__best" id="best-sun">최고 0점</div></div>
+        <button class="btn btn--secondary btn--sm" data-game="sun">도전</button>
       </div>
       <p class="caption" style="margin-top:12px" id="gameNote">게임을 끝까지 깨면 서버에 기록돼요. 지급 여부와 양은 서버가 알려줘요.</p>
     </div>
@@ -335,7 +335,7 @@
   <div class="stagebar"><span id="stTitle">게임</span><span id="stScore"></span>
     <button class="stagebar__x" id="stClose" aria-label="닫기"><svg class="icon"><use href="#i-close"/></svg></button></div>
   <div id="canvasWrap"><canvas id="gcv"></canvas><div id="lightningFlash"></div></div>
-  <div id="memo" style="display:none"></div>
+  <div id="sun" style="display:none"></div>
   <div id="stack" style="display:none"></div>
 </div>
 
@@ -589,7 +589,7 @@ var CFGPUB = null;     // 서버 공개 설정(evCfg) — 로그인 전에도 �
 var net = {offline:false, syncing:false, loaded:false};
 function load(){
   try{var v=JSON.parse(localStorage.getItem(KEY));if(v&&v.v===2)return v;}catch(e){}
-  return {v:2,name:'',code:'',crew:{},pending:{},best:{catch:0,stack:0,memo:0},flags:{},
+  return {v:2,name:'',code:'',crew:{},pending:{},best:{catch:0,stack:0,memo:0,sobyeolSun:0},flags:{},
           daily:{}, photos:[null,null,null,null], cardCount:0};
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
@@ -1248,7 +1248,7 @@ function paintGame(){
   $('#decayTag').textContent=pendingIds().length?'서버 전달 대기 '+pendingIds().length+'건':'';
   $('#best-catch').textContent='최고 '+(S.best.catch||0)+'점';
   $('#best-stack').textContent='최고 '+(S.best.stack||0)+'점';
-  $('#best-memo').textContent=S.best.memo?'최고 '+S.best.memo+'초':'최고 기록 없음';
+  $('#best-sun').textContent='최고 '+(S.best.sobyeolSun||0)+'점';
 }
 /* 게임 클리어 → 서버에 미션 요청. 코인 수량은 서버 응답값만 보여준다. */
 function reward(missionId,label,tier){
@@ -1265,7 +1265,7 @@ function openStage(title){
   cur=title;stage.classList.add('on');
   $('#stTitle').textContent=title;$('#stScore').textContent='';
   var w=$('#canvasWrap');w.style.display='';cv.width=w.clientWidth*2;cv.height=w.clientHeight*2;
-  cv.style.display='block';$('#memo').style.display='none';
+  cv.style.display='block';$('#sun').style.display='none';
   var stackEl0=$('#stack');if(stackEl0)stackEl0.style.display='none';
 }
 function stopGame(){
@@ -1274,12 +1274,14 @@ function stopGame(){
   cv.onpointerdown=null;cv.onpointermove=null;cv.onpointerup=null;cv.onpointercancel=null;
   sfxStopAmbient();
   if(stackTeardown){stackTeardown();stackTeardown=null}
+  if(sunTeardown){sunTeardown();sunTeardown=null}
+  var sunEl=$('#sun');if(sunEl)sunEl.style.display='none';
   var stackEl=$('#stack');if(stackEl)stackEl.style.display='none';
 }
 function startGame(k){
   if(k==='catch')gCatch();
   if(k==='stack')gStack();
-  if(k==='memo')gMemo();
+  if(k==='sun'||k==='memo')gSun();
 }
 
 /* ---------------- 사운드 ---------------- */
@@ -1817,42 +1819,40 @@ function stackInit(){
   };
 }
 
-/* --- ⑤ 기억력 카드 --- */
-function gMemo(){
-  openStage('기억력 카드');
+/* --- ③ 소별왕의 가짜 해를 쏴라! (자체 완결 게임을 iframe으로 임베드, 기억력 카드 자리) ---
+   서버 미션 ID는 기억력 카드 슬롯 'memo'를 그대로 쓴다(서버는 missionId만 받음 → 기존 완료자 중복 보상 없음).
+   최고기록은 새 필드 S.best.sobyeolSun(점수, 높을수록 좋음). 옛 S.best.memo(초)는 건드리지 않는다. */
+var sunTeardown=null;
+var sunRewardedAttempt={};
+function gSun(){
+  openStage('소별왕의 가짜 해를 쏴라!');
   cv.style.display='none';
-  var wrap=$('#memo');wrap.style.display='grid';
-  var faces=['🍊','🗿','🌊','🌾','🔥','⭐'];
-  var deck=faces.concat(faces).sort(function(){return Math.random()-.5});
-  wrap.innerHTML=deck.map(function(f,i){return '<div class="mcard" data-i="'+i+'"><span>'+f+'</span></div>'}).join('');
-  var open=[],done=0,t0=performance.now(),lock=false,tick;
-  tick=setInterval(function(){$('#stScore').textContent=((performance.now()-t0)/1000).toFixed(1)+'초'},100);
-  $$('#memo .mcard').forEach(function(el){
-    el.onclick=function(){
-      if(lock||el.classList.contains('flip'))return;
-      el.classList.add('flip');open.push(el);
-      if(open.length===2){
-        lock=true;
-        var a=deck[open[0].dataset.i],b=deck[open[1].dataset.i];
-        if(a===b){
-          done++;var pair=open.slice();
-          setTimeout(function(){pair.forEach(function(p){p.classList.add('hide')});},380);
-          open=[];lock=false;
-          if(done===6){clearInterval(tick);
-            var sec=(performance.now()-t0)/1000;
-            setTimeout(function(){finishMemo(sec)},450);}
-        } else {
-          setTimeout(function(){open.forEach(function(p){p.classList.remove('flip')});open=[];lock=false},700);
-        }
-      }
+  $('#canvasWrap').style.display='none';
+  var p=$('#sun');p.style.display='flex';
+  sunRewardedAttempt={};
+  p.innerHTML='<iframe id="sunFrame" title="소별왕의 가짜 해를 쏴라!" allow="autoplay" '+
+    'src="assets/sobyeol-sun/index.html?ts='+Date.now()+'"></iframe>';
+  var frame=$('#sunFrame');
+  function onLoad(){
+    var w=frame.contentWindow;
+    if(!w)return;
+    w.getBest=function(){return S.best.sobyeolSun||0};
+    w.onGameExit=function(){stopGame()};
+    w.onGameComplete=function(r){
+      if(!r)return;
+      if(r.score>(S.best.sobyeolSun||0))S.best.sobyeolSun=r.score;
+      save();paintGame();
+      if(!r.cleared)return; /* 실패·도중 종료는 기록만, 보상 요청 없음 */
+      if(sunRewardedAttempt[r.attemptId])return; /* 같은 판 중복 요청 방지 */
+      sunRewardedAttempt[r.attemptId]=1;
+      reward('memo','소별왕의 가짜 해 · '+(r.bossDefeated?'대장 가짜 해 처치':'가짜 해 '+r.fakesRemoved+'개')+' · '+r.score+'점'+(r.isBest?' · 신기록!':''));
     };
-  });
-}
-function finishMemo(sec){
-  var s=Math.round(sec*10)/10;stopGame();
-  $('#memo').style.display='none';
-  if(!S.best.memo||s<S.best.memo)S.best.memo=s;
-  reward('memo','기억력 카드 · '+s+'초 클리어');
+  }
+  frame.addEventListener('load',onLoad);
+  sunTeardown=function(){
+    frame.removeEventListener('load',onLoad);
+    var el=$('#sun');if(el)el.innerHTML='';
+  };
 }
 
 /* ---------------- 포토카드 ---------------- */
