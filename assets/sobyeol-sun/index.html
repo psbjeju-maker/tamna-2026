@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>소별왕의 가짜 해를 쏴라!</title>
-<link rel="stylesheet" href="style.css?v=2">
+<title>소별왕 — 빼앗긴 하늘을 되찾아라</title>
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 <div id="game">
@@ -12,30 +12,22 @@
   <div id="ctrl" aria-label="당겨서 조준하는 영역"></div>
 
   <div class="hud" id="hud" hidden>
-    <div class="hud__bar">
-      <div class="hud__cell"><small>남은 시간</small><strong id="hudTime">45.0</strong></div>
-      <div class="hud__cell hud__cell--main"><small>점수</small><strong id="hudScore">0</strong></div>
-      <div class="hud__cell"><small>최고</small><strong id="hudBest">0</strong></div>
+    <div class="hud__cell"><small>남은 시간</small><strong id="hudTime">45.0</strong></div>
+    <div class="hud__cell hud__cell--sky">
+      <small>되찾은 하늘 <b id="hudPct">0%</b></small>
+      <div class="sky"><i id="hudSky"></i><span class="sky__goal"></span></div>
     </div>
-    <div class="hud__row">
-      <span class="hud__stage" id="hudStage">1단계 · 느린 해</span>
-    </div>
-    <div class="hud__combo" id="hudCombo" hidden><b id="hudComboN">0</b> 콤보</div>
+    <div class="hud__cell"><small>점수</small><strong id="hudScore">0</strong></div>
   </div>
-  <div class="goal" id="goal" hidden>
-    <span id="goalText">다음 단계까지 5명중</span>
-    <div class="goal__bar"><i id="goalFill"></i></div>
-  </div>
+  <div class="goal" id="goal" hidden><span id="goalText">어둠을 퍼뜨리는 해부터 쏴라!</span></div>
   <button class="mute" id="mute" type="button" aria-label="소리 끄기">
     <svg viewBox="0 0 24 24" width="22" height="22"><path id="muteIcon" fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/></svg>
   </button>
-  <button class="skip" id="skip" type="button" hidden>연습 건너뛰기</button>
-  <div class="tip" id="tip" hidden></div>
 
   <div class="panel-wrap" id="overlay">
     <div class="panel" id="panel"><p class="panel__line">그림을 불러오는 중이에요…</p></div>
   </div>
 </div>
-<script src="game.js?v=2"></script>
+<script src="game.js?v=3"></script>
 </body>
 </html>

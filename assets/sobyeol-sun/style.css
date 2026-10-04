@@ -15,35 +15,25 @@ html,body{height:100%;background:#1d3a52;color:var(--text);
 #ctrl{position:absolute;left:0;right:0;bottom:0;touch-action:none;cursor:crosshair}
 [hidden]{display:none!important}
 
-.hud{position:absolute;top:8px;left:0;right:0;pointer-events:none}
-.hud__bar{margin:0 auto;display:flex;background:var(--surface);border-radius:14px;padding:5px 6px;
-  width:min(calc(100% - 120px),300px);transform:translateX(-22px)}
-.hud__cell{flex:1;text-align:center;line-height:1.1}
+.hud{position:absolute;top:8px;left:8px;right:60px;display:flex;align-items:center;gap:4px;
+  background:var(--surface);border-radius:14px;padding:5px 8px;pointer-events:none;max-width:420px;margin:0 auto}
+.hud__cell{text-align:center;line-height:1.1;min-width:58px}
 .hud__cell small{display:block;font-size:10px;color:var(--muted);font-weight:600}
 .hud__cell strong{font-size:19px;font-weight:800}
-.hud__cell--main strong{font-size:22px;color:var(--accent)}
 .hud__cell strong.low{color:var(--danger)}
-.hud__row{display:flex;justify-content:center;margin-top:6px}
-.hud__stage{background:var(--surface);border-radius:999px;padding:3px 12px;font-size:12px;font-weight:600}
-.hud__combo{position:absolute;right:12px;top:58px;font-size:13px;font-weight:800;color:var(--mint);
-  text-shadow:0 1px 6px rgba(13,22,44,.8)}
-.hud__combo b{font-size:28px}
-.hud__combo.pop{animation:pop .25s ease-out}
-@keyframes pop{0%{transform:scale(1.3)}100%{transform:scale(1)}}
-
-.goal{position:absolute;left:50%;transform:translateX(-50%);bottom:8px;text-align:center;pointer-events:none;
-  background:var(--surface);border-radius:12px;padding:5px 12px 7px;font-size:12px;font-weight:600;min-width:150px}
-.goal__bar{height:5px;border-radius:3px;background:rgba(255,255,255,.15);margin-top:4px;overflow:hidden}
-.goal__bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
-.goal.boss .goal__bar i{background:var(--mint)}
-
+.hud__cell--sky{flex:1;min-width:0;padding:0 4px}
+.hud__cell--sky small b{color:var(--mint);font-size:14px;font-weight:800}
+.sky{position:relative;height:8px;border-radius:4px;background:rgba(255,255,255,.14);margin-top:4px;overflow:visible}
+.sky i{display:block;height:100%;width:0;border-radius:4px;background:var(--mint);transition:width .25s}
+.sky.done i{background:var(--accent)}
+.sky__goal{position:absolute;left:75%;top:-3px;bottom:-3px;width:2px;background:var(--text);border-radius:1px;opacity:.8}
+.goal{position:absolute;left:50%;transform:translateX(-50%);bottom:8px;text-align:center;pointer-events:none;white-space:nowrap;
+  background:var(--surface);border-radius:12px;padding:7px 14px;font-size:13px;font-weight:600}
+.goal.warn{color:#D9B8FF}
+.goal.last{color:var(--accent)}
 .mute{position:absolute;top:8px;right:8px;width:44px;height:44px;border-radius:50%;border:0;
   background:var(--surface);color:var(--text);display:grid;place-items:center;cursor:pointer}
 .mute.off{color:var(--muted)}
-.skip{position:absolute;bottom:56px;right:12px;min-height:44px;padding:0 16px;border-radius:999px;border:0;
-  background:var(--surface);color:var(--text);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
-.tip{position:absolute;left:50%;top:64px;transform:translateX(-50%);background:var(--surface);
-  padding:8px 14px;border-radius:12px;font-size:14px;font-weight:600;white-space:nowrap;pointer-events:none}
 
 .panel-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   padding:16px;background:rgba(15,17,32,.45)}
@@ -59,7 +49,8 @@ html,body{height:100%;background:#1d3a52;color:var(--text);
 .pair figcaption{font-size:12px;font-weight:800}
 .pair .is-fake{color:#C9A6FF}
 .pair .is-true{color:var(--success)}
-.pair .is-boss{color:var(--mint)}
+.pair .is-charger{color:#C9A6FF}
+.pair .is-gold{color:var(--accent)}
 .pair small{display:block;font-size:10.5px;color:var(--muted);font-weight:600;margin-top:2px;line-height:1.3}
 /* 움직이는 조작 가이드: 손가락을 왼쪽 아래로 당기면 화살은 오른쪽 위로 */
 .guide{position:relative;height:84px;margin:2px 0 8px;background:rgba(255,255,255,.05);border-radius:14px;overflow:hidden}
