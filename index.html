@@ -1842,10 +1842,10 @@ function gSun(){
       if(!r)return;
       if(r.score>(S.best.sobyeolSun||0))S.best.sobyeolSun=r.score;
       save();paintGame();
-      if(!r.cleared)return; /* 실패·도중 종료는 기록만, 보상 요청 없음 */
+      if(!r.cleared)return; /* 보스 미처치·도중 종료는 기록만, 보상 요청 없음 */
       if(sunRewardedAttempt[r.attemptId])return; /* 같은 판 중복 요청 방지 */
       sunRewardedAttempt[r.attemptId]=1;
-      reward('memo','소별왕의 가짜 해 · '+(r.bossDefeated?'대장 가짜 해 처치':'가짜 해 '+r.fakesRemoved+'개')+' · '+r.score+'점'+(r.isBest?' · 신기록!':''));
+      reward('memo','소별왕의 가짜 해 · 보스 처치 · '+(r.grade?r.grade+'등급 · ':'')+r.score+'점'+(r.isBest?' · 신기록!':''));
     };
   }
   frame.addEventListener('load',onLoad);
