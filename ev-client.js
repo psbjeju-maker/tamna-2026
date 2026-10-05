@@ -187,6 +187,7 @@
     },
     kujiBoard: function (eventId) { return raw('kujiBoard', { eventId: eventId }, true); },
     /* 스태프가 참가자 폰에 PIN 을 눌러 확인 → 미션 카드 지급 (SNS 인증 등) */
+    claimMissionQr: function (eventId, token, missionId) { return withRid('q.' + eventId + '.' + missionId, 'claimMissionQr', { eventId: eventId, token: token, missionId: missionId }, true); },
     confirmMission: function (eventId, missionId, pin) { return withRid('c.' + eventId + '.' + missionId, 'confirmMission', { eventId: eventId, missionId: missionId, pin: pin }, true); },
     submitClue: function (eventId, clueId, answer) { return raw('submitClue', { eventId: eventId, clueId: clueId, answer: answer }, true); },
     claimTreasure: function (eventId, code) { return withRid('t.' + eventId, 'claimTreasure', { eventId: eventId, answer: code }, true); },

@@ -369,7 +369,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="config.js?v=taste1"></script>
 <script src="live.js"></script>
-<script src="ev-client.js?v=3"></script>
+<script src="ev-client.js?v=4"></script>
+<script src="mqscan.js"></script>
 <script src="mhcards.js?v=9"></script>
 <script src="kujiboard.js?v=3"></script>
 <script>
@@ -919,11 +920,36 @@ function paintStaff(){
     el.innerHTML='<p class="caption">지금 열려 있는 스태프 인증이 없어요.</p>';
   } else {
     el.innerHTML='<div class="quest'+(done?' quest--done':'')+'"><svg class="icon"><use href="#i-'+(done?'check':'message')+'"/></svg>'+
-      '<div><div class="quest__title">SNS 인증</div><div class="quest__desc">'+(done?'스태프 확인 완료 · 새 게시물을 올리면 또 받을 수 있어요':'포토카드를 SNS에 올리고 스태프에게 보여주세요')+'</div></div>'+
-      '<button class="btn btn--secondary btn--sm quest__action" data-staff="sns">스태프 확인</button></div>';
+      '<div><div class="quest__title">SNS 인증</div><div class="quest__desc">'+(done?'인증 완료 · 새 게시물을 올리면 또 받을 수 있어요':'SNS에 올린 화면을 스태프에게 보여 주고, 스태프가 보여 주는 QR을 찍어요')+'</div></div>'+
+      '<button class="btn btn--secondary btn--sm quest__action" data-staff="sns">QR 찍기</button></div>';
   }
-  $$('[data-staff]').forEach(function(b){b.onclick=function(){if(window.KB)askStaffPin();else toast('잠시 후 다시 눌러 주세요')}});
-  var sd=$('#snsDesc');if(sd)sd.textContent=done?'스태프 확인 완료':'스태프가 확인하면 서버에 기록돼요';
+  $$('[data-staff]').forEach(function(b){b.onclick=function(){scanSnsQr()}});
+  var sd=$('#snsDesc');if(sd)sd.textContent=done?'인증 완료 · 새 게시물을 올리면 또 받을 수 있어요':'스태프가 확인하고 보여 주는 QR을 찍으면 끝';
+}
+/* 2026-10-05: SNS 인증은 스태프 PIN 대신 미션 QR — 스태프는 게시물을 보고 QR만 보여 준다 */
+function scanSnsQr(){
+  if(!window.MQScan){toast('잠시 후 다시 눌러 주세요');return}
+  MQScan.open({hint:'스태프가 보여 주는 미션 QR을 찍어 주세요',onToken:claimSnsQr});
+}
+var snsQrBusy=false;
+function claimSnsQr(token){
+  if(snsQrBusy)return; snsQrBusy=true;
+  var bookBefore=JSON.parse(JSON.stringify((V&&V.cardBook)||{}));
+  EV.claimMissionQr(EID,token,'sns').then(function(r){
+    snsQrBusy=false;
+    var cards=(r&&r.cards)||[];
+    if(r&&r.awarded>0){
+      toast('SNS 인증 완료 — 카드가 지급됐어요');
+      if(cards.length&&window.MH)setTimeout(function(){MH.reveal(cards,{book:bookBefore,title:'SNS 인증 카드',onClose:paintAlbum})},200);
+    } else if(r&&r.reason==='cooldown'){
+      var sec=r.retryAfterSec||60; toast('방금 인증했어요. '+(sec>=60?Math.ceil(sec/60)+'분':sec+'초')+' 뒤에 다시 찍어 주세요');
+    } else toast('이번에는 받은 카드가 없어요');
+    sync().then(function(){paint();paintStaff();paintTaste()});
+  },function(e){
+    snsQrBusy=false;
+    var why=e&&(e.reason||e.message)||'';
+    toast(/qr-unknown/.test(why)?'탐라문화제 미션 QR이 아니에요':((e&&e.message)||'잠시 후 다시 시도해 주세요'));
+  });
 }
 function askStaffPin(){
   var bookBefore=JSON.parse(JSON.stringify((V&&V.cardBook)||{}));
