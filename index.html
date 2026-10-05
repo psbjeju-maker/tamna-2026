@@ -7,7 +7,7 @@
 <title>도채비의 보물찾기 — 탐라문화제 × 메이커앤하비</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Song+Myung&display=swap">
-<link rel="stylesheet" href="app.css?v=14">
+<link rel="stylesheet" href="app.css?v=15">
 </head>
 <body>
 
@@ -337,6 +337,7 @@
   <div id="canvasWrap"><canvas id="gcv"></canvas><div id="lightningFlash"></div></div>
   <div id="sun" style="display:none"></div>
   <div id="stack" style="display:none"></div>
+  <button class="gameRw" id="gameRw" type="button" disabled></button>
 </div>
 
 <!-- 나침반 추적 -->
@@ -638,7 +639,7 @@ function lostRegistration(){
 /* ---- 미션 요청 — 성공(서버가 응답)해야만 기록으로 취급한다 ----
    연결 문제(retryable)면 "전달 대기"로 남기고 자동 재시도한다. 같은 요청번호(ev.rid.*)를 계속 써서
    서버가 한 번만 처리한다. */
-function claim(missionId,label,tier){
+function claim(missionId,label,tier,deferCards){
   var pkey=tier?missionId+'#'+tier:missionId;
   return EV.claimMission(EID,missionId,tier).then(function(r){
     if(S.pending&&S.pending[pkey]){delete S.pending[pkey]}
@@ -646,9 +647,9 @@ function claim(missionId,label,tier){
     save();
     var before=JSON.parse(JSON.stringify((V&&V.cardBook)||{}));
     /* 카드는 서버 응답에 이미 있으니 동기화를 기다리지 않고 바로 보여 준다 */
-    if(r&&r.cards&&r.cards.length&&window.MH)setTimeout(function(){MH.reveal(r.cards,{book:before,title:coinName()+' 카드를 받았어요!',onClose:paintAlbum})},150);
+    if(!deferCards&&r&&r.cards&&r.cards.length&&window.MH)setTimeout(function(){MH.reveal(r.cards,{book:before,title:coinName()+' 카드를 받았어요!',onClose:paintAlbum})},150);
     sync();
-    return {ok:true,r:r};
+    return {ok:true,r:r,book:before};
   },function(e){
     if(e.reason==='not-registered'){lostRegistration();return {ok:false,e:e}}
     if(e.retryable){S.pending[pkey]=label||missionId;save();net.offline=true;paint();return {ok:false,queued:true,e:e}}
@@ -1253,10 +1254,61 @@ function paintGame(){
 /* 게임 클리어 → 서버에 미션 요청. 코인 수량은 서버 응답값만 보여준다. */
 function reward(missionId,label,tier){
   save();paintGame();
+  if($('#stage').classList.contains('on')){rewardInGame(missionId,label,tier);return}
   sheet('<h3>'+esc(label)+'</h3><div id="rwBody">'+CLAIMING+'</div>'+
     '<button class="btn btn--primary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">확인</button>');
   claim(missionId,label,tier).then(function(res){fillRw(res);paint()});
 }
+/* 게임 도중(단계 클리어 등) 보상: 화면을 가리지 않고 게임은 그대로 이어가게 한다.
+   서버 기록은 바로 하고, 카드 연출은 손님이 '보상 받기'를 누르거나 게임을 나갈 때 보여 준다. */
+var gameRewards=[], collectingRw=false;
+function paintGameRw(){
+  var b=$('#gameRw');if(!b)return;
+  if(!gameRewards.length){b.className='gameRw';b.disabled=true;return}
+  var wait=gameRewards.some(function(x){return x.state==='wait'});
+  var coins=0,cards=0;
+  gameRewards.forEach(function(x){if(x.state==='ready'){coins+=x.awarded;cards+=x.cards.length}});
+  var t=[];if(coins>0)t.push('+'+coins+' '+coinName());if(cards>0)t.push('카드 '+cards+'장');
+  b.className='gameRw on'+(wait?'':' gameRw--ready');
+  b.disabled=wait&&!t.length;
+  b.textContent=t.length?'보상 받기 · '+t.join(' · '):'보상 기록하는 중…';
+}
+function rewardInGame(missionId,label,tier){
+  var item={state:'wait',awarded:0,cards:[],book:null};
+  gameRewards.push(item);paintGameRw();
+  claim(missionId,label,tier,true).then(function(res){
+    if(res.ok){
+      var r=res.r;item.awarded=+r.awarded||0;item.cards=(r.cards||[]).slice();item.book=res.book;
+      item.state=(item.awarded>0||item.cards.length)?'ready':'none';
+      if(item.state==='none')toast(REASON[r.reason]||'이번에는 코인이 지급되지 않았어요.');
+    }else{
+      item.state='none';
+      toast(res.queued?'서버에 아직 전달되지 않았어요. 연결되면 자동으로 다시 보내요':((res.e&&res.e.message)||'기록하지 못했어요'));
+    }
+    if(item.state==='none')gameRewards.splice(gameRewards.indexOf(item),1);
+    paintGameRw();paint();
+    if(!$('#stage').classList.contains('on'))collectGameRewards();
+  });
+}
+function collectGameRewards(){
+  if(collectingRw)return;
+  var ready=gameRewards.filter(function(x){return x.state==='ready'});
+  if(!ready.length)return;
+  collectingRw=true;
+  gameRewards=gameRewards.filter(function(x){return x.state!=='ready'});
+  paintGameRw();
+  var coins=0,cards=[];
+  ready.forEach(function(x){coins+=x.awarded;cards=cards.concat(x.cards)});
+  sfx('bonus',0.7);
+  function done(){collectingRw=false;paintAlbum();paint()}
+  if(cards.length&&window.MH){
+    MH.reveal(cards,{book:ready[0].book,title:(coins>0?'+'+coins+' '+coinName()+' · ':'')+coinName()+' 카드를 받았어요!',onClose:done});
+  }else{
+    if(coins>0)toast('+'+coins+' '+coinName()+' 받았어요!');
+    done();
+  }
+}
+$('#gameRw').onclick=collectGameRewards;
 $$('[data-game]').forEach(function(b){b.onclick=function(){startGame(b.dataset.game)}});
 $('#stClose').onclick=function(){stopGame()};
 
@@ -1277,6 +1329,7 @@ function stopGame(){
   if(sunTeardown){sunTeardown();sunTeardown=null}
   var sunEl=$('#sun');if(sunEl)sunEl.style.display='none';
   var stackEl=$('#stack');if(stackEl)stackEl.style.display='none';
+  setTimeout(collectGameRewards,250);
 }
 function startGame(k){
   if(k==='catch')gCatch();
