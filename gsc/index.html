@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d2547">
+<title>굿스마일 예약 상품</title>
+<style>
+@font-face{font-family:"SCDream";font-weight:400;src:url("../fonts/SCDream4.woff") format("woff");font-display:swap}
+@font-face{font-family:"SCDream";font-weight:500;src:url("../fonts/SCDream5.woff") format("woff");font-display:swap}
+@font-face{font-family:"SCDream";font-weight:700;src:url("../fonts/SCDream7.woff") format("woff");font-display:swap}
+:root{
+  --cobalt:#1E5AA8; --deep:#0d2547; --night:#08172d; --ink:#0f1c33; --paper:#ffffff;
+  --mist:#c9d8ef; --dim:#8ea6c8; --coral:#ff7a5c; --gold:#f2c46d;
+  --u:min(1vw,1.78vh); /* 화면 크기 단위: 가로 TV·세로 태블릿 모두 비례 */
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--night);color:#fff;font-family:"SCDream","Apple SD Gothic Neo","Malgun Gothic",sans-serif;overflow:hidden;cursor:none}
+body{background:radial-gradient(120% 90% at 18% 10%,#1d4f93 0%,var(--deep) 45%,var(--night) 100%)}
+.stage{position:fixed;inset:0;display:grid;grid-template-columns:56% 44%;grid-template-rows:1fr auto}
+
+/* 사진 */
+.photo{position:relative;grid-row:1;margin:calc(var(--u)*3.2) calc(var(--u)*1.6) calc(var(--u)*2) calc(var(--u)*3.2);border-radius:calc(var(--u)*2.4);
+  background:#fff;overflow:hidden;box-shadow:0 calc(var(--u)*2.4) calc(var(--u)*6) rgba(0,0,0,.45)}
+.photo .bg{position:absolute;inset:-10%;background:center/cover no-repeat;filter:blur(calc(var(--u)*3)) saturate(1.2);opacity:.55;transition:background-image .9s}
+.photo img{position:absolute;inset:4%;width:92%;height:92%;object-fit:contain;opacity:0;transform:scale(1.04);transition:opacity .9s ease}
+.photo img.on{opacity:1;animation:kb 9s ease-out forwards}
+@keyframes kb{from{transform:scale(1.04)}to{transform:scale(1.12)}}
+.kind{position:absolute;left:calc(var(--u)*2);top:calc(var(--u)*2);z-index:2;background:var(--deep);color:#fff;font-weight:700;
+  font-size:calc(var(--u)*1.7);padding:calc(var(--u)*.7) calc(var(--u)*1.6);border-radius:999px;letter-spacing:.02em}
+
+/* 정보 */
+.info{grid-row:1;display:flex;flex-direction:column;justify-content:center;padding:calc(var(--u)*3) calc(var(--u)*4.4) calc(var(--u)*2) calc(var(--u)*2.4);min-width:0}
+.info > *{opacity:0;transform:translateY(calc(var(--u)*1.6))}
+.info.in > *{animation:rise .7s cubic-bezier(.2,.8,.2,1) forwards}
+.info.in > :nth-child(2){animation-delay:.08s}.info.in > :nth-child(3){animation-delay:.16s}
+.info.in > :nth-child(4){animation-delay:.24s}.info.in > :nth-child(5){animation-delay:.32s}
+@keyframes rise{to{opacity:1;transform:none}}
+.badge{align-self:flex-start;display:inline-flex;align-items:center;gap:calc(var(--u)*.8);font-size:calc(var(--u)*1.6);font-weight:700;color:var(--deep);
+  background:var(--gold);padding:calc(var(--u)*.6) calc(var(--u)*1.5);border-radius:999px;margin-bottom:calc(var(--u)*2.2)}
+.badge i{width:calc(var(--u)*.9);height:calc(var(--u)*.9);border-radius:50%;background:var(--coral);animation:blink 1.4s ease-in-out infinite}
+@keyframes blink{50%{opacity:.3}}
+.series{font-size:calc(var(--u)*2);color:var(--mist);font-weight:500;line-height:1.35;margin-bottom:calc(var(--u)*1)}
+.name{font-size:calc(var(--u)*4.4);font-weight:700;line-height:1.18;letter-spacing:-.01em;word-break:keep-all;overflow-wrap:anywhere;
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.maker{font-size:calc(var(--u)*1.7);color:var(--dim);margin-top:calc(var(--u)*1.4)}
+.price{margin-top:calc(var(--u)*3);display:flex;align-items:baseline;gap:calc(var(--u)*1)}
+.price b{font-size:calc(var(--u)*6);font-weight:700;color:#fff;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.price span{font-size:calc(var(--u)*1.8);color:var(--mist)}
+.price.ask b{font-size:calc(var(--u)*3.4);color:var(--gold)}
+
+/* 아래 띠 */
+.foot{grid-column:1/-1;display:flex;align-items:center;gap:calc(var(--u)*2.4);padding:calc(var(--u)*1.6) calc(var(--u)*3.2) calc(var(--u)*2.2);position:relative}
+.brand{display:flex;align-items:center;gap:calc(var(--u)*1.4);flex:1;min-width:0}
+.brand img{height:calc(var(--u)*7.2);filter:drop-shadow(0 calc(var(--u)*.6) calc(var(--u)*1.2) rgba(0,0,0,.55))}
+.brand b{display:block;font-size:calc(var(--u)*2.3);font-weight:700}
+.brand small{display:block;font-size:calc(var(--u)*1.5);color:var(--mist);margin-top:calc(var(--u)*.3)}
+.cta{display:flex;align-items:center;gap:calc(var(--u)*1.4);background:#fff;color:var(--ink);border-radius:calc(var(--u)*1.6);padding:calc(var(--u)*1) calc(var(--u)*1.8) calc(var(--u)*1) calc(var(--u)*1)}
+.cta img{width:calc(var(--u)*8.4);height:calc(var(--u)*8.4);image-rendering:pixelated}
+.cta b{display:block;font-size:calc(var(--u)*2);font-weight:700}
+.cta small{display:block;font-size:calc(var(--u)*1.5);color:#4a5a75;margin-top:calc(var(--u)*.3)}
+.bar{position:absolute;left:calc(var(--u)*3.2);right:calc(var(--u)*3.2);top:0;height:calc(var(--u)*.35);background:rgba(255,255,255,.12);border-radius:9px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--coral)}
+.count{font-size:calc(var(--u)*1.5);color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* 모아보기(사이사이 끼는 화면) */
+.wall{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--u)*3);
+  background:radial-gradient(110% 90% at 50% 0%,#1d4f93,var(--deep) 55%,var(--night));opacity:0;pointer-events:none;transition:opacity .8s ease}
+.wall.on{opacity:1}
+.wall h1{font-size:calc(var(--u)*6);font-weight:700;letter-spacing:-.02em;text-align:center;line-height:1.15}
+.wall h1 em{font-style:normal;color:var(--gold)}
+.wall p{font-size:calc(var(--u)*2.2);color:var(--mist);text-align:center}
+.grid{display:grid;grid-template-columns:repeat(6,calc(var(--u)*13));gap:calc(var(--u)*1.4)}
+.grid div{aspect-ratio:1;background:#fff center/contain no-repeat;border-radius:calc(var(--u)*1.4);box-shadow:0 calc(var(--u)*.8) calc(var(--u)*2) rgba(0,0,0,.35);
+  opacity:0;transform:translateY(calc(var(--u)*2)) scale(.94)}
+.wall.on .grid div{animation:rise .6s cubic-bezier(.2,.8,.2,1) forwards}
+
+/* 처음 한 번 누르기 안내(전체화면·화면 꺼짐 방지) */
+.tapgo{position:fixed;right:calc(var(--u)*2);top:calc(var(--u)*2);z-index:9;font-size:calc(var(--u)*1.4);color:var(--dim);background:rgba(8,23,45,.7);
+  border:1px solid rgba(255,255,255,.15);padding:calc(var(--u)*.6) calc(var(--u)*1.2);border-radius:999px;transition:opacity .6s}
+.tapgo.off{opacity:0}
+
+/* 세로 화면(태블릿 세로) */
+@media (max-aspect-ratio:1/1){
+  :root{--u:min(1.78vw,1vh)}
+  .stage{grid-template-columns:1fr;grid-template-rows:46% 1fr auto}
+  .photo{grid-row:1;margin:calc(var(--u)*3) calc(var(--u)*3) calc(var(--u)*1)}
+  .info{grid-row:2;padding:calc(var(--u)*2) calc(var(--u)*4);justify-content:flex-start}
+  .name{-webkit-line-clamp:3}
+  .price{margin-top:calc(var(--u)*2)}
+  .foot{grid-row:3;flex-wrap:wrap;gap:calc(var(--u)*1.6)}
+  .brand{flex:1 1 100%}
+  .brand img{height:calc(var(--u)*5.6)}
+  .cta img{width:calc(var(--u)*7);height:calc(var(--u)*7)}
+  .name{font-size:calc(var(--u)*4)}
+  .price b{font-size:calc(var(--u)*5.2)}
+  .count{display:none}
+  .cta{flex:1 1 100%}
+  .grid{grid-template-columns:repeat(3,calc(var(--u)*24))}
+}
+@media (prefers-reduced-motion:reduce){.photo img.on{animation:none}.info.in > *{animation-duration:.01s}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="photo"><div class="bg" id="pbg"></div><span class="kind" id="kind"></span><img id="imA" alt=""><img id="imB" alt=""></div>
+  <div class="info" id="info">
+    <span class="badge"><i></i>예약 받는 중</span>
+    <div class="series" id="series"></div>
+    <div class="name" id="name"></div>
+    <div class="maker" id="maker"></div>
+    <div class="price" id="price"></div>
+  </div>
+  <div class="foot">
+    <div class="bar"><i id="bar"></i></div>
+    <div class="brand">
+      <img src="../assets/brand/logo.png" alt="" onerror="this.style.display='none'">
+      <div><b>박서방 제주점 · 굿스마일 예약</b><small>발매 전 상품을 미리 예약하세요</small></div>
+    </div>
+    <span class="count" id="count"></span>
+    <div class="cta"><img id="qr" alt="예약 문의 QR"><div><b>예약·가격 문의</b><small>QR을 찍어 DM 주세요</small></div></div>
+  </div>
+</div>
+
+<div class="wall" id="wall">
+  <h1>굿스마일 <em>예약 상품</em><br><span id="wallN"></span>종 준비했어요</h1>
+  <div class="grid" id="grid"></div>
+  <p>마음에 드는 상품이 있으면 부스 스태프에게 말씀해 주세요</p>
+</div>
+<div class="tapgo" id="tapgo">화면을 한 번 누르면 전체화면</div>
+
+<script src="items.js"></script>
+<script src="qr.js"></script>
+<script>
+(function () {
+  'use strict';
+  var SLIDE_MS = 8000, WALL_EVERY = 12, WALL_MS = 9000;
+  var CONTACT_URL = 'https://litt.ly/psb_jeju';
+  var ITEMS = (window.GSC_ITEMS || []).filter(function (x) { return x.imgs && x.imgs.length; });
+  var $ = function (id) { return document.getElementById(id); };
+
+  try { var q = qrcode(0, 'M'); q.addData(CONTACT_URL); q.make(); $('qr').src = q.createDataURL(8, 1); } catch (e) {}
+
+  function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  var order = shuffle(ITEMS), pos = 0, shown = 0, front = 'imA';
+
+  /* 다음 사진 미리 읽기 */
+  function preload(it) { if (it) { var im = new Image(); im.src = it.imgs[0]; } }
+
+  function fmt(p) { return p ? p.toLocaleString('ko-KR') : ''; }
+  function showItem(it) {
+    var back = front === 'imA' ? 'imB' : 'imA';
+    var nb = $(back), nf = $(front);
+    nb.classList.remove('on'); void nb.offsetWidth;
+    nb.src = it.imgs[0];
+    var go = function () { nb.classList.add('on'); nf.classList.remove('on'); front = back; $('pbg').style.backgroundImage = 'url("' + it.imgs[0] + '")'; };
+    if (nb.complete) go(); else { nb.onload = go; nb.onerror = go; }
+    $('kind').textContent = it.kind;
+    $('series').textContent = it.series || '';
+    $('name').textContent = it.name;
+    $('maker').textContent = it.maker || '';
+    var pr = $('price');
+    pr.className = 'price' + (it.price ? '' : ' ask');
+    pr.innerHTML = it.price ? '<b>' + fmt(it.price) + '</b><span>원</span>' : '<b>가격 문의</b>';
+    var info = $('info'); info.classList.remove('in'); void info.offsetWidth; info.classList.add('in');
+    $('count').textContent = (pos % ITEMS.length || ITEMS.length) + ' / ' + ITEMS.length;
+    var bar = $('bar'); bar.style.transition = 'none'; bar.style.width = '0'; void bar.offsetWidth;
+    bar.style.transition = 'width ' + SLIDE_MS + 'ms linear'; bar.style.width = '100%';
+  }
+  function showWall(cb) {
+    var g = $('grid'); g.innerHTML = '';
+    var pick = shuffle(ITEMS).slice(0, matchMedia('(max-aspect-ratio:1/1)').matches ? 9 : 12);
+    pick.forEach(function (it, i) { var d = document.createElement('div'); d.style.backgroundImage = 'url("' + it.imgs[0] + '")'; d.style.animationDelay = (i * 0.06) + 's'; g.appendChild(d); });
+    $('wallN').textContent = ITEMS.length;
+    $('wall').classList.add('on');
+    setTimeout(function () { $('wall').classList.remove('on'); cb(); }, WALL_MS);
+  }
+  function next() {
+    if (!ITEMS.length) return;
+    if (shown > 0 && shown % WALL_EVERY === 0) { shown++; showWall(next); return; }
+    if (pos >= order.length) { order = shuffle(ITEMS); pos = 0; }
+    var it = order[pos++]; shown++;
+    showItem(it); preload(order[pos]);
+    setTimeout(next, SLIDE_MS);
+  }
+  next();
+
+  /* 화면 꺼짐 방지 + 전체화면 (처음 한 번 누르면) */
+  var lock = null;
+  function wake() { try { if ('wakeLock' in navigator && !lock) navigator.wakeLock.request('screen').then(function (l) { lock = l; l.addEventListener('release', function () { lock = null; }); }, function () {}); } catch (e) {} }
+  wake();
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') wake(); });
+  document.addEventListener('click', function () {
+    wake();
+    var el = document.documentElement, rq = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (rq && !document.fullscreenElement) try { rq.call(el); } catch (e) {}
+    $('tapgo').classList.add('off');
+  });
+  setTimeout(function () { $('tapgo').classList.add('off'); }, 15000);
+
+  /* 오프라인: 한 번 열면 와이파이가 끊겨도 계속 돈다 */
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+})();
+</script>
+</body>
+</html>
