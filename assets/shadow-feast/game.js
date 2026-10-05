@@ -28,7 +28,12 @@ var CFG={
   maxBundles:2,
   foot:{len:31,halfSeg:10,r:5.5,side:7,stride:22},
   comboWindow:2.2,
-  clearScore:8,           // 미션 성공 = 문어발 진화(8개)까지
+  clearScore:8,
+  // 중후반 요소
+  moveFrom:6,             // 이만큼 먹은 뒤부터 움직이는 먹이(굴러가는 귤·기어가는 문어)
+  rollSpd:function(st){return Math.min(50,26+st*3)},crawlSpd:function(st){return Math.min(30,14+st*2)},
+  kindOf:{kid:{from:3,p:0.25,sc:0.72,spd:1.45,label:'아이 발'},line:{from:4,p:0.2,sc:1,spd:0.75,label:'행렬'},run:{from:5,p:0.17,sc:1,spd:2.1,max:175,label:'달리기'}},
+  gold:{first:10,every:[8,11],life:7,value:3,absorb:0.9}, // 황금 귤은 발이 걷기 시작할 때 나타나고 0.9초 덮어야 함           // 미션 성공 = 문어발 진화(8개)까지
   forms:[{at:0,name:'꼬마 그림자'},{at:3,name:'돌모자 그림자'},{at:8,name:'문어발 그림자'},{at:15,name:'도깨비불 그림자'},{at:25,name:'그림자 대왕'}]
 };
 var W=CFG.W,H=CFG.H,O=CFG.O,TAU=Math.PI*2;
@@ -58,7 +63,7 @@ var lerp=function(a,b,t){return a+(b-a)*t};
 var state='loading'; // loading → ready → playing ↔ paused → gameover
 var lamp={x:0,y:0},SH=null,score=0,lives=3,stage=1,t=0,inv=0,hazardClock=0,foods=[],dying=[],hazards=[],
     fx=[],parts=[],floaters=[],combo=0,bestCombo=0,lastEat=-99,facePulse=0,faceSquash=0,shake=0,
-    attemptId=null,cleared=false,formIdx=0,hazardSeq=0,nearCount=0,toastUntil=0,toastPrio=0,safeSpots=[];
+    attemptId=null,cleared=false,gold=null,goldNext=0,goldPending=false,seen={},formIdx=0,hazardSeq=0,nearCount=0,toastUntil=0,toastPrio=0,safeSpots=[];
 
 /* ---------------- geometry (그리기·판정 공용) ---------------- */
 function shadowOf(L){
@@ -185,20 +190,38 @@ function addFood(){
     if(!cand.length)cand=safeSpots.filter(function(s){return foods.every(function(f){return Math.hypot(f.x-s.x,f.y-s.y)>=CFG.foodGap})});
     var s=cand[Math.floor(rnd()*cand.length)]||{x:195,y:123};x=s.x;y=s.y;
   }
-  var kind=Math.floor(rnd()*3);
-  foods.push({x:x,y:y,kind:kind,charge:0,born:t,bob:rnd()*TAU});
+  var kind=Math.floor(rnd()*3),f={x:x,y:y,kind:kind,charge:0,born:t,bob:rnd()*TAU,mv:false,vx:0,vy:0,roll:0,turn:0};
+  if(score>=CFG.moveFrom&&kind!==1&&rnd()<(stage>=4?0.8:0.5)){
+    f.mv=true;var a;
+    if(kind===0){a=(rnd()<0.5?0:Math.PI)+(rnd()-0.5)*0.7;f.spd=CFG.rollSpd(stage)} // 귤: 데굴데굴 (주로 옆으로)
+    else{a=rnd()*TAU;f.spd=CFG.crawlSpd(stage)}                                     // 문어: 슬금슬금 방향을 바꾸며
+    f.vx=Math.cos(a)*f.spd;f.vy=Math.sin(a)*f.spd;f.turn=1+rnd();
+    if(!seen.move){seen.move=1;tell(kind===0?'귤이 굴러가요! 그림자로 따라가며 덮어요.':'문어가 기어가요! 그림자로 따라가요.',3,'good',1)}
+  }
+  foods.push(f);
 }
 function laneNearFood(){
   var f=foods[Math.floor(rnd()*foods.length)];
   return clamp((f?f.y:132)+(rnd()-0.5)*20,CFG.laneY0,CFG.laneY1);
 }
 function laneRandom(){return CFG.laneY0+rnd()*(CFG.laneY1-CFG.laneY0)}
-function makeHazard(y,dir,delay,stopAt){
-  hazards.push({id:++hazardSeq,y:y,dir:dir,x:dir===1?-30:W+30,age:-(delay||0),speed:CFG.speed(stage),
-    hit:false,near:false,warned:false,dist:0,stopAt:stopAt||null,stopT:0});
+function makeHazard(y,dir,delay,stopAt,type){
+  type=type||'walk';var K=CFG.kindOf[type],sp=CFG.speed(stage),members=[0];
+  if(K){sp*=K.spd;if(K.max)sp=Math.min(K.max,sp)}
+  if(type==='line'){ // 행렬: 여러 사람이 줄지어, 중간에 빈틈 하나
+    members=[];var gapAt=1+Math.floor(rnd()*3),o=0;
+    for(var i=0;i<6;i++){members.push(o);o+=(i===gapAt)?118:40}
+  }
+  hazards.push({id:++hazardSeq,y:y,dir:dir,x:dir===1?-30:W+30,age:-(delay||0),speed:sp,type:type,sc:K?K.sc:1,members:members,
+    hit:false,near:false,warned:false,dist:0,stopAt:stopAt||null,stopT:0,big:type==='line'});
+}
+function pickType(){
+  var r=rnd(),acc=0,ks=['line','run','kid'];
+  for(var i=0;i<ks.length;i++){var K=CFG.kindOf[ks[i]];if(stage<K.from)continue;acc+=K.p;if(r<acc)return ks[i]}
+  return 'walk';
 }
 function spawnPattern(){
-  var free=CFG.maxBundles-hazards.length;if(free<=0)return false;
+  var free=CFG.maxBundles-hazards.length-(hazards.some(function(h){return h.big})?1:0);if(free<=0)return false; // 행렬은 두 묶음으로 친다
   var dir=rnd()<0.5?1:-1,r=rnd();
   if(stage>=3&&free>=2&&r<0.3){ // 두 묶음: 다른 길, 시간차
     var y1=laneRandom(),y2=y1,tries=0;while(Math.abs(y2-y1)<45&&tries++<20)y2=laneRandom();
@@ -206,17 +229,30 @@ function spawnPattern(){
     makeHazard(y1,dir,0);makeHazard(clamp(y2,CFG.laneY0,CFG.laneY1),rnd()<0.5?dir:-dir,0.55+rnd()*0.4);
     return true;
   }
+  var type=pickType();
+  if(type==='line'){if(hazards.length)type='walk';else{makeHazard(clamp(laneNearFood(),100,165),dir,0,null,'line');return true}}
   var y=(stage>=2&&rnd()<0.55)?laneNearFood():laneRandom();
-  var stop=(stage>=5&&rnd()<0.25)?110+rnd()*170:null; // 멈칫 발: 중간에 잠깐 멈췄다 다시 걷는다
-  makeHazard(y,dir,0,stop);
+  var stop=(type==='walk'&&stage>=5&&rnd()<0.25)?110+rnd()*170:null; // 멈칫 발: 중간에 잠깐 멈췄다 다시 걷는다
+  makeHazard(y,dir,0,stop,type);
   return true;
+}
+
+function spawnGold(){ // 황금 귤: 발이 지나갈 길 위에만 나온다
+  for(var i=0;i<60;i++){
+    var y=95+rnd()*75,x=60+rnd()*270;
+    if(!okSpot(x,y))continue;
+    var dir=x<195?1:-1; // 발이 들어오는 쪽 가까이에 놓아서 발과 마주치게
+    makeHazard(y,dir,0.3,null,'walk');
+    gold={x:x,y:y,charge:0,life:CFG.gold.life,born:-1,hz:hazards[hazards.length-1],shown:false};goldPending=false;
+    return;
+  }
 }
 
 /* ---------------- lifecycle ---------------- */
 function reset(){
   score=0;lives=CFG.lives;stage=1;t=0;inv=0;hazardClock=0;combo=0;bestCombo=0;lastEat=-99;facePulse=0;faceSquash=0;shake=0;
   foods=CFG.firstFoods.map(function(f){return {x:f.x,y:f.y,kind:f.kind,charge:0,born:-1,bob:rnd()*TAU}});
-  dying=[];hazards=[];fx=[];parts=[];floaters=[];cleared=false;formIdx=0;nearCount=0;toastUntil=0;toastPrio=0;
+  dying=[];hazards=[];fx=[];parts=[];floaters=[];cleared=false;formIdx=0;nearCount=0;toastUntil=0;toastPrio=0;gold=null;goldNext=CFG.gold.first;goldPending=false;seen={};
   lamp.x=CFG.lamp.start.x;lamp.y=CFG.lamp.start.y;SH=shadowOf(lamp);endDrag();hud();
 }
 function setMain(label,cls,disabled){mainBtn.textContent=label;mainBtn.className='btn btn--primary btn--bar'+(cls?' '+cls:'');mainBtn.disabled=!!disabled}
@@ -324,35 +360,60 @@ function addParts(x,y,col,n,spd){for(var i=0;i<n&&parts.length<90;i++){var a=rnd
 function floatText(x,y,s,col,size){floaters.push({x:x,y:y,s:s,col:col,size:size||16,age:0})}
 
 /* ---------------- update ---------------- */
-function eat(f,i,touch){
-  foods.splice(i,1);
+function eat(f,touch,val){
+  var prev=score;val=val||1;
   dying.push({x:f.x,y:f.y,tx:touch.x,ty:touch.y,kind:f.kind,age:0});
-  score++;combo=(t-lastEat<CFG.comboWindow)?combo+1:1;lastEat=t;if(combo>bestCombo)bestCombo=combo;
+  score+=val;combo=(t-lastEat<CFG.comboWindow)?combo+1:1;lastEat=t;if(combo>bestCombo)bestCombo=combo;
   facePulse=1;SND.gulp(combo);buzz(15);
   hud();popEl('hudScore','pop');
-  floatText(f.x,f.y-14,combo>=2?combo+'연속 꿀꺽!':'꿀꺽!',combo>=3?'#edd79d':'#93f8d5',combo>=3?18:16);
+  floatText(f.x,f.y-14,val>1?'황금 꿀꺽! +'+val:combo>=2?combo+'연속 꿀꺽!':'꿀꺽!',combo>=3||val>1?'#edd79d':'#93f8d5',combo>=3||val>1?18:16);
+  if(val>1){addParts(f.x,f.y,'#edd79d',16,130);buzz(40)}
   var fi=formOf(score);
   if(fi>formIdx){formIdx=fi;SND.evolve();fx.push({type:'ring',x:SH.x,y:SH.y,age:0});
-    tell(CFG.forms[fi].name+'(으)로 진화!'+(score===CFG.hazardFrom?' 이제 사람 발을 조심해요.':''),3,'gold',2)}
-  else if(score===CFG.hazardFrom)tell('이제 사람 발이 지나가요. 예고선을 보세요!',3,'',2);
-  if(score===CFG.clearScore&&!cleared){cleared=true;tell('미션 성공! 계속 버텨서 기록을 늘려 봐요.',3.5,'good',3)}
+    tell(CFG.forms[fi].name+'(으)로 진화!'+(prev<CFG.hazardFrom&&score>=CFG.hazardFrom?' 이제 사람 발을 조심해요.':''),3,'gold',2)}
+  else if(prev<CFG.hazardFrom&&score>=CFG.hazardFrom)tell('이제 사람 발이 지나가요. 예고선을 보세요!',3,'',2);
+  if(score>=CFG.clearScore&&!cleared){cleared=true;tell('미션 성공! 계속 버텨서 기록을 늘려 봐요.',3.5,'good',3)}
   var next=1+Math.floor(score/CFG.stageEvery);
   if(next>stage){stage=next;hud();SND.stage();tell(stage+'단계! 발걸음이 더 바빠져요.',2.5,'',1)}
-  if(score===CFG.hazardFrom)hazardClock=CFG.interval(stage)-1.2; // 첫 발은 1.2초 뒤 예고 시작
-  addFood();
+  if(prev<CFG.hazardFrom&&score>=CFG.hazardFrom)hazardClock=CFG.interval(stage)-1.2; // 첫 발은 1.2초 뒤 예고 시작
+  if(score>=goldNext&&!gold&&!goldPending){goldPending=true;goldNext=score+CFG.gold.every[0]+Math.floor(rnd()*(CFG.gold.every[1]-CFG.gold.every[0]+1))}
+  if(val===1)addFood();
 }
-function footsOf(h){ // 두 발의 중심 좌표 (번갈아 앞으로)
-  var ph=(h.dist/CFG.foot.stride)%2,tri=ph<1?ph:2-ph,off=(tri-0.5)*16*h.dir,s=CFG.foot.side;
-  return [{x:h.x+off,y:h.y-s,lift:ph<1},{x:h.x-off,y:h.y+s,lift:ph>=1}];
+function footsOf(h){ // 사람마다 두 발의 중심 좌표 (번갈아 앞으로). 행렬은 여러 사람
+  var out=[],sc=h.sc||1,st=CFG.foot.stride*sc,s=CFG.foot.side*sc,mem=h.members||[0];
+  for(var m=0;m<mem.length;m++){
+    var bx=h.x-h.dir*mem[m],ph=((h.dist+m*st*0.7)/st)%2,tri=ph<1?ph:2-ph,off=(tri-0.5)*16*sc*h.dir;
+    out.push({x:bx+off,y:h.y-s,lift:ph<1},{x:bx-off,y:h.y+s,lift:ph>=1});
+  }
+  return out;
 }
+function tailOff(h){var mem=h.members||[0];return mem[mem.length-1]}
+function movable(x,y){var A=CFG.foodArea;return x>=A.x0&&x<=A.x1&&y>=A.y0&&y<=A.y1&&!!lampFor(x,y)}
 function update(dt){
   t+=dt;inv=Math.max(0,inv-dt);facePulse=Math.max(0,facePulse-dt/0.16);faceSquash=Math.max(0,faceSquash-dt/0.25);shake=Math.max(0,shake-dt);
   SH=shadowOf(lamp);
   // 먹이
   for(var i=foods.length-1;i>=0;i--){
-    var f=foods[i],p=covers(SH,f.x,f.y);
+    var f=foods[i];
+    if(f.mv){ // 덮이는 동안은 절반 속도
+      var slow=f.charge>0?0.5:1,nx=f.x+f.vx*dt*slow,ny=f.y+f.vy*dt*slow;
+      if(f.kind===2){f.turn-=dt;if(f.turn<=0){f.turn=0.8+rnd()*1.2;var a=rnd()*TAU;f.vx=Math.cos(a)*f.spd;f.vy=Math.sin(a)*f.spd}}
+      if(movable(nx,ny)){f.roll+=(nx-f.x)/14;f.x=nx;f.y=ny}
+      else if(movable(f.x-f.vx*dt,f.y)){f.vx=-f.vx}else{f.vx=-f.vx;f.vy=-f.vy}
+    }
+    var p=covers(SH,f.x,f.y);
     f.charge=clamp(f.charge+(p?dt*CFG.absorbRate:-dt*CFG.absorbDecay),0,1);
-    if(f.charge>=1)eat(f,i,p);
+    if(f.charge>=1){foods.splice(i,1);eat(f,p,1)}
+  }
+  if(goldPending&&!gold&&hazards.length<=1&&!hazards.some(function(h){return h.big}))spawnGold();
+  if(gold&&!gold.shown){ // 발이 걷기 시작하면 등장
+    if(gold.hz.age>=CFG.warn||hazards.indexOf(gold.hz)<0){gold.shown=true;gold.born=t;SND.evolve();tell('황금 귤! 발이 지나가는 길 위예요. 먹으면 3개!',3,'gold',2)}
+  }
+  if(gold&&gold.shown){
+    gold.life-=dt;var gp=covers(SH,gold.x,gold.y);
+    gold.charge=clamp(gold.charge+(gp?dt/CFG.gold.absorb:-dt*CFG.absorbDecay),0,1);
+    if(gold.charge>=1){var g0=gold;gold=null;eat({x:g0.x,y:g0.y,kind:0},gp,CFG.gold.value)}
+    else if(gold.life<=0){addParts(gold.x,gold.y,'#edd79d',8,50);floatText(gold.x,gold.y-14,'놓쳤다','#c9b98a',14);gold=null}
   }
   if(t-lastEat>CFG.comboWindow)combo=0;
   // 발
@@ -360,12 +421,13 @@ function update(dt){
   for(var j=hazards.length-1;j>=0;j--){
     var h=hazards[j];h.age+=dt;
     if(h.age<0)continue;
-    if(!h.warned){h.warned=true;SND.warn()}
+    if(!h.warned){h.warned=true;SND.warn();
+      if(h.type!=='walk'&&!seen[h.type]){seen[h.type]=1;tell({kid:'작은 아이 발! 빠르게 지나가요.',line:'행렬이 와요! 빈틈에 맞춰 지나가거나 접고 기다려요.',run:'달리는 발! 아주 빨라요.'}[h.type],3,'danger',3)}}
     if(h.age<CFG.warn)continue;
     if(h.stopAt!=null&&h.stopT<0.7&&((h.dir===1&&h.x>=h.stopAt)||(h.dir===-1&&h.x<=W-h.stopAt))){h.stopT+=dt}
     else{var mv=h.speed*dt;h.x+=h.dir*mv;h.dist+=mv}
     var ft=footsOf(h),gap=1e9;
-    for(var k=0;k<2;k++)gap=Math.min(gap,capsuleGap(SH,ft[k].x,ft[k].y,CFG.foot.halfSeg,CFG.foot.r));
+    for(var k=0;k<ft.length;k++)gap=Math.min(gap,capsuleGap(SH,ft[k].x,ft[k].y,CFG.foot.halfSeg*h.sc,CFG.foot.r*h.sc));
     if(gap<0&&inv===0&&!h.hit){
       h.hit=true;lives--;inv=CFG.invuln;faceSquash=1;shake=0.25;combo=0;
       SND.hit();buzz([60,40,60]);addParts(SH.x,SH.y,'#ff9cac',14,120);floatText(SH.x,SH.y-20,'앗, 밟혔다!','#ff9cac',17);
@@ -375,7 +437,7 @@ function update(dt){
     }else if(gap>=0&&gap<9&&!h.near&&!h.hit&&inv===0){
       h.near=true;nearCount++;SND.near();floatText(ft[0].x,h.y-18,'아슬아슬!','#edd79d',15);
     }
-    if(h.x<-60||h.x>W+60)hazards.splice(j,1);
+    var tail=h.x-h.dir*tailOff(h);if((h.dir===1&&tail>W+60)||(h.dir===-1&&tail<-60))hazards.splice(j,1);
   }
   for(var d=dying.length-1;d>=0;d--){var o=dying[d];o.age+=dt;if(o.age>=0.18){dying.splice(d,1);fx.push({type:'burst',x:o.tx,y:o.ty,age:0});addParts(o.tx,o.ty,'#93f8d5',8,80)}}
   stepFx(dt);
@@ -423,8 +485,8 @@ function drawShadowBody(sh,alpha){
   c.save();c.globalAlpha=alpha;c.fillStyle='#101d2c';c.shadowBlur=9;c.shadowColor='rgba(128,230,201,.55)';
   c.beginPath();for(var i=0;i<sh.circ.length;i++){var p=sh.circ[i];c.moveTo(p.x+p.r,p.y);c.arc(p.x,p.y,p.r,0,TAU)}c.fill();c.restore();
 }
-function drawFoot(x,y,dir,lift,alpha,mirror){
-  var L=CFG.foot.len*(lift?1.08:1);
+function drawFoot(x,y,dir,lift,alpha,mirror,sc){
+  var L=CFG.foot.len*(sc||1)*(lift?1.08:1);
   if(lift)ell(x,y+3,L/2-2,5,'rgba(0,0,0,.25)');
   sprite('foot',x,y-(lift?2:0),L,L,alpha,dir===1?Math.PI/2:-Math.PI/2,mirror?-1:1,1);
 }
@@ -448,25 +510,36 @@ function draw(){
   for(var i=0;i<foods.length;i++){var f=foods[i],sz=FOOD_SIZE[f.kind],by=Math.sin(t*2.2+f.bob)*1.5,
       grow=f.born<0?1:clamp((t-f.born)/0.25,0,1);
     ell(f.x,f.y+sz[1]*0.42,16,5,'rgba(8,24,32,.45)');
-    sprite('f'+f.kind,f.x,f.y+by,sz[0]*grow,sz[1]*grow);
+    if(f.mv&&f.kind===2)by+=Math.sin(t*9+f.bob)*1.5;
+    sprite('f'+f.kind,f.x,f.y+by,sz[0]*grow,sz[1]*grow,1,f.mv&&f.kind===0?f.roll:(f.mv?Math.sin(t*6+f.bob)*0.12:0));
     if(f.charge>0){c.strokeStyle='rgba(16,40,44,.6)';c.lineWidth=5;c.beginPath();c.arc(f.x,f.y,25,0,TAU);c.stroke();
       c.strokeStyle='#91efd2';c.lineWidth=3;c.lineCap='round';c.beginPath();c.arc(f.x,f.y,25,-Math.PI/2,-Math.PI/2+TAU*f.charge);c.stroke()}
   }
+  if(gold&&gold.shown){var G=gold,gg=c.createRadialGradient(G.x,G.y,0,G.x,G.y,34),gs=1.12+0.06*Math.sin(t*8);
+    gg.addColorStop(0,'rgba(255,222,140,.55)');gg.addColorStop(1,'rgba(255,222,140,0)');c.fillStyle=gg;c.beginPath();c.arc(G.x,G.y,34,0,TAU);c.fill();
+    gs*=clamp((t-G.born)/0.25,0,1);
+    sprite('f0',G.x,G.y,FOOD_SIZE[0][0]*gs,FOOD_SIZE[0][1]*gs);
+    c.save();c.globalCompositeOperation='overlay';c.fillStyle='rgba(255,200,60,.55)';c.beginPath();c.arc(G.x,G.y,17*gs,0,TAU);c.fill();c.restore();
+    c.strokeStyle='rgba(237,215,157,.45)';c.lineWidth=2;c.beginPath();c.arc(G.x,G.y,29,-Math.PI/2,-Math.PI/2+TAU*Math.max(0,G.life/CFG.gold.life));c.stroke();
+    if(G.charge>0){c.strokeStyle='#ffd77a';c.lineWidth=3;c.lineCap='round';c.beginPath();c.arc(G.x,G.y,24,-Math.PI/2,-Math.PI/2+TAU*G.charge);c.stroke()}
+    txt('×3',G.x+22,G.y-22,13,'#ffe39a',800)}
   for(var d=0;d<dying.length;d++){var o=dying[d],k=o.age/0.18,s2=lerp(1,0.25,k),z=FOOD_SIZE[o.kind];
     sprite('f'+o.kind,lerp(o.x,o.tx,k),lerp(o.y,o.ty,k),z[0]*s2,z[1]*s2,1-k*0.4)}
   // 7 발 예고 + 발자국
   for(var j=0;j<hazards.length;j++){var h=hazards[j];if(h.age<0)continue;
     if(h.age<CFG.warn){
       var pulse=0.45+0.35*Math.sin(h.age*12),prog=h.age/CFG.warn;
-      c.save();c.globalAlpha=pulse;c.fillStyle='rgba(255,156,172,.13)';c.fillRect(0,h.y-16,W,32);
+      c.save();c.globalAlpha=pulse;c.fillStyle=h.type==='run'?'rgba(255,120,140,.22)':'rgba(255,156,172,.13)';c.fillRect(0,h.y-16,W,32);
       c.setLineDash([6,6]);c.lineDashOffset=-h.dir*t*40;c.strokeStyle='#ff9cac';c.lineWidth=1.5;c.beginPath();c.moveTo(20,h.y);c.lineTo(W-20,h.y);c.stroke();c.setLineDash([]);c.restore();
       var ex=h.dir===1?26:W-26;
-      c.save();c.globalAlpha=0.85;drawFoot(ex,h.y,h.dir,false,0.9);c.restore();
+      c.save();c.globalAlpha=0.85;drawFoot(ex,h.y,h.dir,false,0.9,false,h.sc);c.restore();
+      if(h.type!=='walk')txt(CFG.kindOf[h.type].label,ex+h.dir*44,h.y-22,12,'#ffb7c2',800);
       for(var a=0;a<3;a++){var ax=ex+h.dir*(30+a*14+((t*60)%14));c.fillStyle='rgba(255,183,194,'+(0.8-a*0.22)+')';c.beginPath();c.moveTo(ax+h.dir*7,h.y);c.lineTo(ax-h.dir*3,h.y-6);c.lineTo(ax-h.dir*3,h.y+6);c.closePath();c.fill()}
       c.strokeStyle='#ff9cac';c.lineWidth=3;c.beginPath();c.arc(ex,h.y,20,-Math.PI/2,-Math.PI/2+TAU*(1-prog));c.stroke();
       continue;
     }
-    var ft=footsOf(h);for(var q=0;q<2;q++)drawFoot(ft[q].x,ft[q].y,h.dir,ft[q].lift,1,q===1);
+    var ft=footsOf(h);for(var q=0;q<ft.length;q++){if(ft[q].x<-30||ft[q].x>W+30)continue;drawFoot(ft[q].x,ft[q].y,h.dir,ft[q].lift,1,q%2===1,h.sc)}
+    if(h.type==='run'){c.strokeStyle='rgba(255,183,194,.5)';c.lineWidth=2;for(var sl=0;sl<3;sl++){var sx0=h.x-h.dir*(22+sl*9);c.beginPath();c.moveTo(sx0,h.y-10+sl*10);c.lineTo(sx0-h.dir*16,h.y-10+sl*10);c.stroke()}}
     if(h.stopAt!=null&&h.stopT>0&&h.stopT<0.7)txt('멈칫',h.x,h.y-24,12,'#ffb7c2');
   }
   // 8 고정 도채비
@@ -544,5 +617,5 @@ requestAnimationFrame(frame);
 window.__sf={get state(){return state},get score(){return score},get lives(){return lives},get stage(){return stage},
   get foods(){return foods},get hazards(){return hazards},get lamp(){return lamp},get t(){return t},
   shadowOf:shadowOf,lampFor:lampFor,covers:covers,capsuleGap:capsuleGap,footsOf:footsOf,moveLamp:moveLamp,CFG:CFG,start:startPlay,pause:pause,resume:resume,
-  step:function(dt){if(state==='playing')update(dt)},get nearCount(){return nearCount},get bestCombo(){return bestCombo}};
+  step:function(dt){if(state==='playing')update(dt)},get nearCount(){return nearCount},get gold(){return gold},makeHazard:makeHazard,spawnGold:function(){goldPending=true},get bestCombo(){return bestCombo}};
 })();
