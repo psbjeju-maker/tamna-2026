@@ -134,7 +134,7 @@ body.mouse{cursor:auto}
   :root{--u:min(1.78vw,1vh)}
   .corners{display:none}
   .show{padding:calc(var(--u)*2.6) calc(var(--u)*3.6) calc(var(--u)*1.8)}
-  .main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,53fr) minmax(0,47fr);row-gap:calc(var(--u)*1)}
+  .main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;row-gap:calc(var(--u)*1)}
   .info{justify-content:flex-start}
   .state{margin-bottom:calc(var(--u)*1.1)}
   .name{font-size:max(28px,calc(var(--u)*4))}
@@ -145,7 +145,7 @@ body.mouse{cursor:auto}
   .badge{font-size:calc(var(--u)*1.35);height:calc(var(--u)*2.9);padding-left:calc(var(--u)*2.3)}
   .kind{font-size:calc(var(--u)*1.5)}
   .divider{margin-top:calc(var(--u)*1)}
-  .cta{margin-top:auto}
+  .cta{margin-top:calc(var(--u)*1.6)}
   .cta b{font-size:calc(var(--u)*2.2)}.cta em{font-size:calc(var(--u)*1.35)}.cta small{font-size:calc(var(--u)*1.4)}
   .qrbox{--qf:clamp(200px,calc(var(--u)*19),340px)}
   .top b{font-size:calc(var(--u)*1.9)}.top small{font-size:calc(var(--u)*1.2)}
@@ -158,8 +158,8 @@ body.mouse{cursor:auto}
 @media (max-aspect-ratio:1/1) and (max-width:520px){
   .show{padding:14px 16px max(30px,calc(env(safe-area-inset-bottom) + 22px))}
   .top img{height:30px}.top b{font-size:13px;letter-spacing:.02em}.top small{font-size:11px}
-  .main{grid-template-rows:minmax(0,52fr) minmax(0,48fr)}
-  .divider{display:none}.price{margin-top:6px}.cta{margin-top:auto}
+  .main{grid-template-rows:minmax(0,1fr) auto}
+  .divider{display:none}.price{margin-top:6px}.cta{margin-top:12px}
   .name{font-size:28px}.sub{font-size:14px}.price b{font-size:34px}.price span{font-size:15px}
   .badge{font-size:12px;height:26px;padding-left:22px}.kind{font-size:13px}
   .cta{gap:12px}.cta b{font-size:15px;white-space:nowrap}.cta em{font-size:11px}.cta small{display:none}
@@ -238,7 +238,7 @@ body.mouse{cursor:auto}
     <div class="ctl"><button type="button" id="bClose">닫기</button></div></div>
   <div class="allgrid" id="allgrid"></div>
 </div>
-<div class="tapgo" id="tapgo">화면을 한 번 누르면 전체화면</div>
+<div class="tapgo" id="tapgo">빈 곳을 한 번 누르면 전체화면</div>
 
 <script src="items.js"></script>
 <script src="qr.js"></script>
@@ -275,6 +275,7 @@ body.mouse{cursor:auto}
   }
   addEventListener('resize', function () { fitRig(); if (wallOn) layoutWall(); });
   fitRig();
+  if (window.ResizeObserver) new ResizeObserver(fitRig).observe($("stage")); /* 글자 줄 수가 바뀌어 무대 크기가 변해도 다시 맞춤 */
 
   function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   var order = shuffle(ITEMS), pos = 0, shown = 0, front = 'imA', timer = 0, wallOn = false;
@@ -298,6 +299,7 @@ body.mouse{cursor:auto}
     var back = front === 'imA' ? 'imB' : 'imA', nb = $(back), nf = $(front);
     $('matte').classList.toggle('failed', !ok);
     ratio = ok && ratios[it.imgs[0]] ? Math.max(0.5, Math.min(1.8, ratios[it.imgs[0]])) : 0.75; fitRig();
+    nb.onload = function () { if (nb.classList.contains('on') && nb.naturalWidth) { ratio = Math.max(0.5, Math.min(1.8, nb.naturalWidth / nb.naturalHeight)); fitRig(); } };
     nb.onerror = function () { if (nb.classList.contains('on')) $('matte').classList.add('failed'); };
     if (ok) { nb.src = it.imgs[0]; nb.classList.remove('on'); void nb.offsetWidth; nb.classList.add('on'); }
     nf.classList.remove('on'); front = back;
@@ -427,8 +429,11 @@ body.mouse{cursor:auto}
   function wake() { try { if ('wakeLock' in navigator && !lock) navigator.wakeLock.request('screen').then(function (l) { lock = l; l.addEventListener('release', function () { lock = null; }); }, function () {}); } catch (e) {} }
   wake();
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') wake(); });
-  document.addEventListener('click', function () {
+  document.addEventListener('click', function (e) {
     wake();
+    $('tapgo').classList.add('off');
+    /* 버튼·전체보기를 누를 땐 전체화면 안 함(폰 크롬의 "전체화면 종료하려면…" 안내가 하단 버튼을 가림) */
+    if (e.target.closest && e.target.closest('button,.all')) return;
     var el = document.documentElement, rq = el.requestFullscreen || el.webkitRequestFullscreen;
     if (rq && !document.fullscreenElement) try { var fr = rq.call(el); if (fr && fr.catch) fr.catch(function () {}); } catch (e) {}
     $('tapgo').classList.add('off');
