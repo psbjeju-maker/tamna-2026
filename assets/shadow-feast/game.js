@@ -28,8 +28,8 @@ var CFG={
   maxBundles:2,
   foot:{len:31,halfSeg:10,r:5.5,side:7,stride:22},
   comboWindow:2.2,
-  clearScore:8,           // 보상 1단계와 같음
-  tiers:[8,15,25],        // 보상 단계: 8개 1 · 15개 2 · 25개 3 (진화 문어발·도깨비불·대왕과 같은 지점)
+  clearScore:20,          // 보상 1단계와 같음
+  tiers:[20,50,80],       // 보상 단계: 20개 1 · 50개 2 · 80개 3 (사장님 실플레이 50개 기준으로 상향, 2026-10-05)
   // 중후반 요소
   moveFrom:6,             // 이만큼 먹은 뒤부터 움직이는 먹이(굴러가는 귤·기어가는 문어)
   rollSpd:function(st){return Math.min(50,26+st*3)},crawlSpd:function(st){return Math.min(30,14+st*2)},

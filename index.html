@@ -1845,7 +1845,7 @@ function gSun(){
       if(!r)return;
       if(r.score>(S.best.shadowFeast||0))S.best.shadowFeast=r.score;
       save();paintGame();
-      /* 점수별 차등(서버 missions.memo.tierMax=3): 8개 1 · 15개 2 · 25개 3 — 단계 미달은 기록만 */
+      /* 점수별 차등(서버 missions.memo.tierMax=3): 20개 1 · 50개 2 · 80개 3 — 단계 미달은 기록만 */
       var tier=+r.tier||0;
       if(!tier)return;
       if(sunRewardedAttempt[r.attemptId])return; /* 같은 판 중복 요청 방지 */
