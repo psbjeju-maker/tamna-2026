@@ -3,129 +3,213 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0d2547">
+<meta name="theme-color" content="#070e18">
 <title>굿스마일 예약 상품</title>
 <style>
 @font-face{font-family:"SCDream";font-weight:400;src:url("../fonts/SCDream4.woff") format("woff");font-display:swap}
 @font-face{font-family:"SCDream";font-weight:500;src:url("../fonts/SCDream5.woff") format("woff");font-display:swap}
 @font-face{font-family:"SCDream";font-weight:700;src:url("../fonts/SCDream7.woff") format("woff");font-display:swap}
+/* GSC 쇼케이스 디자인 팩(2026-10-05) 적용 — 민트빛 전시장. 금색·주황·코랄 섞지 말 것 */
 :root{
-  --cobalt:#1E5AA8; --deep:#0d2547; --night:#08172d; --ink:#0f1c33; --paper:#ffffff;
-  --mist:#c9d8ef; --dim:#8ea6c8; --coral:#ff7a5c; --gold:#f2c46d;
-  --u:min(1vw,1.78vh); /* 화면 크기 단위: 가로 TV·세로 태블릿 모두 비례 */
+  --bg:#070e18; --panel:#101d2b; --ink:#eaf7f5; --muted:#9cb0bc; --accent:#8fffe1; --matte:#ffffff;
+  --u:min(1vw,1.78vh); /* 1920×1080 기준 1u = 19.2px */
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--night);color:#fff;font-family:"SCDream","Apple SD Gothic Neo","Malgun Gothic",sans-serif;overflow:hidden;cursor:none}
-body{background:radial-gradient(120% 90% at 18% 10%,#1d4f93 0%,var(--deep) 45%,var(--night) 100%)}
-.stage{position:fixed;inset:0;display:grid;grid-template-columns:56% 44%;grid-template-rows:1fr auto}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:"SCDream","Apple SD Gothic Neo","Malgun Gothic",sans-serif;overflow:hidden;cursor:none}
+.deco{pointer-events:none;user-select:none}
 
-/* 사진 */
-.photo{position:relative;grid-row:1;margin:calc(var(--u)*3.2) calc(var(--u)*1.6) calc(var(--u)*2) calc(var(--u)*3.2);border-radius:calc(var(--u)*2.4);
-  background:#fff;overflow:hidden;box-shadow:0 calc(var(--u)*2.4) calc(var(--u)*6) rgba(0,0,0,.45)}
-.photo .bg{position:absolute;inset:-10%;background:center/cover no-repeat;filter:blur(calc(var(--u)*3)) saturate(1.2);opacity:.55;transition:background-image .9s}
-.photo img{position:absolute;inset:4%;width:92%;height:92%;object-fit:contain;opacity:0;transform:scale(1.04);transition:opacity .9s ease}
-.photo img.on{opacity:1;animation:kb 9s ease-out forwards}
-@keyframes kb{from{transform:scale(1.04)}to{transform:scale(1.12)}}
-.kind{position:absolute;left:calc(var(--u)*2);top:calc(var(--u)*2);z-index:2;background:var(--deep);color:#fff;font-weight:700;
-  font-size:calc(var(--u)*1.7);padding:calc(var(--u)*.7) calc(var(--u)*1.6);border-radius:999px;letter-spacing:.02em}
+/* 전체 틀: 상단 브랜드 / 가운데 상품+정보 / 하단 진행바 */
+.show{position:fixed;inset:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;padding:calc(var(--u)*2.6) calc(var(--u)*3.3) calc(var(--u)*1.8)}
+.corners{position:fixed;inset:0;width:100%;height:100%;opacity:.8;z-index:0}
+.top{display:flex;align-items:center;gap:calc(var(--u)*1.4);position:relative;z-index:2}
+.top img{height:calc(var(--u)*4.4);width:auto}
+.top b{display:block;font-size:calc(var(--u)*1.55);font-weight:500;letter-spacing:.06em}
+.top small{display:block;font-size:calc(var(--u)*.95);color:var(--muted);letter-spacing:.08em;margin-top:calc(var(--u)*.35)}
+.main{display:grid;grid-template-columns:54fr 42fr;column-gap:4%;min-height:0;position:relative;z-index:1}
+
+/* 상품 전시대: halo → 바닥빛 → 받침대 → 상품 매트 → 별빛 */
+.stage{position:relative;min-height:0;min-width:0;overflow:hidden}
+.dots{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.7}
+.rig{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
+.rig > *{position:absolute}
+.halo{left:0;top:0;width:100%;opacity:.6;animation:breathe 10s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.45}}
+.floor{left:0;top:88%;width:100%}
+.plat{left:12%;top:79.4%;width:76%}
+.spk{width:2.4%;opacity:.9}
+.spk.s1{left:16%;top:22%}.spk.s2{left:80%;top:12%;width:1.6%}.spk.s3{left:84%;top:64%;width:1.9%;opacity:.6}
+/* 흰 배경 사진: 원본 그대로 밝은 매트 안에 (자동 누끼·blend 금지) */
+.matte{left:23%;top:14%;width:54%;height:72%;background:var(--matte);border-radius:calc(var(--u)*1.3);overflow:hidden;
+  box-shadow:0 calc(var(--u)*1.6) calc(var(--u)*4) rgba(0,0,0,.5),0 0 0 1px rgba(207,255,247,.18)}
+.matte .ph{position:absolute;inset:4%;width:92%;height:92%;object-fit:contain;opacity:0;transition:opacity .35s ease}
+.matte .ph.on{opacity:1;animation:enter .65s ease both}
+@keyframes enter{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+.matte .fail{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--u)*1);color:#5d6f7c;font-size:calc(var(--u)*1.2)}
+.matte .fail img{width:62%;height:auto}
+.matte.failed{background:var(--panel)}.matte.failed .fail{display:flex;color:var(--muted)}.matte.failed .ph{opacity:0}
+.streak{left:-10%;top:40%;width:120%;opacity:0}
+.stage.leaving .streak{animation:sweep .3s ease-in forwards}
+@keyframes sweep{from{opacity:0;transform:translateX(-25%)}40%{opacity:1}to{opacity:0;transform:translateX(25%)}}
 
 /* 정보 */
-.info{grid-row:1;display:flex;flex-direction:column;justify-content:center;padding:calc(var(--u)*3) calc(var(--u)*4.4) calc(var(--u)*2) calc(var(--u)*2.4);min-width:0}
-.info > *{opacity:0;transform:translateY(calc(var(--u)*1.6))}
-.info.in > *{animation:rise .7s cubic-bezier(.2,.8,.2,1) forwards}
-.info.in > :nth-child(2){animation-delay:.08s}.info.in > :nth-child(3){animation-delay:.16s}
-.info.in > :nth-child(4){animation-delay:.24s}.info.in > :nth-child(5){animation-delay:.32s}
-@keyframes rise{to{opacity:1;transform:none}}
-.badge{align-self:flex-start;display:inline-flex;align-items:center;gap:calc(var(--u)*.8);font-size:calc(var(--u)*1.6);font-weight:700;color:var(--deep);
-  background:var(--gold);padding:calc(var(--u)*.6) calc(var(--u)*1.5);border-radius:999px;margin-bottom:calc(var(--u)*2.2)}
-.badge i{width:calc(var(--u)*.9);height:calc(var(--u)*.9);border-radius:50%;background:var(--coral);animation:blink 1.4s ease-in-out infinite}
-@keyframes blink{50%{opacity:.3}}
-.series{font-size:calc(var(--u)*2);color:var(--mist);font-weight:500;line-height:1.35;margin-bottom:calc(var(--u)*1)}
-.name{font-size:calc(var(--u)*4.4);font-weight:700;line-height:1.18;letter-spacing:-.01em;word-break:keep-all;overflow-wrap:anywhere;
-  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-.maker{font-size:calc(var(--u)*1.7);color:var(--dim);margin-top:calc(var(--u)*1.4)}
-.price{margin-top:calc(var(--u)*3);display:flex;align-items:baseline;gap:calc(var(--u)*1)}
-.price b{font-size:calc(var(--u)*6);font-weight:700;color:#fff;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-.price span{font-size:calc(var(--u)*1.8);color:var(--mist)}
-.price.ask b{font-size:calc(var(--u)*3.4);color:var(--gold)}
+.info{display:flex;flex-direction:column;justify-content:center;min-width:0;min-height:0}
+.txt > *{opacity:0}
+.txt.in > *{animation:enter .65s ease .12s both}
+.state{display:flex;align-items:center;gap:calc(var(--u)*1.2);margin-bottom:calc(var(--u)*1.6)}
+.badge{position:relative;display:inline-flex;align-items:center;height:calc(var(--u)*2.3);aspect-ratio:360/88;padding-left:calc(var(--u)*1.9);
+  font-size:calc(var(--u)*1.05);font-weight:500;color:var(--accent);letter-spacing:.04em;white-space:nowrap}
+.badge img{position:absolute;inset:0;width:100%;height:100%}
+.badge span{position:relative}
+.kind{font-size:calc(var(--u)*1.15);color:var(--accent);font-weight:500;letter-spacing:.04em}
+.name{font-size:clamp(28px,calc(var(--u)*3.3),72px);font-weight:700;line-height:1.18;letter-spacing:-.01em;word-break:keep-all;overflow-wrap:anywhere;text-wrap:balance;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.sub{font-size:calc(var(--u)*1.35);color:var(--muted);line-height:1.4;margin-top:calc(var(--u)*1);word-break:keep-all;overflow-wrap:anywhere;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.maker{font-size:calc(var(--u)*1.1);color:var(--muted);letter-spacing:.06em;margin-top:calc(var(--u)*1.1)}
+.price{margin-top:calc(var(--u)*2);display:flex;align-items:baseline;gap:calc(var(--u)*.6);font-variant-numeric:tabular-nums}
+.price b{font-size:clamp(36px,calc(var(--u)*4),84px);font-weight:700;letter-spacing:-.01em}
+.price span{font-size:calc(var(--u)*1.5);color:var(--muted)}
+.price.ask b{font-size:clamp(30px,calc(var(--u)*2.8),60px);color:var(--accent)}
+.divider{display:block;width:100%;height:calc(var(--u)*1.2);margin-top:calc(var(--u)*1.4)}
 
-/* 아래 띠 */
-.foot{grid-column:1/-1;display:flex;align-items:center;gap:calc(var(--u)*2.4);padding:calc(var(--u)*1.6) calc(var(--u)*3.2) calc(var(--u)*2.2);position:relative}
-.brand{display:flex;align-items:center;gap:calc(var(--u)*1.4);flex:1;min-width:0}
-.brand img{height:calc(var(--u)*7.2);filter:drop-shadow(0 calc(var(--u)*.6) calc(var(--u)*1.2) rgba(0,0,0,.55))}
-.brand b{display:block;font-size:calc(var(--u)*2.3);font-weight:700}
-.brand small{display:block;font-size:calc(var(--u)*1.5);color:var(--mist);margin-top:calc(var(--u)*.3)}
-.cta{display:flex;align-items:center;gap:calc(var(--u)*1.4);background:#fff;color:var(--ink);border-radius:calc(var(--u)*1.6);padding:calc(var(--u)*1) calc(var(--u)*1.8) calc(var(--u)*1) calc(var(--u)*1)}
-.cta img{width:calc(var(--u)*8.4);height:calc(var(--u)*8.4);image-rendering:pixelated}
-.cta b{display:block;font-size:calc(var(--u)*2);font-weight:700}
-.cta small{display:block;font-size:calc(var(--u)*1.5);color:#4a5a75;margin-top:calc(var(--u)*.3)}
-.bar{position:absolute;left:calc(var(--u)*3.2);right:calc(var(--u)*3.2);top:0;height:calc(var(--u)*.35);background:rgba(255,255,255,.12);border-radius:9px;overflow:hidden}
-.bar i{display:block;height:100%;width:0;background:var(--coral)}
-.count{font-size:calc(var(--u)*1.5);color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap}
+/* QR: 흰 바탕 검은 코드, 장식은 QR 밖으로 */
+.cta{display:flex;align-items:center;justify-content:space-between;gap:calc(var(--u)*2);margin-top:calc(var(--u)*1.2)}
+.cta b{display:block;font-size:calc(var(--u)*1.55);font-weight:700}
+.cta em{display:block;font-style:normal;font-size:calc(var(--u)*1);color:var(--accent);letter-spacing:.08em;margin-top:calc(var(--u)*.4)}
+.cta small{display:block;font-size:calc(var(--u)*1.05);color:var(--muted);margin-top:calc(var(--u)*.6)}
+.qrbox{position:relative;flex:none;width:var(--qf);height:var(--qf);--qf:calc(var(--u)*15)}
+.qrbox > img.deco{position:absolute;inset:0;width:100%;height:100%}
+.qrbox .qr{position:absolute;inset:16.7%;width:66.6%;height:66.6%;background:#fff;border-radius:calc(var(--u)*.4);image-rendering:pixelated}
 
-/* 모아보기(사이사이 끼는 화면) */
-.wall{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--u)*3);
-  background:radial-gradient(110% 90% at 50% 0%,#1d4f93,var(--deep) 55%,var(--night));opacity:0;pointer-events:none;transition:opacity .8s ease}
+/* 아래 진행바 */
+.foot{display:flex;align-items:center;gap:calc(var(--u)*1.6);margin-top:calc(var(--u)*1.4);position:relative;z-index:2}
+.bar{flex:1;height:2px;background:rgba(159,255,240,.14);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);opacity:.75}
+.count{font-size:calc(var(--u)*.95);color:var(--muted);letter-spacing:.06em;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* 모아보기 (12개마다) */
+.wall{position:fixed;inset:0;z-index:5;background:var(--bg);display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;row-gap:calc(var(--u)*1.6);
+  padding:calc(var(--u)*2.8) calc(var(--u)*3.3) calc(var(--u)*2);opacity:0;pointer-events:none;transition:opacity .6s ease}
 .wall.on{opacity:1}
-.wall h1{font-size:calc(var(--u)*6);font-weight:700;letter-spacing:-.02em;text-align:center;line-height:1.15}
-.wall h1 em{font-style:normal;color:var(--gold)}
-.wall p{font-size:calc(var(--u)*2.2);color:var(--mist);text-align:center}
-.grid{display:grid;grid-template-columns:repeat(6,calc(var(--u)*13));gap:calc(var(--u)*1.4)}
-.grid div{aspect-ratio:1;background:#fff center/contain no-repeat;border-radius:calc(var(--u)*1.4);box-shadow:0 calc(var(--u)*.8) calc(var(--u)*2) rgba(0,0,0,.35);
-  opacity:0;transform:translateY(calc(var(--u)*2)) scale(.94)}
-.wall.on .grid div{animation:rise .6s cubic-bezier(.2,.8,.2,1) forwards}
+.wall h1{font-size:calc(var(--u)*2.6);font-weight:500;letter-spacing:.04em}
+.wall h1 em{font-style:normal;color:var(--accent)}
+.wall .wsub{font-size:calc(var(--u)*1.15);color:var(--muted);margin-top:calc(var(--u)*.6);letter-spacing:.04em}
+.gridwrap{min-height:0;display:flex;align-items:center;justify-content:center}
+.grid{display:grid;gap:var(--gap)}
+.card{position:relative;aspect-ratio:4/5;opacity:0;transform:translateY(10px);font-size:var(--cf)}
+.wall.on .card{animation:enter .4s ease both}
+.card > img.deco{position:absolute;inset:0;width:100%;height:100%}
+.card .cph{position:absolute;left:10%;top:3.2%;width:80%;aspect-ratio:1;background:var(--matte);border-radius:5%;overflow:hidden}
+.card .cph img{width:100%;height:100%;object-fit:contain}
+.card .cn{position:absolute;left:8%;right:8%;top:70.5%;font-size:1em;line-height:1.22;font-weight:500;word-break:keep-all;overflow-wrap:anywhere;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .cp{position:absolute;left:8%;bottom:6%;font-size:1.1em;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}
+.wfoot{display:flex;align-items:center;justify-content:space-between;gap:calc(var(--u)*2)}
+.wfoot .page{font-size:calc(var(--u)*1);color:var(--muted);letter-spacing:.06em}
+.wfoot .cta{margin:0;gap:calc(var(--u)*1.6)}
+.wfoot .qrbox{--qf:calc(var(--u)*11)}
 
-/* 처음 한 번 누르기 안내(전체화면·화면 꺼짐 방지) */
-.tapgo{position:fixed;right:calc(var(--u)*2);top:calc(var(--u)*2);z-index:9;font-size:calc(var(--u)*1.4);color:var(--dim);background:rgba(8,23,45,.7);
-  border:1px solid rgba(255,255,255,.15);padding:calc(var(--u)*.6) calc(var(--u)*1.2);border-radius:999px;transition:opacity .6s}
+/* 처음 한 번 누르기 안내 */
+.tapgo{position:fixed;right:calc(var(--u)*2);top:calc(var(--u)*2);z-index:9;font-size:calc(var(--u)*1.1);color:var(--muted);background:rgba(16,29,43,.85);
+  border:1px solid rgba(159,255,240,.2);padding:calc(var(--u)*.6) calc(var(--u)*1.2);border-radius:999px;transition:opacity .6s}
 .tapgo.off{opacity:0}
 
-/* 세로 화면(태블릿 세로) */
+/* 세로 화면: 브랜드 → 상품 → 이름·가격 → QR */
 @media (max-aspect-ratio:1/1){
   :root{--u:min(1.78vw,1vh)}
-  .stage{grid-template-columns:1fr;grid-template-rows:46% 1fr auto}
-  .photo{grid-row:1;margin:calc(var(--u)*3) calc(var(--u)*3) calc(var(--u)*1)}
-  .info{grid-row:2;padding:calc(var(--u)*2) calc(var(--u)*4);justify-content:flex-start}
-  .name{-webkit-line-clamp:3}
-  .price{margin-top:calc(var(--u)*2)}
-  .foot{grid-row:3;flex-wrap:wrap;gap:calc(var(--u)*1.6)}
-  .brand{flex:1 1 100%}
-  .brand img{height:calc(var(--u)*5.6)}
-  .cta img{width:calc(var(--u)*7);height:calc(var(--u)*7)}
-  .name{font-size:calc(var(--u)*4)}
-  .price b{font-size:calc(var(--u)*5.2)}
-  .count{display:none}
-  .cta{flex:1 1 100%}
-  .grid{grid-template-columns:repeat(3,calc(var(--u)*24))}
+  .corners{display:none}
+  .show{padding:calc(var(--u)*2.6) calc(var(--u)*3.6) calc(var(--u)*1.8)}
+  .main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,56fr) minmax(0,44fr);row-gap:calc(var(--u)*1)}
+  .info{justify-content:flex-start}
+  .state{margin-bottom:calc(var(--u)*1.1)}
+  .name{font-size:max(28px,calc(var(--u)*4))}
+  .sub{font-size:calc(var(--u)*1.7);-webkit-line-clamp:1}
+  .maker{display:none}
+  .price{margin-top:calc(var(--u)*1.3)}
+  .price b{font-size:max(32px,calc(var(--u)*5))}
+  .badge{font-size:calc(var(--u)*1.35);height:calc(var(--u)*2.9);padding-left:calc(var(--u)*2.3)}
+  .kind{font-size:calc(var(--u)*1.5)}
+  .divider{margin-top:calc(var(--u)*1)}
+  .cta{margin-top:auto}
+  .cta b{font-size:calc(var(--u)*2.2)}.cta em{font-size:calc(var(--u)*1.35)}.cta small{font-size:calc(var(--u)*1.4)}
+  .qrbox{--qf:clamp(200px,calc(var(--u)*19),340px)}
+  .top b{font-size:calc(var(--u)*1.9)}.top small{font-size:calc(var(--u)*1.2)}
+  .count{font-size:calc(var(--u)*1.2)}
+  .wall h1{font-size:calc(var(--u)*3.4)}.wall .wsub{font-size:calc(var(--u)*1.5)}
+  .wfoot .qrbox{--qf:max(180px,calc(var(--u)*16))}
+  .wfoot .page{font-size:calc(var(--u)*1.3)}
 }
-@media (prefers-reduced-motion:reduce){.photo img.on{animation:none}.info.in > *{animation-duration:.01s}}
+/* 폰 세로(390×844 등): 이름·가격·QR 우선 */
+@media (max-aspect-ratio:1/1) and (max-width:520px){
+  .show{padding:16px 18px 12px}
+  .top img{height:30px}.top b{font-size:13px;letter-spacing:.02em}.top small{font-size:11px}
+  .main{grid-template-rows:minmax(0,44fr) minmax(0,56fr)}
+  .name{font-size:28px}.sub{font-size:14px}.price b{font-size:34px}.price span{font-size:15px}
+  .badge{font-size:12px;height:26px;padding-left:22px}.kind{font-size:13px}
+  .cta{gap:12px}.cta b{font-size:15px;white-space:nowrap}.cta em{font-size:11px}.cta small{display:none}
+  .qrbox{--qf:210px}
+  .count{font-size:11px}
+  .wall{padding:18px}.wall h1{font-size:22px}.wall .wsub{font-size:12px}
+  .wfoot .qrbox{--qf:180px}.wfoot .page{white-space:nowrap;font-size:11px}
+}
+@media (prefers-reduced-motion:reduce){
+  .halo,.stage.leaving .streak{animation:none}
+  .dots,.streak,.spk{display:none}
+  .matte .ph.on,.txt.in > *,.wall.on .card{animation:fade .3s ease both}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+}
 </style>
 </head>
 <body>
-<div class="stage">
-  <div class="photo"><div class="bg" id="pbg"></div><span class="kind" id="kind"></span><img id="imA" alt=""><img id="imB" alt=""></div>
-  <div class="info" id="info">
-    <span class="badge"><i></i>예약 받는 중</span>
-    <div class="series" id="series"></div>
-    <div class="name" id="name"></div>
-    <div class="maker" id="maker"></div>
-    <div class="price" id="price"></div>
-  </div>
-  <div class="foot">
-    <div class="bar"><i id="bar"></i></div>
-    <div class="brand">
-      <img src="../assets/brand/logo.png" alt="" onerror="this.style.display='none'">
-      <div><b>박서방 제주점 · 굿스마일 예약</b><small>발매 전 상품을 미리 예약하세요</small></div>
+<img class="corners deco" src="assets/showcase/corner_lines.svg" alt="" aria-hidden="true">
+<div class="show">
+  <header class="top">
+    <img src="../assets/brand/logo.png" alt="박서방" onerror="this.style.display='none'">
+    <div><b>GOOD SMILE / PRE-ORDER SHOWCASE</b><small>박서방 제주점 · 굿스마일 예약</small></div>
+  </header>
+  <div class="main">
+    <div class="stage" id="stage">
+      <img class="dots deco" src="assets/showcase/particle_dots.svg" alt="" aria-hidden="true">
+      <div class="rig" id="rig">
+        <img class="halo deco" src="assets/showcase/showcase_halo.svg" alt="" aria-hidden="true">
+        <img class="floor deco" src="assets/showcase/floor_reflection.svg" alt="" aria-hidden="true">
+        <img class="plat deco" src="assets/showcase/showcase_platform.svg" alt="" aria-hidden="true">
+        <div class="matte" id="matte">
+          <img class="ph" id="imA" alt=""><img class="ph" id="imB" alt="">
+          <div class="fail"><img src="../assets/brand/logo.png" alt="" onerror="this.style.display='none'"><span>상품 이미지 준비 중</span></div>
+        </div>
+        <img class="spk s1 deco" src="assets/showcase/sparkle.svg" alt="" aria-hidden="true">
+        <img class="spk s2 deco" src="assets/showcase/sparkle.svg" alt="" aria-hidden="true">
+        <img class="spk s3 deco" src="assets/showcase/sparkle.svg" alt="" aria-hidden="true">
+        <img class="streak deco" src="assets/showcase/light_streak_01.svg" alt="" aria-hidden="true">
+      </div>
     </div>
-    <span class="count" id="count"></span>
-    <div class="cta"><img id="qr" alt="예약 문의 QR"><div><b>예약·가격 문의</b><small>QR을 찍어 DM 주세요</small></div></div>
+    <div class="info">
+      <div class="txt" id="txt">
+        <div class="state"><span class="badge"><img class="deco" src="assets/showcase/reservation_badge.svg" alt="" aria-hidden="true"><span>예약 받는 중</span></span><span class="kind" id="kind"></span></div>
+        <div class="name" id="name"></div>
+        <div class="sub" id="sub"></div>
+        <div class="maker" id="maker"></div>
+        <div class="price" id="price"></div>
+      </div>
+      <svg class="divider deco" viewBox="0 0 900 24" preserveAspectRatio="none" aria-hidden="true"><path d="M0 12H900" stroke="#9FFFF0" stroke-opacity=".18" vector-effect="non-scaling-stroke"/><path d="M0 12H105" stroke="#9FFFF0" stroke-opacity=".8" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>
+      <div class="cta">
+        <div><b>QR 찍고 예약 문의</b><em>SCAN TO INQUIRE</em><small>DM으로 가격·예약 안내해 드려요</small></div>
+        <div class="qrbox"><img class="deco" src="assets/showcase/qr_frame.svg" alt="" aria-hidden="true"><img class="qr" alt="예약 문의 QR"></div>
+      </div>
+    </div>
   </div>
+  <footer class="foot"><div class="bar"><i id="bar"></i></div><span class="count" id="count"></span></footer>
 </div>
 
-<div class="wall" id="wall">
-  <h1>굿스마일 <em>예약 상품</em><br><span id="wallN"></span>종 준비했어요</h1>
-  <div class="grid" id="grid"></div>
-  <p>마음에 드는 상품이 있으면 부스 스태프에게 말씀해 주세요</p>
+<div class="wall" id="wall" aria-hidden="true">
+  <div><h1>GOOD SMILE / <em>PRE-ORDER COLLECTION</em></h1><div class="wsub">굿스마일 예약 상품 <span id="wallN"></span>종 · 마음에 드는 상품은 부스 스태프에게 말씀해 주세요</div></div>
+  <div class="gridwrap" id="gridwrap"><div class="grid" id="grid"></div></div>
+  <div class="wfoot">
+    <span class="page" id="wpage"></span>
+    <div class="cta"><div><b>QR 찍고 예약 문의</b><em>SCAN TO INQUIRE</em></div>
+      <div class="qrbox"><img class="deco" src="assets/showcase/qr_frame.svg" alt="" aria-hidden="true"><img class="qr" alt="예약 문의 QR"></div></div>
+  </div>
 </div>
 <div class="tapgo" id="tapgo">화면을 한 번 누르면 전체화면</div>
 
@@ -134,58 +218,115 @@ body{background:radial-gradient(120% 90% at 18% 10%,#1d4f93 0%,var(--deep) 45%,v
 <script>
 (function () {
   'use strict';
-  var SLIDE_MS = 8000, WALL_EVERY = 12, WALL_MS = 9000;
+  var SLIDE_MS = 8000, WALL_EVERY = 12, WALL_MS = 9000, EXIT_MS = 300;
   var CONTACT_URL = 'https://litt.ly/psb_jeju';
   var ITEMS = (window.GSC_ITEMS || []).filter(function (x) { return x.imgs && x.imgs.length; });
   var $ = function (id) { return document.getElementById(id); };
+  var portrait = function () { return matchMedia('(max-aspect-ratio:1/1)').matches; };
+  var phone = function () { return matchMedia('(max-aspect-ratio:1/1) and (max-width:520px)').matches; };
 
-  try { var q = qrcode(0, 'M'); q.addData(CONTACT_URL); q.make(); $('qr').src = q.createDataURL(8, 1); } catch (e) {}
+  /* QR: 4모듈 quiet zone(margin = cellSize*4) */
+  try { var q = qrcode(0, 'M'); q.addData(CONTACT_URL); q.make(); var qd = q.createDataURL(8, 32);
+    Array.prototype.forEach.call(document.querySelectorAll('img.qr'), function (im) { im.src = qd; }); } catch (e) {}
+
+  /* 전시대 크기: 무대 안에 비율(가로:세로 = 1:1.13) 유지하며 꽉 차게 */
+  function fitRig() {
+    var s = $('stage'), w = s.clientWidth, h = s.clientHeight, r = 1 / 1.13;
+    var rw = Math.min(w * 0.96, h * 0.98 * r);
+    $('rig').style.width = rw + 'px'; $('rig').style.height = (rw / r) + 'px';
+  }
+  addEventListener('resize', function () { fitRig(); if (wallOn) layoutWall(); });
+  fitRig();
 
   function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
-  var order = shuffle(ITEMS), pos = 0, shown = 0, front = 'imA';
+  var order = shuffle(ITEMS), pos = 0, shown = 0, front = 'imA', timer = 0, wallOn = false;
+  function later(fn, ms) { clearTimeout(timer); timer = setTimeout(fn, ms); } /* 타이머는 항상 하나만 */
 
-  /* 다음 사진 미리 읽기 */
-  function preload(it) { if (it) { var im = new Image(); im.src = it.imgs[0]; } }
+  /* 다음 사진 1장만 미리 디코드 */
+  function load(src) {
+    return new Promise(function (res) {
+      var im = new Image(), done = false, fin = function (v) { if (!done) { done = true; res(v); } };
+      im.onload = function () { if (im.decode) im.decode().then(function () { fin(true); }, function () { fin(true); }); else fin(true); };
+      im.onerror = function () { fin(false); };
+      setTimeout(function () { fin(true); }, 1500); /* decode가 늦어도 전환은 멈추지 않게 */
+      im.src = src;
+    });
+  }
 
   function fmt(p) { return p ? p.toLocaleString('ko-KR') : ''; }
-  function showItem(it) {
-    var back = front === 'imA' ? 'imB' : 'imA';
-    var nb = $(back), nf = $(front);
-    nb.classList.remove('on'); void nb.offsetWidth;
-    nb.src = it.imgs[0];
-    var go = function () { nb.classList.add('on'); nf.classList.remove('on'); front = back; $('pbg').style.backgroundImage = 'url("' + it.imgs[0] + '")'; };
-    if (nb.complete) go(); else { nb.onload = go; nb.onerror = go; }
-    $('kind').textContent = it.kind;
-    $('series').textContent = it.series || '';
-    $('name').textContent = it.name;
-    $('maker').textContent = it.maker || '';
+  function title(it) { return it.name_ko || it.name; } /* 한글명 없으면 공식명 그대로 */
+
+  function render(it, ok) {
+    var back = front === 'imA' ? 'imB' : 'imA', nb = $(back), nf = $(front);
+    $('matte').classList.toggle('failed', !ok);
+    nb.onerror = function () { if (nb.classList.contains('on')) $('matte').classList.add('failed'); };
+    if (ok) { nb.src = it.imgs[0]; nb.classList.remove('on'); void nb.offsetWidth; nb.classList.add('on'); }
+    nf.classList.remove('on'); front = back;
+    $('stage').classList.remove('leaving');
+
+    $('kind').textContent = it.kind || '';
+    $('name').textContent = title(it);
+    $('sub').textContent = it.name_ko ? [it.name, it.series].filter(Boolean).join(' · ') : (it.series || '');
+    $('maker').textContent = (it.maker || '').toUpperCase();
     var pr = $('price');
     pr.className = 'price' + (it.price ? '' : ' ask');
     pr.innerHTML = it.price ? '<b>' + fmt(it.price) + '</b><span>원</span>' : '<b>가격 문의</b>';
-    var info = $('info'); info.classList.remove('in'); void info.offsetWidth; info.classList.add('in');
-    $('count').textContent = (pos % ITEMS.length || ITEMS.length) + ' / ' + ITEMS.length;
+    var t = $('txt'); t.classList.remove('in'); void t.offsetWidth; t.classList.add('in');
+    $('count').textContent = 'PRE-ORDER  ' + (pos % ITEMS.length || ITEMS.length) + ' / ' + ITEMS.length;
     var bar = $('bar'); bar.style.transition = 'none'; bar.style.width = '0'; void bar.offsetWidth;
     bar.style.transition = 'width ' + SLIDE_MS + 'ms linear'; bar.style.width = '100%';
   }
-  function showWall(cb) {
-    var g = $('grid'); g.innerHTML = '';
-    var pick = shuffle(ITEMS).slice(0, matchMedia('(max-aspect-ratio:1/1)').matches ? 9 : 12);
-    pick.forEach(function (it, i) { var d = document.createElement('div'); d.style.backgroundImage = 'url("' + it.imgs[0] + '")'; d.style.animationDelay = (i * 0.06) + 's'; g.appendChild(d); });
-    $('wallN').textContent = ITEMS.length;
-    $('wall').classList.add('on');
-    setTimeout(function () { $('wall').classList.remove('on'); cb(); }, WALL_MS);
+
+  /* 모아보기: 가로 6×2 한 장, 세로 3×2 두 장(같은 12개를 나눠서) */
+  var wallItems = [], wallPage = 0;
+  function layoutWall() {
+    var p = portrait(), cols = phone() ? 2 : p ? 3 : 6, rows = phone() ? 3 : 2, gw = $('gridwrap'), gap = Math.round(gw.clientWidth * (p ? .03 : .018));
+    var cw = Math.floor(Math.min((gw.clientWidth - gap * (cols - 1)) / cols, (gw.clientHeight - gap * (rows - 1)) / rows * 0.8));
+    var g = $('grid');
+    g.style.gridTemplateColumns = 'repeat(' + cols + ',' + cw + 'px)';
+    g.style.setProperty('--gap', gap + 'px'); g.style.setProperty('--cf', Math.max(11, cw * 0.072) + 'px');
   }
+  function fillWall() {
+    var per = portrait() ? 6 : 12, pages = Math.ceil(wallItems.length / per);
+    var g = $('grid'); g.innerHTML = '';
+    wallItems.slice(wallPage * per, wallPage * per + per).forEach(function (it, i) {
+      var c = document.createElement('div'); c.className = 'card'; c.style.animationDelay = (i * 45) + 'ms';
+      c.innerHTML = '<img class="deco" src="assets/showcase/grid_frame.svg" alt=""><div class="cph"><img alt=""></div><div class="cn"></div><div class="cp"></div>';
+      var im = c.querySelector('.cph img'); im.src = it.imgs[0]; im.onerror = function () { im.style.visibility = 'hidden'; };
+      c.querySelector('.cn').textContent = title(it);
+      c.querySelector('.cp').textContent = it.price ? fmt(it.price) + '원' : '가격 문의';
+      g.appendChild(c);
+    });
+    $('wpage').textContent = pages > 1 ? (wallPage + 1) + ' / ' + pages : '';
+    layoutWall();
+    return pages;
+  }
+  function showWall() {
+    wallOn = true; wallItems = shuffle(ITEMS).slice(0, WALL_EVERY); wallPage = 0;
+    $('wallN').textContent = ITEMS.length;
+    var pages = fillWall();
+    $('wall').classList.add('on');
+    var step = function () {
+      if (++wallPage < pages) { fillWall(); later(step, WALL_MS / pages); return; }
+      $('wall').classList.remove('on'); wallOn = false; next();
+    };
+    later(step, WALL_MS / pages);
+  }
+
   function next() {
     if (!ITEMS.length) return;
-    if (shown > 0 && shown % WALL_EVERY === 0) { shown++; showWall(next); return; }
+    if (shown > 0 && shown % WALL_EVERY === 0) { shown++; showWall(); return; }
     if (pos >= order.length) { order = shuffle(ITEMS); pos = 0; }
     var it = order[pos++]; shown++;
-    showItem(it); preload(order[pos]);
-    setTimeout(next, SLIDE_MS);
+    load(it.imgs[0]).then(function (ok) {
+      render(it, ok);
+      if (order[pos]) load(order[pos].imgs[0]);
+      later(function () { $('stage').classList.add('leaving'); later(next, EXIT_MS); }, SLIDE_MS - EXIT_MS);
+    });
   }
   next();
 
-  /* 화면 꺼짐 방지 + 전체화면 (처음 한 번 누르면) */
+  /* 화면 꺼짐 방지 + 전체화면 (처음 한 번 누르면). 실패해도 상품은 계속 돈다 */
   var lock = null;
   function wake() { try { if ('wakeLock' in navigator && !lock) navigator.wakeLock.request('screen').then(function (l) { lock = l; l.addEventListener('release', function () { lock = null; }); }, function () {}); } catch (e) {} }
   wake();
