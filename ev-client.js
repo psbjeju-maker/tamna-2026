@@ -7,7 +7,7 @@
        (1) 이미 있는 firebase 전역을 재사용하고 그 버전에 맞는 auth/functions 만 추가 로드하며
        (2) 행사 서버용 앱을 별도 이름('ev')으로 만들어 live.js 의 기본 앱과 완전히 분리한다.
      - SDK 로드·로그인 실패도 {retryable:true} 로 정리해서 던진다(오프라인 재시도용).
-   - 코인·결과·재고는 전부 서버(Cloud Functions)가 정한다. 여기는 "요청"만 보낸다.
+   - mh머니·결과·재고는 전부 서버(Cloud Functions)가 정한다. 여기는 "요청"만 보낸다.
    - apiKey 는 비밀이 아니다(Firebase 웹 설정값은 원래 공개). 보안은 서버가 담당한다.
    - 관리자·스태프 PIN 은 이 파일에 없다. PIN 은 서버 비밀값이며, 로그인하면 12시간짜리 세션 토큰만 받는다. */
 (function () {
@@ -102,16 +102,17 @@
     var m = {
       'not-registered': '먼저 닉네임과 번호로 등록해 주세요.',
       'pass-required': '항해 패스 확인이 필요해요. 스태프에게 패스를 보여주세요.',
-      'not-enough-coins': '코인이 부족해요.',
+      'not-enough-coins': 'mh머니가 부족해요.',
       'sold-out': '준비된 상품이 모두 소진되었어요.',
       'kuji-disabled': '쿠지가 아직 열려 있지 않아요.',
       'play-limit': '맛보기 횟수를 모두 사용했어요.',
       'mission-disabled': '지금 열려 있지 않은 미션이에요.',
       'staff-verify-required': '스태프 확인이 필요한 미션이에요.',
       'phone-registered': '이미 등록된 번호예요. 전화번호로 이어서 하거나 스태프에게 문의해 주세요.',
+      'recover-locked': '닉네임을 여러 번 잘못 입력했어요. 스태프에게 문의해 주세요.',
       'config-missing': '행사 설정이 아직 준비되지 않았어요.',
       'event-disabled': '지금은 열려 있지 않아요.',
-      'cost-not-set': '쿠지 필요 코인이 아직 정해지지 않았어요.',
+      'cost-not-set': '쿠지 필요 mh머니가 아직 정해지지 않았어요.',
       'no-paid-plays': '유료 쿠지 이용권이 없어요.',
       'paid-disabled': '유료 쿠지가 켜져 있지 않아요.',
       'clue-locked': '잠시 후 다시 시도해 주세요.',

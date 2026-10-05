@@ -44,11 +44,11 @@
 
 <div id="app">
 
-  <!-- 헤더: 어느 화면에서든 코인(서버 잔액)과 D-day가 보인다 -->
+  <!-- 헤더: 어느 화면에서든 mh머니(서버 잔액)과 D-day가 보인다 -->
   <header class="app-header" id="hud">
     <div class="app-header__row">
-      <button class="balance balance--luck" id="balBtn" aria-label="내 코인">
-        <svg class="icon"><use href="#i-coin"/></svg><span id="goldN">-</span><small class="coinName">귤코인</small>
+      <button class="balance balance--luck" id="balBtn" aria-label="내 mh머니">
+        <svg class="icon"><use href="#i-coin"/></svg><span id="goldN">-</span><small class="coinName">mh머니</small>
       </button>
       <a class="app-header__brand" href="#" id="brandHome">도채비와 떠나는 신화 탐험</a>
       <button class="dpill" id="ddayPill" aria-label="과수원피스까지 남은 날">
@@ -67,7 +67,7 @@
       <div class="intro__brand">DOCHAEBI'S TREASURE HUNT</div>
       <h1 class="intro__title">도채비와 떠나는<br>신화 탐험</h1>
       <p class="intro__lead">
-        여섯 신을 만나고 게임을 깨면 <b class="coinName">mh머니</b>이 쌓여요. 모은 코인으로 <b>디지털 쿠지</b>를 맛볼 수 있어요.
+        여섯 신을 만나고 게임을 깨면 <b class="coinName">mh머니</b>가 쌓여요. 모은 mh머니로 <b>디지털 쿠지</b>를 맛볼 수 있어요.
         10월 31일 <b>과수원피스</b>에서는 본편이 열려요.
       </p>
       <div class="intro__form">
@@ -99,7 +99,7 @@
     <p class="caption" id="homeSync" style="margin-top:6px"></p>
 
     <div class="btnrow">
-      <button class="btn btn--primary" data-nav="collect"><svg class="icon"><use href="#i-clover"/></svg>코인 모으기</button>
+      <button class="btn btn--primary" data-nav="collect"><svg class="icon"><use href="#i-clover"/></svg>mh머니 모으기</button>
       <button class="btn btn--secondary" data-nav="taste"><svg class="icon"><use href="#i-gift"/></svg>쿠지 뽑기</button>
     </div>
 
@@ -116,7 +116,7 @@
   <section class="screen" id="s-collect">
     <div class="hero">
       <h1 class="hero__title"><span class="coinName">mh머니</span> 모으기</h1>
-      <p class="hero__sub">신께 인사하고 게임을 깨면 코인이 쌓여요. 받는 양은 서버가 정해서 알려줘요.</p>
+      <p class="hero__sub">신께 인사하고 게임을 깨면 mh머니가 쌓여요. 받는 양은 서버가 정해서 알려줘요.</p>
     </div>
 
     <div class="section" style="margin-top:24px">
@@ -161,7 +161,7 @@
   <section class="screen" id="s-taste">
     <div class="hero">
       <h1 class="hero__title">디지털 쿠지</h1>
-      <p class="hero__sub">모은 <span class="coinName">mh머니</span>으로 쿠지를 한 번 뽑아 보세요.</p>
+      <p class="hero__sub">모은 <span class="coinName">mh머니</span>로 쿠지를 한 번 뽑아 보세요.</p>
     </div>
 
     <div class="note" id="tasteDemo" hidden style="margin-bottom:14px">
@@ -171,7 +171,7 @@
 
     <div class="stats">
       <div class="stat"><svg class="icon"><use href="#i-coin"/></svg><div class="stat__label">내 <span class="coinName">mh머니</span></div><div class="stat__num stat__num--luck" id="tasteCoins">-</div></div>
-      <div class="stat"><svg class="icon"><use href="#i-gift"/></svg><div class="stat__label">필요 코인</div><div class="stat__num" id="tasteCost">-</div></div>
+      <div class="stat"><svg class="icon"><use href="#i-gift"/></svg><div class="stat__label">필요 mh머니</div><div class="stat__num" id="tasteCost">-</div></div>
     </div>
 
     <button class="btn btn--primary btn--block" id="btnTaste">쿠지 뽑기</button>
@@ -204,7 +204,7 @@
   <section class="screen" id="s-photo">
     <div class="hero">
       <h1 class="hero__title">오늘의 나를 카드로!</h1>
-      <p class="hero__sub">사진을 넣으면 나만의 랜덤 포토카드가 탄생해요. 완성하고 SNS에 올려 부스 스태프에게 보여주면 코인 인증을 받을 수 있어요.</p>
+      <p class="hero__sub">사진을 넣으면 나만의 랜덤 포토카드가 탄생해요. 완성하고 SNS에 올려 부스 스태프에게 보여주면 mh머니 인증을 받을 수 있어요.</p>
     </div>
 
     <div class="slots slots--one" id="slots"></div>
@@ -279,7 +279,7 @@
     </div>
     <div class="chips" id="dokAsk">
       <button class="chip chip--btn" data-ask="treasure">쿠지가 뭐야?</button>
-      <button class="chip chip--btn" data-ask="luck">코인은 어떻게 모아?</button>
+      <button class="chip chip--btn" data-ask="luck">mh머니는 어떻게 모아?</button>
       <button class="chip chip--btn" data-ask="where">과수원피스가 어디야?</button>
       <button class="chip chip--btn" data-ask="who">넌 누구야?</button>
       <button class="chip chip--btn" data-ask="random">아무 말이나 해줘</button>
@@ -304,7 +304,7 @@
 <!-- 하단 내비게이션 (5탭) -->
 <nav id="tabs" class="nav" aria-label="주 메뉴"><div class="nav__in nav__in--5">
   <button class="tab on" data-go="home"><svg class="icon"><use href="#i-home"/></svg>홈</button>
-  <button class="tab" data-go="collect"><svg class="icon"><use href="#i-clover"/></svg>코인 모으기</button>
+  <button class="tab" data-go="collect"><svg class="icon"><use href="#i-clover"/></svg>mh머니 모으기</button>
   <button class="tab" data-go="taste"><svg class="icon"><use href="#i-gift"/></svg>쿠지</button>
   <button class="tab" data-go="photo"><svg class="icon"><use href="#i-camera"/></svg>포토카드</button>
   <button class="tab" data-go="dokebi"><img class="tab__face" src="dokebi/exp_default.png" alt="">도채비</button>
@@ -581,8 +581,8 @@ function liveHintHtml(c){
 /* ---------------- 상태 ----------------
    S : 이 기기에 저장하는 것(닉네임·참가코드·게임 최고기록·포토 슬롯 등 "내 폰 안의" 값). tamna_v2.
        옛 키(tamna_v1)는 읽지도 지우지도 않는다.
-   V : 서버(getState)에서 받은 마지막 상태. 코인·미션 기록·쿠지 결과 표시는 전부 여기서만 나온다.
-       (앱이 코인을 더하거나 빼지 않는다 — 서버가 준 숫자만 그대로 보여준다) */
+   V : 서버(getState)에서 받은 마지막 상태. mh머니·미션 기록·쿠지 결과 표시는 전부 여기서만 나온다.
+       (앱이 mh머니를 더하거나 빼지 않는다 — 서버가 준 숫자만 그대로 보여준다) */
 var EID = C.eventId || 'tamna';
 var S = load();
 var V = null;          // 서버 상태
@@ -603,7 +603,7 @@ function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');
 function cfgNow(){return (V&&V.cfg)||CFGPUB||null}
 function kujiCfg(){var c=cfgNow();return (c&&c.kuji)||null}
 function coinNameSrv(){var c=cfgNow();return (c&&c.coinName)||null}
-function coinName(){return coinNameSrv()||C.coinNameFallback||'코인'}
+function coinName(){return coinNameSrv()||C.coinNameFallback||'mh머니'}
 function coins(){return (V&&V.wallet&&typeof V.wallet.coins==='number')?V.wallet.coins:null}
 function missionCfg(id){var c=cfgNow();return (c&&c.missions&&c.missions[id])||null}
 function missionDone(id){return !!(V&&V.missions&&V.missions[id]&&V.missions[id].count>0)}
@@ -676,10 +676,10 @@ function retryPending(){
   })(0);
 }
 var REASON={
-  'reward-not-set':'이 미션의 코인 지급량은 아직 정해지지 않아서 이번에는 코인이 없어요.',
+  'reward-not-set':'이 미션의 mh머니 지급량은 아직 정해지지 않아서 이번에는 mh머니가 없어요.',
   'cooldown':'조금 뒤에 다시 하면 받을 수 있어요.',
   'daily-cap':'오늘 받을 수 있는 만큼은 다 받았어요.',
-  'already-rewarded':'이 미션의 코인은 이미 받았어요.'
+  'already-rewarded':'이 미션의 mh머니는 이미 받았어요.'
 };
 function resultHtml(res){
   if(!res.ok){
@@ -688,7 +688,7 @@ function resultHtml(res){
   }
   var r=res.r;
   if(r.awarded>0)return '<div class="reward"><div class="reward__num">+'+esc(r.awarded)+'</div><div class="reward__label">'+esc(coinName())+' · 서버에 기록됐어요</div></div>';
-  return '<div class="note">'+esc(REASON[r.reason]||'이번에는 코인이 지급되지 않았어요.')+'</div>';
+  return '<div class="note">'+esc(REASON[r.reason]||'이번에는 mh머니가 지급되지 않았어요.')+'</div>';
 }
 var CLAIMING='<p class="caption">서버에 기록하는 중…</p>';
 function fillRw(res){var el=$('#rwBody');if(el)el.innerHTML=resultHtml(res)}
@@ -777,7 +777,7 @@ function enter(){
   window.addEventListener('online',function(){ if(S.code){sync().then(function(){retryPending()})} });
   document.addEventListener('visibilitychange',function(){ if(!document.hidden&&S.code)sync() });
 }
-/* 로그인 전 — 서버 공개 설정만 읽어 코인 이름·연결 상태를 미리 보여준다 */
+/* 로그인 전 — 서버 공개 설정만 읽어 mh머니 이름·연결 상태를 미리 보여준다 */
 function loadPublicCfg(){
   EV.readCfg(EID).then(function(c){CFGPUB=c;net.offline=false;paintIntro()},
     function(){net.offline=true;paintIntro()});
@@ -809,7 +809,7 @@ function syncLine(){
   else if(net.offline)parts.push('지금 서버와 연결이 안 돼요. 연결되면 자동으로 다시 시도해요.');
   else parts.push('서버와 연결됨');
   if(np)parts.push('서버에 아직 전달되지 않은 미션 '+np+'건 · 연결되면 자동으로 다시 보내요');
-  if(!coinNameSrv())parts.push('코인 이름은 임시 표기예요');
+  if(!coinNameSrv())parts.push('mh머니 이름은 임시 표기예요');
   return parts.join(' · ');
 }
 function paint(){
@@ -960,9 +960,9 @@ function paintTaste(){
   var why='';
   if(!k)why=net.offline?'서버와 연결되면 열려요.':'설정을 불러오는 중이에요.';
   else if(k.enabled===false)why='쿠지가 아직 열려 있지 않아요.';
-  else if(cost==null)why='쿠지에 필요한 코인이 아직 정해지지 않았어요.';
+  else if(cost==null)why='쿠지에 필요한 mh머니가 아직 정해지지 않았어요.';
   else if(w&&k.playLimit!=null&&w.playCount>=k.playLimit)why='쿠지 횟수를 모두 썼어요.';
-  else if(w&&c!=null&&c<cost)why='코인이 부족해요. 필요한 코인 '+cost+', 내 코인 '+c+'.';
+  else if(w&&c!=null&&c<cost)why='mh머니가 부족해요. 필요한 mh머니 '+cost+', 내 mh머니 '+c+'.';
   var lockedByPass=false;
   var cf=cfgNow();
   if(!why&&cf&&cf.passRequired&&V&&V.pass&&!V.pass.active){why='항해 패스 확인이 필요해요.';lockedByPass=true}
@@ -1060,7 +1060,7 @@ function playTaste(cardIds){
 };
 
 /* 신을 처음 만났을 때의 연출 — 근처 자동 발견(GPS)과 나침반 화면의 "인사하기" 버튼(greetGod)
-   둘 다 여기로 온다. 코인은 서버가 정해서 응답한 값만 보여준다.
+   둘 다 여기로 온다. mh머니는 서버가 정해서 응답한 값만 보여준다.
    이미 인사드린 신은 여기까지 오지 않는다(재방문 인사는 onNearGod/greetGod에서 따로 처리). */
 function grantCrew(hit){
   closeModal();revealId=hit.id;
@@ -1118,8 +1118,8 @@ var OPENING_LINES=[
 /* 등록 직후 한 번 — 맛보기 안내(숫자·보상은 말하지 않는다: 서버가 정한다) */
 var TASTE_LINES=[
   {img:'dokebi/exp_smile.png', text:'등록 끝! 여기선 무료로 디지털 쿠지를 맛볼 수 있어.'},
-  {img:'dokebi/exp_wink.png', text:'신들께 인사하고, 놀이터에서 놀고, 포토카드를 만들면 코인이 쌓여.'},
-  {img:'dokebi/exp_excited.png', text:'코인이 모이면 쿠지 탭에서 한 번 뽑아봐. 그럼 시작해볼까?'}
+  {img:'dokebi/exp_wink.png', text:'신들께 인사하고, 놀이터에서 놀고, 포토카드를 만들면 mh머니가 쌓여.'},
+  {img:'dokebi/exp_excited.png', text:'mh머니가 모이면 쿠지 탭에서 한 번 뽑아봐. 그럼 시작해볼까?'}
 ];
 /* ---- 씨름: 3초 동안 마구 누르기. 결과는 늘 도채비 승(개그) ---- */
 function startSsireum(onDone){
@@ -1168,7 +1168,7 @@ var DOK_RANDOM=[
   {t:function(){return '10월 31일이 '+dday()+'일 뒤야. 한림 금능석물원에서 과수원피스가 열려!'},f:'excited'},
   {t:'포토카드 만들어 봤어? 신이랑 찍은 사진으로 만들면 예뻐.',f:'smile',when:function(){return !missionDone('photo')}},
   {t:'놀이터에서 귤 좀 잘라봐. 재밌어.',f:'laugh'},
-  {t:'코인이 모였으면 쿠지 탭에서 한 번 뽑아봐.',f:'wink',when:function(){var c=coins();return c!=null&&c>0}},
+  {t:'mh머니가 모였으면 쿠지 탭에서 한 번 뽑아봐.',f:'wink',when:function(){var c=coins();return c!=null&&c>0}},
   {t:'탐라문화제 재밌지? 나도 이런 날엔 신난다.',f:'excited'}
 ];
 function pickDok(){
@@ -1185,8 +1185,8 @@ function maybeDokPop(){
 }
 /* ---- 도채비 화면 ---- */
 var DOK_ASK={
-  treasure:{t:function(){var k=kujiCfg();return '디지털 쿠지야. 코인으로 여기서 뽑아볼 수 있어.'+(k&&k.demoMode?' 지금은 시연이라 실물 지급은 없어.':'')},f:'wink'},
-  luck:{t:'여섯 신께 인사하고, 놀이터 게임을 하고, 포토카드를 만들면 코인이 쌓여. 얼마나 쌓이는지는 서버가 알려줘.',f:'smile'},
+  treasure:{t:function(){var k=kujiCfg();return '디지털 쿠지야. mh머니로 여기서 뽑아볼 수 있어.'+(k&&k.demoMode?' 지금은 시연이라 실물 지급은 없어.':'')},f:'wink'},
+  luck:{t:'여섯 신께 인사하고, 놀이터 게임을 하고, 포토카드를 만들면 mh머니가 쌓여. 얼마나 쌓이는지는 서버가 알려줘.',f:'smile'},
   where:{t:'10월 31일(토) 한림 금능석물원에서 10시 30분부터 4시까지야. 항해 패스는 6,000원.',f:'excited'},
   who:{t:'뿔 달린 거 상상했지? 그건 오니야, 난 도채비라고!',f:'pout'}
 };
@@ -1247,11 +1247,11 @@ $('#cinema').onclick=function(){
 /* ---------------- 미니게임 공통 ---------------- */
 function paintGame(){
   $('#decayTag').textContent=pendingIds().length?'서버 전달 대기 '+pendingIds().length+'건':'';
-  $('#best-catch').textContent='최고 '+(S.best.catch||0)+'점';
-  $('#best-stack').textContent='최고 '+(S.best.stack||0)+'점';
-  $('#best-sun').textContent=S.best.shadowFeast?'최고 그림자 '+S.best.shadowFeast+'개':'최고 기록 없음';
+  $('#best-catch').innerHTML='최고 <b>'+(S.best.catch||0)+'점</b>';
+  $('#best-stack').innerHTML='최고 <b>'+(S.best.stack||0)+'점</b>';
+  $('#best-sun').innerHTML=S.best.shadowFeast?'최고 그림자 <b>'+S.best.shadowFeast+'개</b>':'최고 기록 없음';
 }
-/* 게임 클리어 → 서버에 미션 요청. 코인 수량은 서버 응답값만 보여준다. */
+/* 게임 클리어 → 서버에 미션 요청. mh머니 수량은 서버 응답값만 보여준다. */
 function reward(missionId,label,tier){
   save();paintGame();
   if($('#stage').classList.contains('on')){rewardInGame(missionId,label,tier);return}
@@ -1280,7 +1280,7 @@ function rewardInGame(missionId,label,tier){
     if(res.ok){
       var r=res.r;item.awarded=+r.awarded||0;item.cards=(r.cards||[]).slice();item.book=res.book;
       item.state=(item.awarded>0||item.cards.length)?'ready':'none';
-      if(item.state==='none')toast(REASON[r.reason]||'이번에는 코인이 지급되지 않았어요.');
+      if(item.state==='none')toast(REASON[r.reason]||'이번에는 mh머니가 지급되지 않았어요.');
     }else{
       item.state='none';
       toast(res.queued?'서버에 아직 전달되지 않았어요. 연결되면 자동으로 다시 보내요':((res.e&&res.e.message)||'기록하지 못했어요'));
@@ -1823,7 +1823,7 @@ function finishCatch(score){
   var lbl='황금귤 캐치 · '+score+'점'+(isBest?' · 신기록!':'');
   if(!tier){
     save();paintGame();
-    sheet('<h3>'+esc(lbl)+'</h3><p style="text-align:center;line-height:1.6">3,000점부터 '+coinName()+'을 받을 수 있어요.<br>3,000점 1개 · 5,000점 2개 · 7,000점 3개</p>'+
+    sheet('<h3>'+esc(lbl)+'</h3><p style="text-align:center;line-height:1.6">3,000점부터 '+coinName()+'를 받을 수 있어요.<br>3,000점 1개 · 5,000점 2개 · 7,000점 3개</p>'+
       '<button class="btn btn--primary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">확인</button>');
 return;
   }
@@ -2510,7 +2510,7 @@ $('#btnShare').onclick=function(){
 
 /* ---------------- 초기화 ---------------- */
 $('#btnReset').onclick=function(){
-  sheet('<h3>이 기기에서 로그아웃할까요?</h3><p>이 기기에 저장된 내 정보(닉네임, 게임 최고기록, 사진 슬롯)만 지워져요. 서버에 저장된 코인·미션 기록은 그대로이고, 전화번호로 다시 이어할 수 있어요.</p>'+
+  sheet('<h3>이 기기에서 로그아웃할까요?</h3><p>이 기기에 저장된 내 정보(닉네임, 게임 최고기록, 사진 슬롯)만 지워져요. 서버에 저장된 mh머니·미션 기록은 그대로이고, 전화번호로 다시 이어할 수 있어요.</p>'+
     (pendingIds().length?'<div class="note note--danger">서버에 아직 전달되지 않은 미션 '+pendingIds().length+'건이 있어요. 지금 로그아웃하면 그 기록은 전달되지 않을 수 있어요.</div>':'')+
     '<button class="btn btn--danger btn--block" id="okReset">로그아웃</button>'+
     '<button class="btn btn--tertiary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">취소</button>');

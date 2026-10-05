@@ -172,7 +172,7 @@ p{margin:0}
 .game__title{font-weight:800;font-size:17px;letter-spacing:-.01em}
 .game__desc{font-size:13.5px;color:var(--color-text-secondary);margin-top:4px;line-height:1.55}
 .game__best{font-size:13px;color:var(--color-text-muted);margin-top:6px}
-.game__best b{color:var(--color-text);font-weight:700}
+.game__best b{color:var(--color-accent);font-weight:700}
 
 /* photo */
 .slots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-2);margin-top:var(--space-4)}
