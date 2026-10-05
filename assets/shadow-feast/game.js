@@ -471,8 +471,12 @@ function drawFace(x,y,r,n,tt,squash,pulse,charging){
     c.beginPath();c.ellipse(0,-22*s,12*s,10*s,0,Math.PI,TAU);c.closePath();c.fill();c.stroke();
     c.fillStyle='rgba(145,239,210,.35)';[[-5,-25],[3,-27],[6,-21],[-2,-20]].forEach(function(q){c.beginPath();c.arc(q[0]*s,q[1]*s,1*s,0,TAU);c.fill()});
   }
-  if(n>=25){ // 대왕: 금빛 뿔
-    c.fillStyle='#edd79d';[-1,1].forEach(function(sd){c.beginPath();c.moveTo(sd*7*s,-30*s);c.quadraticCurveTo(sd*12*s,-40*s,sd*16*s,-44*s);c.quadraticCurveTo(sd*13*s,-34*s,sd*11*s,-29*s);c.closePath();c.fill()});
+  if(n>=25){ // 대왕: 돌모자에 금띠 + 양옆 금방울 (뿔은 쓰지 않는다 — 도채비는 뿔 없음)
+    c.strokeStyle='#edd79d';c.lineWidth=2.4*s;c.beginPath();c.ellipse(0,-18.5*s,12.5*s,3*s,0,0,Math.PI);c.stroke();
+    [-1,1].forEach(function(sd){var bx=sd*17*s,by=-12*s+Math.sin(tt*5+sd)*1.2*s;
+      c.strokeStyle='rgba(237,215,157,.8)';c.lineWidth=1*s;c.beginPath();c.moveTo(sd*15*s,-17*s);c.lineTo(bx,by-3.5*s);c.stroke();
+      c.fillStyle='#edd79d';c.beginPath();c.arc(bx,by,3.6*s,0,TAU);c.fill();
+      c.fillStyle='#8a6a2a';c.fillRect(bx-2.2*s,by+0.6*s,4.4*s,0.9*s)});
   }
   c.restore();
   if(n>=15){ // 도깨비불 두 개가 얼굴 주위를 돈다
