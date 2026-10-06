@@ -135,7 +135,9 @@ body.mouse{cursor:auto}
   .corners{display:none}
   .show{padding:calc(var(--u)*2.6) calc(var(--u)*3.6) calc(var(--u)*1.8)}
   .main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;row-gap:calc(var(--u)*1)}
-  .info{justify-content:flex-start}
+  .info{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:calc(var(--u)*2);align-items:end}
+  .info .cta{grid-column:2;grid-row:1;margin:0;flex-direction:column-reverse;align-items:center;gap:calc(var(--u)*.6);text-align:center}
+  .info .cta small{display:none}
   .state{margin-bottom:calc(var(--u)*1.1)}
   .name{font-size:max(28px,calc(var(--u)*4))}
   .sub{font-size:calc(var(--u)*1.7);-webkit-line-clamp:1}
@@ -144,10 +146,9 @@ body.mouse{cursor:auto}
   .price b{font-size:max(32px,calc(var(--u)*5))}
   .badge{font-size:calc(var(--u)*1.35);height:calc(var(--u)*2.9);padding-left:calc(var(--u)*2.3)}
   .kind{font-size:calc(var(--u)*1.5)}
-  .divider{margin-top:calc(var(--u)*1)}
-  .cta{margin-top:calc(var(--u)*1.6)}
-  .cta b{font-size:calc(var(--u)*2.2)}.cta em{font-size:calc(var(--u)*1.35)}.cta small{font-size:calc(var(--u)*1.4)}
-  .qrbox{--qf:clamp(200px,calc(var(--u)*19),340px)}
+  .divider{display:none}
+  .cta b{font-size:calc(var(--u)*1.7)}.cta em{font-size:calc(var(--u)*1.1)}
+  .qrbox{--qf:clamp(150px,calc(var(--u)*17),300px)}
   .top b{font-size:calc(var(--u)*1.9)}.top small{font-size:calc(var(--u)*1.2)}
   .count{font-size:calc(var(--u)*1.2)}
   .wall h1{font-size:calc(var(--u)*3.4)}.wall .wsub{font-size:calc(var(--u)*1.5)}
@@ -159,11 +160,11 @@ body.mouse{cursor:auto}
   .show{padding:14px 16px max(30px,calc(env(safe-area-inset-bottom) + 22px))}
   .top img{height:30px}.top b{font-size:13px;letter-spacing:.02em}.top small{font-size:11px}
   .main{grid-template-rows:minmax(0,1fr) auto}
-  .divider{display:none}.price{margin-top:6px}.cta{margin-top:12px}
+  .price{margin-top:6px}
   .name{font-size:28px}.sub{font-size:14px}.price b{font-size:34px}.price span{font-size:15px}
   .badge{font-size:12px;height:26px;padding-left:22px}.kind{font-size:13px}
-  .cta{gap:12px}.cta b{font-size:15px;white-space:nowrap}.cta em{font-size:11px}.cta small{display:none}
-  .qrbox{--qf:160px}
+  .info{column-gap:10px}.cta b{font-size:13px;white-space:nowrap}.cta em{font-size:10px}
+  .info .qrbox{--qf:132px}
   .count{font-size:11px}
   .wall{padding:18px}.wall h1{font-size:22px}.wall .wsub{font-size:12px}
   .wfoot .qrbox{--qf:180px}.wfoot .page{white-space:nowrap;font-size:11px}
@@ -262,8 +263,8 @@ body.mouse{cursor:auto}
   function fitRig() {
     var s = $('stage'), W = s.clientWidth, H = s.clientHeight, r = ratio;
     if (!W || !H) return;
-    var mw = Math.min(W * 0.9, H * 0.84 * r), mh = mw / r;
-    var top = Math.max(H * 0.02, (H * 0.9 - mh) / 2), cx = W / 2, cy = top + mh / 2, bot = top + mh;
+    var tall = H > W, mw = Math.min(W * (tall ? 0.98 : 0.9), H * (tall ? 0.92 : 0.84) * r), mh = mw / r;
+    var top = Math.max(H * 0.01, (H * (tall ? 0.95 : 0.9) - mh) / 2), cx = W / 2, cy = top + mh / 2, bot = top + mh;
     px($('matte'), cx - mw / 2, top, mw, mh);
     var pw = Math.min(W * 0.98, Math.max(mw * 1.3, H * 0.5)), ph = pw * 0.26, pt = bot - ph * 0.3;
     px(document.querySelector('.plat'), cx - pw / 2, pt, pw);
