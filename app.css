@@ -619,3 +619,14 @@ p{margin:0}
 .kcard__art .icon{width:44px;height:44px}
 .kcard__t{font-size:18px;font-weight:800;margin-top:var(--space-4)}
 .kcard__s{font-size:14px;color:var(--color-text-secondary);margin-top:4px}
+
+/* 부스 타임테이블 */
+.tt{margin-top:var(--space-3);border-radius:14px;background:var(--color-surface);overflow:hidden}
+.tt__day{padding:12px var(--space-4);font-weight:800;font-size:15px;border-bottom:1px solid var(--color-border);display:flex;align-items:center;gap:8px}
+.tt__day em,.tt__row em{font-style:normal;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--color-accent);color:#1a1300;margin-left:auto}
+.tt__row{display:grid;grid-template-columns:104px 1fr auto;align-items:center;gap:var(--space-3);padding:13px var(--space-4);border-bottom:1px solid var(--color-border)}
+.tt__row:last-child{border-bottom:0}
+.tt__row b{font-size:14px;font-variant-numeric:tabular-nums;color:var(--color-accent)}
+.tt__row span{font-size:15.5px;font-weight:700;line-height:1.3}
+.tt__row--live{background:var(--color-accent-soft)}
+.tt__row--done,.tt--past{opacity:.45}

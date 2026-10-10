@@ -7,7 +7,7 @@
 <title>도채비와 떠나는 신화 탐험 — 탐라문화제 × 메이커앤하비</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Song+Myung&display=swap">
-<link rel="stylesheet" href="app.css?v=18">
+<link rel="stylesheet" href="app.css?v=19">
 </head>
 <body>
 
@@ -119,6 +119,13 @@
       <div class="section__head"><h2 class="section__title">오늘 갈 수 있는 곳</h2></div>
       <p class="section__lead" id="placeGuide"></p>
       <div class="places" id="places"></div>
+    </div>
+
+    <!-- 부스 타임테이블 -->
+    <div class="section" id="boothSec" hidden>
+      <div class="section__head"><h2 class="section__title">부스 프로그램</h2><span class="section__meta">토·일 14:00~</span></div>
+      <p class="section__lead">메이커앤하비 부스에서 시간마다 열려요. 하루 한 번씩!</p>
+      <div id="boothTT"></div>
     </div>
 
     <!-- 여섯 신 찾기 -->
@@ -425,7 +432,7 @@
 <script>['gesturestart','gesturechange','gestureend'].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault()},{passive:false})});var _lt=0;document.addEventListener('touchend',function(e){var n=Date.now();if(n-_lt<300)e.preventDefault();_lt=n},{passive:false});</script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="config.js?v=taste1"></script>
+<script src="config.js?v=taste2"></script>
 <script src="live.js"></script>
 <script src="ev-client.js?v=5"></script>
 <script src="mqscan.js?v=2"></script>
@@ -937,6 +944,28 @@ function kstHMNow(){return kstParts(srvNow()).hm}
 function fmtHM(ms){return ms?kstParts(ms).hm:''}
 var WD='일월화수목금토';
 function fmtDay(day,short){var d=new Date(day+'T12:00:00+09:00');var m=+day.slice(5,7),dd=+day.slice(8,10);return short?m+'.'+dd:m+'월 '+dd+'일('+WD[d.getUTCDay()]+')'}
+
+/* 부스 타임테이블 — C.boothSchedule, 진행 중/다음 표시 */
+function renderBooth(){
+  var sec=$('#boothSec'),days=C.boothSchedule||[];if(!sec||!days.length)return;
+  var today=kstToday(),now=kstHMNow(),html='';
+  days.forEach(function(d){
+    var past=d.day<today,isToday=d.day===today,nextDone=false;
+    html+='<div class="tt'+(past?' tt--past':'')+'"><div class="tt__day">'+esc(fmtDay(d.day))+(isToday?' <em>오늘</em>':'')+'</div>';
+    d.items.forEach(function(it){
+      var cls='',tag='';
+      if(isToday){
+        if(now>=it.e)cls=' tt__row--done';
+        else if(now>=it.s){cls=' tt__row--live';tag='<em>진행 중</em>'}
+        else if(!nextDone){cls=' tt__row--next';tag='<em>다음</em>';nextDone=true}
+      }
+      html+='<div class="tt__row'+cls+'"><b>'+it.s+'~'+it.e+'</b><span>'+esc(it.t)+'</span>'+tag+'</div>';
+    });
+    html+='</div>';
+  });
+  $('#boothTT').innerHTML=html;sec.hidden=false;
+}
+renderBooth();setInterval(renderBooth,30000);
 function campCfg(){var c=cfgNow();return (c&&c.campaign&&c.campaign.enabled!==false&&c.campaign.places)?c.campaign:null}
 function couponCfg(){var c=cfgNow();return (c&&c.coupon)||null}
 function campV(){return (V&&V.campaign)||null}
