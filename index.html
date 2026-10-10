@@ -983,6 +983,8 @@ function stamps7Html(){
   }).join('');
 }
 function myCoupon(){return (V&&V.coupon)||null}
+/* 2026-10-10: 쿠폰은 부스에서 실물로 지급(날짜 도장). 앱은 수령 코드만 보여 준다 */
+function couponPlay(){var pl=(V&&V.plays)||[];for(var i=0;i<pl.length;i++)if(pl[i].kind==='coupon')return pl[i];return null}
 function couponLive(c){if(!c)return null;if(c.status==='active'&&srvNow()>c.expiresAt)return 'expired';return c.status}
 function paintCampaign(){
   var cp=campCfg(), v=campV();
@@ -1005,8 +1007,11 @@ function paintCampaign(){
   $('#places').innerHTML=PLACE_KEYS.map(placeCardHtml).join('');
   $('#placeGuide').textContent=placeGuideText();
   /* 쿠폰 배너 — 미사용·유효할 때만 */
-  var c=myCoupon(), cs=couponLive(c), hb=$('#homeCoupon');
-  if(c&&cs==='active'){
+  var c=myCoupon(), cs=couponLive(c), hb=$('#homeCoupon'), cp=couponPlay();
+  if(cp&&cp.pickup&&cp.pickup.status==='pending'){
+    hb.hidden=false;
+    hb.innerHTML='<div class="cpnBanner__amt">5,000원 쿠폰 당첨!</div><div class="cpnBanner__due">부스 스태프에게 수령 코드 <b>'+esc(cp.pickup.code)+'</b>를 보여 주고 실물 쿠폰을 받아 가세요</div>';
+  } else if(false){
     var sp=placeDef('store'), url=mapUrl(sp)||mapUrl({address:'제주시 월랑로 59'});
     hb.hidden=false;
     hb.innerHTML='<div class="cpnBanner__amt">5,000원 쿠폰</div><div class="cpnBanner__due">오늘 <b>'+esc(fmtHM(c.expiresAt))+'</b>까지 · 박서방 제주지점</div>'+
@@ -1016,8 +1021,7 @@ function paintCampaign(){
   /* 지금 추천 버튼 */
   var nb=$('#homeNext'), met=C.crew.filter(isMet).length, k=kujiCfg(), cost=k&&k.cost, cn=coins();
   var rec;
-  if(c&&cs==='active')rec={t:'내 쿠폰 사용하러 가기',go:['record','couponSec'],i:'ticket'};
-  else if(met<C.crew.length&&placeState('festival')==='open')rec={t:'신 찾기',go:['home','godsSec'],i:'compass'};
+  if(met<C.crew.length&&placeState('festival')==='open')rec={t:'신 찾기',go:['home','godsSec'],i:'compass'};
   else if(cost!=null&&cn!=null&&cn>=cost&&k.enabled!==false)rec={t:'쿠지 뽑기',go:['taste'],i:'gift'};
   else rec={t:'신 찾기',go:['home','godsSec'],i:'compass'};
   nb.innerHTML='<svg class="icon"><use href="#i-'+rec.i+'"/></svg>'+esc(rec.t);
@@ -1067,7 +1071,8 @@ function paintRecord(){
   $('#recGodN').textContent=met;
   $('#recGods').innerHTML=C.crew.map(function(c){var m=isMet(c);return '<span class="godDot'+(m?' godDot--on':'')+'">'+(m?'<img src="'+c.photo+'" alt="">':'')+'<i>'+(m?esc(c.name):'???')+'</i></span>'}).join('');
   var c=myCoupon();
-  $('#couponBox').innerHTML=c?couponCardHtml(c):'<p class="caption">아직 받은 쿠폰이 없어요. 쿠지에서 5,000원 쿠폰이 나올 수 있어요(1인 1회).</p>';
+  var cp=couponPlay();
+  $('#couponBox').innerHTML=cp?playHtml(cp):'<p class="caption">아직 당첨된 쿠폰이 없어요. 쿠지에서 5,000원 쿠폰이 나올 수 있어요(1인 1회, 부스에서 실물로 받아요).</p>';
   $('#drawRows').innerHTML=drawRowsHtml();
 }
 /* 오늘 스탬프 찍기 → 기존 QR 스캐너. 카메라가 안 되면 화면 아래 7자리 코드로 입력 */
@@ -1311,8 +1316,9 @@ function tasteSummaryHtml(pl){
 function safeImg(u){return (typeof u==='string'&&(/^https?:\/\//.test(u)||/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(u)||/^[\w\-\/.]+\.(png|jpe?g|webp|gif)$/i.test(u)))?u:''}
 function playHtml(p){
   var img=safeImg(p.image);
-  if(p.kind==='coupon'&&p.coupon)return '<div class="reward"><div class="reward__num" style="font-size:24px">박서방 5,000원 쿠폰</div><div class="reward__label">오늘 '+esc(fmtHM(p.coupon.expiresAt))+'까지 박서방 제주지점에서 쓸 수 있어요</div></div>'+
-    '<button class="btn btn--primary btn--block" data-nav="record" data-anchor="couponSec" style="margin-top:12px">내 쿠폰 보기</button>';
+  if(p.kind==='coupon')return '<div class="reward">'+
+    '<div class="reward__num" style="font-size:24px">박서방 5,000원 쿠폰</div><div class="reward__label">부스 스태프에게 수령 코드를 보여 주고 실물 쿠폰을 받아 가세요. 받은 날 박서방 제주지점에서만 쓸 수 있어요.</div></div>'+
+    (p.pickup&&p.pickup.code?'<div class="note" style="margin-top:12px"><b>수령 코드 '+esc(p.pickup.code)+'</b>'+(p.pickup.status==='given'?' · 받음':'')+'</div>':'');
   if(p.kind==='blank'&&p.couponNote==='dup')return '<div class="reward"><div class="reward__num" style="font-size:24px">꽝</div><div class="reward__label">5,000원 쿠폰은 이미 받아서 이번엔 꽝으로 처리됐어요</div></div>';
   if(p.kind==='blank'&&p.couponNote==='closed')return '<div class="reward"><div class="reward__num" style="font-size:24px">꽝</div><div class="reward__label">오늘 쿠폰 발급이 끝나서 꽝으로 처리됐어요</div></div>';
   if(p.kind==='blank')return '<div class="reward"><div class="reward__num" style="font-size:24px">'+esc(p.name||'꽝')+'</div><div class="reward__label">이번엔 꽝이에요</div></div>';
@@ -1335,7 +1341,7 @@ $('#btnTaste').onclick=function(){
 function afterPlay(r,bookBefore){
   lastPlay=r.play;
   var p=r.play||{};
-  if(p.kind==='coupon'&&p.coupon)setTimeout(function(){dokPop('오늘 박서방에서 쓸 수 있는 5,000원 쿠폰이야. 마감 시간을 확인하고 가봐!','excited',6500)},900);
+  if(p.kind==='coupon')setTimeout(function(){dokPop('5,000원 쿠폰이야! 부스에서 실물 쿠폰 받아서 오늘 박서방에서 써 봐!','excited',6500)},900);
   else if(p.kind==='blank')setTimeout(function(){dokPop(p.couponNote==='dup'?'쿠폰은 한 사람에 한 장이라 이번엔 꽝이야. 다른 상품은 계속 나올 수 있어.':'아쉽다, 꽝이야. 다음 판에 또 해 봐.','smile',4500)},900);
   return sync().then(function(){paintTaste();
     if(r.play&&r.play.cards&&r.play.cards.length&&window.MH)setTimeout(function(){MH.reveal(r.play.cards,{book:bookBefore,title:'아쉽! 대신 '+coinName()+' 카드',onClose:paintAlbum})},500);
@@ -1514,7 +1520,7 @@ var DOK_ASK={
     b:[['내 스탬프','record#recStamps7'],['추첨 안내','record#drawSec']]},
   treasure:{t:function(){var k=kujiCfg();return '디지털 쿠지야. mh머니로 번호를 골라 뽑아. 5,000원 쿠폰도 들어 있는데, 쿠폰은 행사 기간 중 한 사람에 한 번만 당첨돼.'+(k&&k.demoMode?' 지금은 시연이라 실물 지급은 없어.':'')},f:'wink',b:[['쿠지 뽑으러 가기','taste']]},
   luck:{t:'여섯 신께 인사하고, 놀이터 게임을 하고, 포토카드를 만들면 mh머니가 쌓여. 얼마나 쌓이는지는 서버가 알려줘.',f:'smile',b:[['여섯 신 찾기','home#godsSec']]},
-  coupon:{t:'쿠지에서 나온 5,000원 쿠폰은 받은 날 박서방 제주지점에서 써. 마감 시간이 쿠폰에 적혀 있으니까 꼭 확인하고, 매장 직원에게 쿠폰 QR을 보여 주면 돼!',f:'smile',
+  coupon:{t:'쿠지에서 5,000원 쿠폰이 나오면 부스에서 날짜 도장 찍힌 실물 쿠폰을 받아. 그 쿠폰은 받은 날 박서방 제주지점에서만 쓸 수 있어!',f:'smile',
     b:[['내 쿠폰','record#couponSec'],['박서방 위치','place:store']]},
   where:{t:'10월 31일에 열리는 과수원피스야. 방문 스탬프를 모은 기록이 거기서 헌터×헌터 더블찬스 인형 추첨으로 이어져. 추첨은 현장에서 체크인한 사람만 참여할 수 있어!',f:'excited',
     b:[['추첨 안내','record#drawSec']]},
