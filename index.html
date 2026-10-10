@@ -7,7 +7,7 @@
 <title>도채비와 떠나는 신화 탐험 — 탐라문화제 × 메이커앤하비</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Song+Myung&display=swap">
-<link rel="stylesheet" href="app.css?v=17">
+<link rel="stylesheet" href="app.css?v=18">
 </head>
 <body>
 
@@ -48,8 +48,8 @@
   <!-- 헤더: 어느 화면에서든 mh머니(서버 잔액)과 D-day가 보인다 -->
   <header class="app-header" id="hud">
     <div class="app-header__row">
-      <button class="balance balance--luck" id="balBtn" aria-label="내 mh머니">
-        <svg class="icon"><use href="#i-coin"/></svg><span id="goldN">-</span><small class="coinName">mh머니</small>
+      <button class="balance balance--luck" id="balBtn" aria-label="내 쿠지 카드">
+        <svg class="icon"><use href="#i-ticket"/></svg><span id="goldN">-</span><small id="goldSub">쿠지 카드</small>
       </button>
       <a class="app-header__brand" href="#" id="brandHome">도채비와 떠나는 신화 탐험</a>
       <button class="dpill" id="ddayPill" aria-label="과수원피스까지 남은 날">
@@ -132,7 +132,7 @@
         <div class="progress__bar"><i class="progress__fill" id="progFill"></i></div>
       </div>
       <div class="gods" id="crewGrid"></div>
-      <p class="caption" style="margin-top:10px">신 도장은 방문 스탬프와 따로 모여요. 신을 만나면 <span class="coinName">mh머니</span>를 받아요.</p>
+      <p class="caption" style="margin-top:10px">신 도장은 방문 스탬프와 따로 모여요. 신께 인사하면 미션 1개 달성!</p>
     </div>
 
     <!-- 놀이터 -->
@@ -153,7 +153,7 @@
         <div><div class="game__title">도채비 그림자 대소동</div><div class="game__desc">그림자로 먹이를 덮어 꿀꺽, 지나가는 사람 발은 피하세요.</div><div class="game__best" id="best-sun">최고 기록 없음</div></div>
         <button class="btn btn--secondary btn--sm" data-game="sun">도전</button>
       </div>
-      <p class="caption" style="margin-top:12px" id="gameNote">게임을 끝까지 깨면 <span class="coinName">mh머니</span>를 받아요.</p>
+      <p class="caption" style="margin-top:12px" id="gameNote">게임을 깨면 미션 1개 달성! 미션 3개마다 쿠지 카드 1장이 나와요.</p>
     </div>
 
     <!-- 포토카드 · 오늘 이벤트 · 도채비 -->
@@ -163,6 +163,11 @@
         <button class="quest quest--link" type="button" data-nav="photo">
           <svg class="icon"><use href="#i-camera"/></svg>
           <div><div class="quest__title">포토카드 만들기</div><div class="quest__desc">사진으로 나만의 랜덤 카드 · SNS 인증도 여기서</div></div>
+          <svg class="icon icon--sm"><use href="#i-external"/></svg>
+        </button>
+        <button class="quest quest--link" type="button" id="btnBoothQr">
+          <svg class="icon"><use href="#i-qr"/></svg>
+          <div><div class="quest__title">현장 미션 QR 찍기</div><div class="quest__desc">코스프레 체험·이벤트 등 부스 미션을 하고 스태프 QR을 찍으면 바로 미션 달성</div></div>
           <svg class="icon icon--sm"><use href="#i-external"/></svg>
         </button>
         <div id="staffTodo"></div>
@@ -236,7 +241,7 @@
   <section class="screen" id="s-taste">
     <div class="hero">
       <h1 class="hero__title">디지털 쿠지</h1>
-      <p class="hero__sub">모은 <span class="coinName">mh머니</span>로 쿠지를 한 번 뽑아 보세요.</p>
+      <p class="hero__sub">미션 3개를 하면 쿠지 카드 1장! 카드 1장으로 쿠지를 한 번 뽑아요. 하이엔드 피규어 당첨 기회를 얻어 보세요.</p>
     </div>
 
     <div class="note" id="tasteDemo" hidden style="margin-bottom:14px">
@@ -245,18 +250,15 @@
     </div>
 
     <div class="stats">
-      <div class="stat"><svg class="icon"><use href="#i-coin"/></svg><div class="stat__label">내 <span class="coinName">mh머니</span></div><div class="stat__num stat__num--luck" id="tasteCoins">-</div></div>
-      <div class="stat"><svg class="icon"><use href="#i-gift"/></svg><div class="stat__label">필요 mh머니</div><div class="stat__num" id="tasteCost">-</div></div>
+      <div class="stat"><svg class="icon"><use href="#i-ticket"/></svg><div class="stat__label">내 쿠지 카드</div><div class="stat__num stat__num--luck" id="tasteCoins">-</div></div>
+      <div class="stat"><svg class="icon"><use href="#i-check"/></svg><div class="stat__label">다음 카드까지 미션</div><div class="stat__num" id="tasteCost">-</div></div>
     </div>
 
     <button class="btn btn--primary btn--block" id="btnTaste">쿠지 뽑기</button>
     <p class="caption caption--center" id="tasteNeed" style="margin-top:10px"></p>
     <p class="caption caption--center" id="tasteLimit"></p>
 
-    <div class="section" id="mhAlbumBox">
-      <div class="section__head"><h2 class="section__title" style="font-size:17px">내 트럼프 카드 도감</h2></div>
-      <div id="mhAlbum"></div>
-    </div>
+
 
     <div class="section" id="tasteResultBox" hidden>
       <div class="section__head"><h2 class="section__title" style="font-size:17px">이번 결과</h2></div>
@@ -271,7 +273,7 @@
     <button class="backlink" type="button" data-nav="home"><svg class="icon icon--sm"><use href="#i-close"/></svg>놀기로 돌아가기</button>
     <div class="hero">
       <h1 class="hero__title">오늘의 나를 카드로!</h1>
-      <p class="hero__sub">사진을 넣으면 나만의 랜덤 포토카드가 탄생해요. 완성하고 SNS에 올려 부스 스태프에게 보여주면 mh머니 인증을 받을 수 있어요.</p>
+      <p class="hero__sub">사진을 넣으면 나만의 랜덤 포토카드가 탄생해요. 완성하면 미션 1개 달성! SNS에 올려 부스 스태프에게 보여주면 미션을 하나 더 할 수 있어요.</p>
     </div>
 
     <div class="slots slots--one" id="slots"></div>
@@ -350,7 +352,7 @@
       <button class="chip chip--btn" data-ask="festival">탐라문화제가 뭐야?</button>
       <button class="chip chip--btn" data-ask="stamp">스탬프는 뭐야?</button>
       <button class="chip chip--btn" data-ask="treasure">쿠지가 뭐야?</button>
-      <button class="chip chip--btn" data-ask="luck">mh머니는 어떻게 모아?</button>
+      <button class="chip chip--btn" data-ask="luck">쿠지 카드는 어떻게 받아?</button>
       <button class="chip chip--btn" data-ask="coupon">쿠폰은 어디서 써?</button>
       <button class="chip chip--btn" data-ask="where">과수원피스가 뭐야?</button>
       <button class="chip chip--btn" data-ask="who">넌 누구야?</button>
@@ -492,6 +494,7 @@ function onNearGod(gid){
     return;
   }
   if(S.pending&&S.pending[hit.missionId])return;
+  if(canMeetAgain(hit)){askMeetAgain(hit);return}
   dokPop('어? '+hit.name+' 같은데? 가까이 왔어 — 인사하기를 눌러봐!','excited',4200);
   openTracker(hit);
 }
@@ -666,9 +669,16 @@ function coins(){return (V&&V.wallet&&typeof V.wallet.coins==='number')?V.wallet
 function missionCfg(id){var c=cfgNow();return (c&&c.missions&&c.missions[id])||null}
 function missionDone(id){return !!(V&&V.missions&&V.missions[id]&&V.missions[id].count>0)}
 function pendingIds(){return Object.keys(S.pending||{})}
-function isMet(c){
-  return !!S.crew[c.id]||missionDone(c.missionId);
+/* 2026-10-10: 신은 만나고 1시간(미션 cooldownSec, 기본 3600초)이 지나면 다시 찾을 수 있다.
+   isMet = 지금 '만난 상태'(1시간 안), everMet = 한 번이라도 만난 적 있음(신 도장 기록용). */
+function godCoolMs(c){var m=missionCfg(c.missionId);return ((m&&m.cooldownSec)||3600)*1000}
+function godLastAt(c){
+  var m=V&&V.missions&&V.missions[c.missionId], a=(m&&m.lastAt)||0, b=+S.crew[c.id]||0;
+  return Math.max(a,b);
 }
+function everMet(c){return !!S.crew[c.id]||missionDone(c.missionId)}
+function isMet(c){var t=godLastAt(c);return !!t&&srvNow()-t<godCoolMs(c)}
+function canMeetAgain(c){return everMet(c)&&!isMet(c)}
 
 /* ---- 서버 동기화 ---- */
 function sync(){
@@ -678,7 +688,7 @@ function sync(){
     V=st;net.offline=false;net.syncing=false;net.loaded=true;
     if(st&&st.serverTime)skew=st.serverTime-Date.now();
     if(st&&st.participant&&st.participant.nickname&&st.participant.nickname!==S.name){S.name=st.participant.nickname;save()}
-    C.crew.forEach(function(c){ if(missionDone(c.missionId)&&!S.crew[c.id]){S.crew[c.id]=today()} });
+
     save();paint();return st;
   })['catch'](function(e){
     net.syncing=false;
@@ -702,11 +712,11 @@ function claim(missionId,label,tier,deferCards){
   var pkey=tier?missionId+'#'+tier:missionId;
   return EV.claimMission(EID,missionId,tier).then(function(r){
     if(S.pending&&S.pending[pkey]){delete S.pending[pkey]}
-    C.crew.forEach(function(c){ if(c.missionId===missionId)S.crew[c.id]=today() });
+    C.crew.forEach(function(c){ if(c.missionId===missionId&&r&&r.awarded>0)S.crew[c.id]=Date.now() });
     save();
     var before=JSON.parse(JSON.stringify((V&&V.cardBook)||{}));
-    /* 카드는 서버 응답에 이미 있으니 동기화를 기다리지 않고 바로 보여 준다 */
-    if(!deferCards&&r&&r.cards&&r.cards.length&&window.MH)setTimeout(function(){MH.reveal(r.cards,{book:before,title:coinName()+' 카드를 받았어요!',onClose:paintAlbum})},150);
+    /* 2026-10-10: 트럼프 카드 연출 대신 '미션 n/3 → 쿠지 카드' 진행도로 보여 준다(resultHtml / showStep) */
+    if(V&&V.wallet&&r&&typeof r.coins==='number')V.wallet.coins=r.coins;
     sync();
     return {ok:true,r:r,book:before};
   },function(e){
@@ -727,7 +737,7 @@ function retryPending(){
     var pm=id.split('#');
     claim(pm[0],label,pm[1]?+pm[1]:undefined).then(function(res){
       if(res.ok){
-        toast(res.r.awarded>0?'다시 전달됨 · +'+res.r.awarded+' '+coinName()+' ('+label+')':'다시 전달됨 · '+label);
+        toast(res.r.awarded>0?'다시 전달됨 · 미션 달성 ('+label+')':'다시 전달됨 · '+label);
         next(i+1);
       } else if(res.queued){retrying=false}   // 아직 연결 안 됨 — 다음 주기에 다시
       else next(i+1);
@@ -735,10 +745,10 @@ function retryPending(){
   })(0);
 }
 var REASON={
-  'reward-not-set':'이 미션의 mh머니 지급량은 아직 정해지지 않아서 이번에는 mh머니가 없어요.',
+  'reward-not-set':'이 미션은 아직 준비 중이에요.',
   'cooldown':'조금 뒤에 다시 하면 받을 수 있어요.',
   'daily-cap':'오늘 받을 수 있는 만큼은 다 받았어요.',
-  'already-rewarded':'이 미션의 mh머니는 이미 받았어요.'
+  'already-rewarded':'이 미션은 이미 달성했어요.'
 };
 function resultHtml(res){
   if(!res.ok){
@@ -746,8 +756,27 @@ function resultHtml(res){
     return '<div class="note note--danger">'+esc(res.e&&res.e.message)+'</div>';
   }
   var r=res.r;
-  if(r.awarded>0)return '<div class="reward"><div class="reward__num">+'+esc(r.awarded)+'</div><div class="reward__label">'+esc(coinName())+' · 서버에 기록됐어요</div></div>';
-  return '<div class="note">'+esc(REASON[r.reason]||'이번에는 mh머니가 지급되지 않았어요.')+'</div>';
+  if(r.awarded>0)return stepHtml(r.coins-r.awarded,r.coins);
+  return '<div class="note">'+esc(REASON[r.reason]||'이번에는 미션으로 기록되지 않았어요.')+'</div>';
+}
+/* ---- 미션 3개 = 쿠지 카드 1장 (2026-10-10) ----
+   서버 지갑 숫자(coins)를 '달성한 미션 수'로 쓰고, 쿠지 1회 비용(kuji.cost, 3)으로 나눠 카드 수·진행도를 보여 준다. */
+function kCost(){var k=kujiCfg(),w=V&&V.wallet;var c=(w&&w.kujiCost!=null)?w.kujiCost:(k&&k.cost!=null?k.cost:3);return c>0?c:3}
+function ticketsOf(c){return c==null?null:Math.floor(c/kCost())}
+function progOf(c){return c==null?0:c%kCost()}
+function dotsHtml(p,K){var s='';for(var i=0;i<K;i++)s+='<i class="mdot'+(i<p?' mdot--on':'')+'"></i>';return '<div class="mdots">'+s+'</div>'}
+function stepHtml(prev,next){
+  var K=kCost(), gained=Math.floor(next/K)-Math.floor(prev/K), p=next%K, left=K-p;
+  if(gained>0)return '<div class="kcard"><div class="kcard__art"><svg class="icon icon--lg"><use href="#i-ticket"/></svg><b>쿠지 카드</b></div>'+
+    '<div class="kcard__t">미션 '+K+'/'+K+' 달성! 쿠지 카드 '+(gained>1?gained+'장':'1장')+'이 나왔어요</div>'+
+    '<div class="kcard__s">쿠지 탭에서 하이엔드 피규어 당첨 기회를 얻어 보세요</div>'+
+    '<button class="btn btn--primary btn--block" data-nav="taste" style="margin-top:12px">쿠지 뽑으러 가기</button></div>';
+  return '<div class="reward"><div class="reward__num">미션 '+p+'/'+K+'</div>'+dotsHtml(p,K)+
+    '<div class="reward__label">미션 '+(left===1?'한':left===2?'두':left)+' 번만 더 하면 쿠지를 뽑을 수 있어요. 하이엔드 피규어 당첨 기회를 얻어 보세요!</div></div>';
+}
+function showStep(prev,next,title){
+  sheet('<h3>'+esc(title||'미션 달성')+'</h3>'+stepHtml(prev,next)+
+    '<button class="btn btn--tertiary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">닫기</button>');
 }
 var CLAIMING='<p class="caption">서버에 기록하는 중…</p>';
 function fillRw(res){var el=$('#rwBody');if(el)el.innerHTML=resultHtml(res)}
@@ -881,12 +910,12 @@ function syncLine(){
   else if(net.offline)parts.push('지금 서버와 연결이 안 돼요. 연결되면 자동으로 다시 시도해요.');
   else parts.push('서버와 연결됨');
   if(np)parts.push('서버에 아직 전달되지 않은 미션 '+np+'건 · 연결되면 자동으로 다시 보내요');
-  if(!coinNameSrv())parts.push('mh머니 이름은 임시 표기예요');
   return parts.join(' · ');
 }
 function paint(){
   var c=coins();
-  setNum($('#goldN'),c);
+  setNum($('#goldN'),ticketsOf(c));
+  $('#goldSub').textContent=c==null?'쿠지 카드':'쿠지 카드 · '+progOf(c)+'/'+kCost();
   $$('.coinName').forEach(function(e){e.textContent=coinName()});
   $('#meName').textContent=S.name||'-';$('#meCode').textContent=S.code||'-';
   var days=dday(), dtxt=days===0?'D-DAY':'D-'+days;
@@ -1062,9 +1091,9 @@ function paintRecord(){
   var v=campV();
   $('#recStampN').textContent=(v&&v.count)||0;$('#recStampMax').textContent=(v&&v.max)||stampSlots().length||7;
   $('#recStamps7').innerHTML=stamps7Html();
-  var met=C.crew.filter(isMet).length;
+  var met=C.crew.filter(everMet).length;
   $('#recGodN').textContent=met;
-  $('#recGods').innerHTML=C.crew.map(function(c){var m=isMet(c);return '<span class="godDot'+(m?' godDot--on':'')+'">'+(m?'<img src="'+c.photo+'" alt="">':'')+'<i>'+(m?esc(c.name):'???')+'</i></span>'}).join('');
+  $('#recGods').innerHTML=C.crew.map(function(c){var m=everMet(c);return '<span class="godDot'+(m?' godDot--on':'')+'">'+(m?'<img src="'+c.photo+'" alt="">':'')+'<i>'+(m?esc(c.name):'???')+'</i></span>'}).join('');
   var c=myCoupon();
   var cp=couponPlay();
   $('#couponBox').innerHTML=cp?playHtml(cp):'<p class="caption">아직 당첨된 쿠폰이 없어요. 쿠지에서 5,000원 쿠폰이 나올 수 있어요(부스에서 실물로 받아요).</p>';
@@ -1076,10 +1105,34 @@ function stampTokenFrom(t){
   var m=/[?&]st=([A-Za-z0-9]{7})\b/.exec(t);if(m)return m[1].toUpperCase();
   return /^[A-Za-z0-9]{7}$/.test(t)?t.toUpperCase():'';
 }
+/* QR 한 번이면 끝 (2026-10-10): 장소 스탬프 QR이든 현장 미션 QR이든 같은 스캐너로 찍으면 알아서 처리한다 */
+function anyQrFrom(t){
+  var st=stampTokenFrom(t);if(st)return 'st:'+st;
+  var mq=window.MQScan&&MQScan.tokenFrom(t);if(mq)return 'mq:'+mq;
+  return '';
+}
+function onAnyQr(v){
+  if(v.indexOf('st:')===0)return claimStampTok(v.slice(3));
+  if(v.indexOf('mq:')===0)return claimBoothQr(v.slice(3));
+}
 function openStampScan(){
   if(!window.MQScan){toast('잠시 후 다시 눌러 주세요');return}
-  MQScan.open({hint:'장소에 있는 방문 스탬프 QR을 네모 안에 맞춰 주세요',parse:stampTokenFrom,
-    badHint:'방문 스탬프 QR이 아니에요. 장소 화면의 QR을 비춰 주세요.',onToken:claimStampTok,onManual:openStampCode});
+  MQScan.open({hint:'방문 스탬프 QR이나 현장 미션 QR을 네모 안에 맞춰 주세요',parse:anyQrFrom,
+    badHint:'행사 QR이 아니에요. 장소 화면이나 스태프의 QR을 비춰 주세요.',onToken:onAnyQr,onManual:openStampCode});
+}
+var boothBusy=false;
+function claimBoothQr(token){
+  if(boothBusy)return;boothBusy=true;
+  EV.claimMissionQr(EID,token,'booth').then(function(r){
+    boothBusy=false;
+    if(r&&r.awarded>0)showStep(r.coins-r.awarded,r.coins,'현장 미션 달성');
+    else if(r&&r.reason==='cooldown'){var sec=r.retryAfterSec||60;toast('방금 했어요. '+(sec>=60?Math.ceil(sec/60)+'분':sec+'초')+' 뒤에 다시 찍어 주세요')}
+    else toast(REASON[r&&r.reason]||'이번에는 미션으로 기록되지 않았어요');
+    sync();
+  },function(e){
+    boothBusy=false;
+    toast(e.retryable?'연결이 불안정해요. 다시 찍어 주세요 — 완료로 기록되지 않았어요.':(/qr-unknown/.test(e.reason||'')?'탐라문화제 미션 QR이 아니에요':(e.message||'기록하지 못했어요')));
+  });
 }
 function openStampCode(){
   sheet('<h3>코드로 스탬프 찍기</h3><p>장소 화면의 QR 아래에 있는 7자리 코드를 입력하세요. 코드는 잠시 뒤 바뀌어요.</p>'+
@@ -1116,6 +1169,7 @@ function claimStampTok(tok){
   });
 }
 $('#btnStamp').onclick=openStampScan;
+$('#btnBoothQr').onclick=openStampScan;
 /* 장소 안내 시트(도채비 답변 버튼용) */
 function placeSheet(k){
   sheet('<h3>'+esc(placeName(k))+'</h3>'+placeCardHtml(k)+
@@ -1139,7 +1193,7 @@ function isActiveToday(c){
 function paintCrew(){
   var g=$('#crewGrid');g.innerHTML='';
   C.crew.forEach(function(c){
-    var got=isMet(c), queued=!!(S.pending&&S.pending[c.missionId]);
+    var got=isMet(c), again=canMeetAgain(c), queued=!!(S.pending&&S.pending[c.missionId]);
     var active=isActiveToday(c);
     var el=document.createElement('button');
     el.type='button';
@@ -1148,24 +1202,25 @@ function paintCrew(){
     el.dataset.god=c.id;
     el.setAttribute('aria-label',got?c.name+' · 발견':'미발견 신');
     var status;
-    if(got) status='<svg class="icon"><use href="#i-check"/></svg>발견'+(c.jeju?' · '+c.jeju.word:'');
+    if(got) status='<svg class="icon"><use href="#i-check"/></svg>발견 · '+Math.max(1,Math.ceil((godCoolMs(c)-(srvNow()-godLastAt(c)))/60000))+'분 뒤 다시';
     else if(queued) status='서버 전달 대기 중';
+    else if(again) status='다시 찾아보세요';
     else if(live) status=live;
     else if(!active) status='오늘은 쉬어가심';
     else status='미발견';
     el.innerHTML=
       (c.photo?'<img class="god__img" src="'+c.photo+'" alt="" loading="lazy">':'')+
       (got?'':'<span class="god__seal"><svg class="icon"><use href="#i-lock"/></svg></span>')+
-      '<div class="god__body"><div class="god__name">'+(got?c.name:'???')+'</div>'+
+      '<div class="god__body"><div class="god__name">'+(got||again?c.name:'???')+'</div>'+
       '<div class="god__status">'+status+'</div></div>';
     g.appendChild(el);
   });
   revealId=null;
-  var n=C.crew.filter(isMet).length, total=C.crew.length;
+  var n=C.crew.filter(everMet).length, total=C.crew.length;
   $('#progFill').style.transform='scaleX('+(n/total)+')';
   $('#progN').textContent=n;
   $('#progWrap').setAttribute('aria-valuenow',n);
-  $('#heroSub').textContent = n===0?'행사장 곳곳에 강림해 계십니다':(n>=total?'여섯 신을 모두 만났습니다':n+'분을 만났습니다. '+(total-n)+'분 남았어요');
+  $('#heroSub').textContent = n===0?'행사장 곳곳에 강림해 계십니다. 만난 신은 1시간 뒤 다시 찾을 수 있어요.':(n>=total?'여섯 신을 모두 만났어요. 1시간마다 다시 찾으면 미션을 또 할 수 있어요.':n+'분을 만났어요. 만난 신도 1시간 뒤 다시 찾을 수 있어요.');
 }
 var revealId=null;
 $('#crewGrid').addEventListener('click',function(e){
@@ -1174,12 +1229,23 @@ $('#crewGrid').addEventListener('click',function(e){
   var c=C.crew.filter(function(x){return x.id===card.dataset.god})[0];
   if(!c)return;
   if(isMet(c)){crewInfo(c);return}
+  if(canMeetAgain(c)){askMeetAgain(c);return}
+  seekGod(c);
+});
+/* "또 만나러 갈래요?" → 확인을 누르면 다시 찾기(나침반) 시작 */
+function askMeetAgain(c){
+  sheet(dokSheetHtml('wink',esc(c.name)+'님을 또 만나러 갈래요? 다시 인사하면 미션 1개 달성!')+
+    '<button class="btn btn--primary btn--block" id="againOk" style="margin-top:12px">확인 · 찾으러 가기</button>'+
+    '<button class="btn btn--tertiary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">다음에</button>');
+  $('#againOk').onclick=function(){closeModal();seekGod(c)};
+}
+function seekGod(c){
   var h=liveHints[c.id];
   var stale=h&&h.updatedAt&&h.updatedAt.toMillis&&(Date.now()-h.updatedAt.toMillis()>(C.liveLocation.staleMs||90000));
   var isLive=h&&h.active&&h.lat!=null&&!stale;
   if(isLive)openTracker(c);
   else toast('아직 위치 신호가 없어요. 잠시 후 다시 확인해 주세요');
-});
+}
 function jejuCard(c){
   if(!c.jeju)return '';
   return '<div class="jeju"><div class="jeju__label">제주어 한마디</div>'+
@@ -1220,7 +1286,7 @@ function claimSnsQr(token){
     var cards=(r&&r.cards)||[];
     if(r&&r.awarded>0){
       toast('SNS 인증 완료 — 카드가 지급됐어요');
-      if(cards.length&&window.MH)setTimeout(function(){MH.reveal(cards,{book:bookBefore,title:'SNS 인증 카드',onClose:paintAlbum})},200);
+      setTimeout(function(){showStep(r.coins-r.awarded,r.coins,'SNS 인증 완료')},200);
     } else if(r&&r.reason==='cooldown'){
       var sec=r.retryAfterSec||60; toast('방금 인증했어요. '+(sec>=60?Math.ceil(sec/60)+'분':sec+'초')+' 뒤에 다시 찍어 주세요');
     } else toast('이번에는 받은 카드가 없어요');
@@ -1240,7 +1306,7 @@ function askStaffPin(){
     onDone:function(r){
       toast('스태프 확인 완료 — 카드가 지급됐어요');
       var cards=(r&&(r.cards||(r.play&&r.play.cards)))||[];
-      if(cards.length&&window.MH)setTimeout(function(){MH.reveal(cards,{book:bookBefore,title:'SNS 인증 카드',onClose:paintAlbum})},200);
+      if(r&&r.awarded>0)setTimeout(function(){showStep(r.coins-r.awarded,r.coins,'SNS 인증 완료')},200);
       sync().then(function(){paint();paintStaff();paintTaste()});
     }
   });
@@ -1253,22 +1319,21 @@ function dokSheetHtml(face,text){
 /* ---------------- 디지털 쿠지 ----------------
    비용·횟수·시연 여부·결과는 전부 서버 설정/응답. 앱은 요청만 보낸다. */
 var lastPlay=null;
-function paintAlbum(){var el=$('#mhAlbum');if(el&&window.MH)MH.album(el,(V&&V.cardBook)||{})}
+function paintAlbum(){}
 function paintTaste(){
-  paintAlbum();
   var k=kujiCfg(), w=V&&V.wallet, c=coins();
   var demo=!!(k&&k.demoMode);
   $('#tasteDemo').hidden=!demo;
-  setNum($('#tasteCoins'),c);
+  setNum($('#tasteCoins'),ticketsOf(c));
   var cost=(w&&w.kujiCost!=null)?w.kujiCost:(k&&k.cost!=null?k.cost:null);
-  $('#tasteCost').textContent=cost==null?'미정':cost;
+  $('#tasteCost').textContent=c==null?'-':(kCost()-progOf(c))+'개';
   var b=$('#btnTaste'), need=$('#tasteNeed'), lim=$('#tasteLimit');
   var why='';
   if(!k)why=net.offline?'서버와 연결되면 열려요.':'설정을 불러오는 중이에요.';
   else if(k.enabled===false)why='쿠지가 아직 열려 있지 않아요.';
-  else if(cost==null)why='쿠지에 필요한 mh머니가 아직 정해지지 않았어요.';
+  else if(cost==null)why='쿠지 준비 중이에요.';
   else if(w&&k.playLimit!=null&&w.playCount>=k.playLimit)why='쿠지 횟수를 모두 썼어요.';
-  else if(w&&c!=null&&c<cost)why='mh머니가 부족해요. 필요한 mh머니 '+cost+', 내 mh머니 '+c+'.';
+  else if(w&&c!=null&&c<cost){var lf=cost-c;why='쿠지 카드가 없어요. 미션 '+(lf===1?'한':lf===2?'두':lf)+' 번만 더 하면 쿠지를 뽑을 수 있어요!'}
   var lockedByPass=false;
   var cf=cfgNow();
   if(!why&&cf&&cf.passRequired&&V&&V.pass&&!V.pass.active){why='항해 패스 확인이 필요해요.';lockedByPass=true}
@@ -1322,8 +1387,7 @@ function playHtml(p){
 $('#btnTaste').onclick=function(){
   var b=$('#btnTaste');if(b.disabled)return;
   var k=kujiCfg(),w=V&&V.wallet,cost=(w&&w.kujiCost!=null)?w.kujiCost:(k&&k.cost!=null?k.cost:null),bk=(V&&V.cardBook)||{},have=0;
-  Object.keys(bk).forEach(function(x){if(/^M\d+$/.test(x))have+=MH.held(bk,x)});
-  if(window.MH&&MH.pick&&cost>0&&cost<=10&&have>=cost){MH.pick(JSON.parse(JSON.stringify(bk)),cost,{title:'쿠지에 넣을 카드 '+cost+'장을 골라 주세요',onDone:function(ids){playTaste(ids)}});return}
+
   playTaste();
 };
 function afterPlay(r,bookBefore){
@@ -1387,14 +1451,14 @@ function grantCrew(hit){
       '<button class="btn btn--primary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">계속</button>');
     p.then(function(res){
       fillRw(res);
-      if(res.ok&&C.crew.every(isMet)){
+      if(res.ok&&C.crew.every(everMet)){
         var ex=$('#rwExtra');
         if(ex)ex.innerHTML='<div class="note" style="margin-top:16px"><b>여섯 신께 모두 인사했어요.</b><br>신 도장과 별개로, 방문 스탬프는 장소 QR로 하루 하나씩 모여요.</div>';
       }
     });
   }
   /* 도채비는 처음 인사드릴 때만 짧은 대화 장면(오해 풀어주기)이 먼저 나온다 */
-  if(hit.id==='GOD2'){ playCinema(hit.name,DOKEBI_LINES,showCaptureSheet); }
+  if(hit.id==='GOD2'&&!missionDone(hit.missionId)){ playCinema(hit.name,DOKEBI_LINES,showCaptureSheet); }
   else { showCaptureSheet(); }
   p.then(function(){paint()});
 }
@@ -1431,7 +1495,7 @@ var OPENING_LINES=[
 ];
 /* 등록 직후 한 번 — 오늘 할 일 안내(숫자·보상은 말하지 않는다: 서버가 정한다) */
 var TASTE_LINES=[
-  {img:'dokebi/exp_smile.png', text:'등록 끝! 부스에서 여섯 신을 찾고 게임을 하면 mh머니가 쌓여. 그걸로 쿠지를 뽑을 수 있어.'},
+  {img:'dokebi/exp_smile.png', text:'등록 끝! 신께 인사하거나 게임을 깨면 미션 달성. 미션 3개마다 쿠지 카드 1장이 나와. 하이엔드 피규어 당첨 기회를 노려 봐!'},
   {img:'dokebi/exp_wink.png', text:'그리고 「오늘 스탬프 찍기」! 부스랑 박서방 플리마켓에서 하루 하나씩 QR을 찍으면 방문 스탬프가 모여.'},
   {img:'dokebi/exp_excited.png', text:'모은 스탬프는 10월 31일 과수원피스의 헌터×헌터 더블찬스 인형 추첨으로 이어져. 그럼 놀아 볼까?'}
 ];
@@ -1478,12 +1542,13 @@ $('#dokpopX').onclick=function(){$('#dokpop').classList.remove('on')};
 $('#dokpop').onclick=function(e){ if(e.target.closest('.dokpop__x'))return; $('#dokpop').classList.remove('on') };
 /* 앱은 탐라문화제 기간(10/17~21, D-14~D-10)에만 열어두므로 대사도 "지금 행사장에 있는 사람" 기준으로 쓴다 */
 var DOK_RANDOM=[
-  {t:function(){var n=C.crew.filter(function(c){return !isMet(c)}).length;return '여섯 신이 지금 행사장 어딘가에 계셔. 아직 못 만난 신이 '+n+'분!'},f:'surprise',when:function(){return C.crew.some(function(c){return !isMet(c)})}},
+  {t:function(){var n=C.crew.filter(function(c){return !isMet(c)}).length;return '여섯 신이 지금 행사장 어딘가에 계셔. 지금 찾을 수 있는 신이 '+n+'분! 만난 신도 1시간 뒤면 또 만날 수 있어.'},f:'surprise',when:function(){return C.crew.some(function(c){return !isMet(c)})}},
   {t:'오늘 방문 스탬프 찍었어? 장소에 있는 QR을 찍으면 하루 하나씩 모여.',f:'excited',when:function(){var v=campV();return !!campCfg()&&!(v&&(v.stamps||[]).some(function(x){return x.day===kstToday()}))}},
   {t:'주말엔 박서방 제주지점에서 피규어·굿즈 플리마켓이 열려. 거기서도 스탬프를 받을 수 있어!',f:'wink',when:function(){var s=placeState('store');return !!s&&s!=='not-today'}},
   {t:'포토카드 만들어 봤어? 신이랑 찍은 사진으로 만들면 예뻐.',f:'smile',when:function(){return !missionDone('photo')}},
   {t:'놀이터에서 귤 좀 잘라봐. 재밌어.',f:'laugh'},
-  {t:'mh머니가 모였으면 쿠지 탭에서 한 번 뽑아봐.',f:'wink',when:function(){var c=coins();return c!=null&&c>0}},
+  {t:'쿠지 카드 생겼지? 쿠지 탭에서 하이엔드 피규어 당첨 기회를 얻어 봐!',f:'wink',when:function(){var t=ticketsOf(coins());return t!=null&&t>0}},
+  {t:function(){var l=kCost()-progOf(coins());return '미션 '+(l===1?'한':l===2?'두':l)+' 번만 더 하면 쿠지를 뽑을 수 있어!'},f:'smile',when:function(){var c=coins();return c!=null&&progOf(c)>0}},
   {t:'탐라문화제 재밌지? 나도 이런 날엔 신난다.',f:'excited'}
 ];
 function pickDok(){
@@ -1506,8 +1571,8 @@ var DOK_ASK={
     b:[['체험 부스 안내','place:festival'],['박서방 플리마켓 안내','place:store']]},
   stamp:{t:'탐라문화제는 하루 하나씩 5개, 박서방 토·일 플리마켓은 하루 하나씩 2개! 최대 7개의 방문 스탬프를 모을 수 있어. 모은 기록은 과수원피스의 헌터×헌터 더블찬스 인형 추첨과 연결돼. 정확한 응모 조건은 아래에서 확인해봐!',f:'wink',
     b:[['내 스탬프','record#recStamps7'],['추첨 안내','record#drawSec']]},
-  treasure:{t:function(){var k=kujiCfg();return '디지털 쿠지야. mh머니로 번호를 골라 뽑아. 5,000원 쿠폰도 들어 있어.'+(k&&k.demoMode?' 지금은 시연이라 실물 지급은 없어.':'')},f:'wink',b:[['쿠지 뽑으러 가기','taste']]},
-  luck:{t:'여섯 신께 인사하고, 놀이터 게임을 하고, 포토카드를 만들면 mh머니가 쌓여. 얼마나 쌓이는지는 서버가 알려줘.',f:'smile',b:[['여섯 신 찾기','home#godsSec']]},
+  treasure:{t:function(){var k=kujiCfg();return '디지털 쿠지야. 쿠지 카드 1장으로 번호를 골라 뽑아. 하이엔드 피규어 당첨 기회도 있어! 5,000원 쿠폰도 들어 있어.'+(k&&k.demoMode?' 지금은 시연이라 실물 지급은 없어.':'')},f:'wink',b:[['쿠지 뽑으러 가기','taste']]},
+  luck:{t:'신께 인사하기, 놀이터 게임 깨기, 포토카드 만들기, SNS 인증이 다 미션이야. 미션 3개를 하면 쿠지 카드 1장이 나와!',f:'smile',b:[['여섯 신 찾기','home#godsSec']]},
   coupon:{t:'쿠지에서 5,000원 쿠폰이 나오면 부스에서 날짜 도장 찍힌 실물 쿠폰을 받아. 그 쿠폰은 받은 날 박서방 제주지점에서만 쓸 수 있어!',f:'smile',
     b:[['내 쿠폰','record#couponSec'],['박서방 위치','place:store']]},
   where:{t:'10월 31일에 열리는 과수원피스야. 방문 스탬프를 모은 기록이 거기서 헌터×헌터 더블찬스 인형 추첨으로 이어져. 추첨은 현장에서 체크인한 사람만 참여할 수 있어!',f:'excited',
@@ -1600,9 +1665,9 @@ function paintGameRw(){
   var b=$('#gameRw');if(!b)return;
   if(!gameRewards.length){b.className='gameRw';b.disabled=true;return}
   var wait=gameRewards.some(function(x){return x.state==='wait'});
-  var coins=0,cards=0;
-  gameRewards.forEach(function(x){if(x.state==='ready'){coins+=x.awarded;cards+=x.cards.length}});
-  var t=[];if(coins>0)t.push('+'+coins+' '+coinName());if(cards>0)t.push('카드 '+cards+'장');
+  var coins=0;
+  gameRewards.forEach(function(x){if(x.state==='ready'){coins+=x.awarded}});
+  var t=[];if(coins>0)t.push('미션 달성');
   b.className='gameRw on'+(wait?'':' gameRw--ready');
   b.disabled=wait&&!t.length;
   b.textContent=t.length?'보상 받기 · '+t.join(' · '):'보상 기록하는 중…';
@@ -1612,9 +1677,9 @@ function rewardInGame(missionId,label,tier){
   gameRewards.push(item);paintGameRw();
   claim(missionId,label,tier,true).then(function(res){
     if(res.ok){
-      var r=res.r;item.awarded=+r.awarded||0;item.cards=(r.cards||[]).slice();item.book=res.book;
-      item.state=(item.awarded>0||item.cards.length)?'ready':'none';
-      if(item.state==='none')toast(REASON[r.reason]||'이번에는 mh머니가 지급되지 않았어요.');
+      var r=res.r;item.awarded=+r.awarded||0;item.cards=[];item.book=res.book;item.after=r.coins;
+      item.state=item.awarded>0?'ready':'none';
+      if(item.state==='none')toast(REASON[r.reason]||'이번에는 미션으로 기록되지 않았어요.');
     }else{
       item.state='none';
       toast(res.queued?'서버에 아직 전달되지 않았어요. 연결되면 자동으로 다시 보내요':((res.e&&res.e.message)||'기록하지 못했어요'));
@@ -1631,16 +1696,11 @@ function collectGameRewards(){
   collectingRw=true;
   gameRewards=gameRewards.filter(function(x){return x.state!=='ready'});
   paintGameRw();
-  var coins=0,cards=[];
-  ready.forEach(function(x){coins+=x.awarded;cards=cards.concat(x.cards)});
+  var coins=0,after=null;
+  ready.forEach(function(x){coins+=x.awarded;if(typeof x.after==='number')after=Math.max(after||0,x.after)});
   sfx('bonus',0.7);
-  function done(){collectingRw=false;paintAlbum();paint()}
-  if(cards.length&&window.MH){
-    MH.reveal(cards,{book:ready[0].book,title:(coins>0?'+'+coins+' '+coinName()+' · ':'')+coinName()+' 카드를 받았어요!',onClose:done});
-  }else{
-    if(coins>0)toast('+'+coins+' '+coinName()+' 받았어요!');
-    done();
-  }
+  collectingRw=false;paint();
+  if(coins>0&&after!=null)showStep(after-coins,after,'미션 달성');
 }
 $('#gameRw').onclick=collectGameRewards;
 $$('[data-game]').forEach(function(b){b.onclick=function(){startGame(b.dataset.game)}});
@@ -2157,7 +2217,7 @@ function finishCatch(score){
   var lbl='황금귤 캐치 · '+score+'점'+(isBest?' · 신기록!':'');
   if(!tier){
     save();paintGame();
-    sheet('<h3>'+esc(lbl)+'</h3><p style="text-align:center;line-height:1.6">3,000점부터 '+coinName()+'를 받을 수 있어요.<br>3,000점 1개 · 5,000점 2개 · 7,000점 3개</p>'+
+    sheet('<h3>'+esc(lbl)+'</h3><p style="text-align:center;line-height:1.6">3,000점을 넘기면 미션 1개 달성!<br>한 번 더 도전해 보세요.</p>'+
       '<button class="btn btn--primary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">확인</button>');
 return;
   }
@@ -2192,8 +2252,10 @@ function stackInit(){
       var isBest=result.score>(S.best.stack||0);
       if(isBest)S.best.stack=result.score;
       save();paintGame();
-      if(stackRewardedAttempt[result.attemptId])return; /* 같은 단계 결과 중복 방지 */
-      stackRewardedAttempt[result.attemptId]=1;
+      /* 2026-10-10: 한 판 = 미션 1개. 단계마다 오는 결과 중 첫 클리어만 보낸다(attemptId 끝의 -s단계 제거) */
+      var gameKey=String(result.attemptId).replace(/-s\d+$/,'');
+      if(stackRewardedAttempt[gameKey])return;
+      stackRewardedAttempt[gameKey]=1;
       sfx(isBest?'fanfare':'bonus',0.7);
       var label=(result.stage===3?'3단계 완주':result.stage+'단계 클리어');
       reward('stack','영등할망의 바람탑 · '+label+' · '+result.placedCount+'개 쌓기 · '+result.score+'점'+(isBest?' · 신기록!':''),result.stage);
@@ -2804,7 +2866,7 @@ $('#btnMake').onclick=function(){
       onCardSettled=function(){
         if(missionDone('photo'))return;
         claim('photo','포토카드 완성').then(function(res){
-          if(res.ok){toast(res.r.awarded>0?'포토카드 완성 · +'+res.r.awarded+' '+coinName():'포토카드 완성')}
+          if(res.ok){if(res.r.awarded>0)showStep(res.r.coins-res.r.awarded,res.r.coins,'포토카드 완성 · 미션 달성');else toast('포토카드 완성')}
           else if(res.queued){toast('서버에 아직 전달되지 않았어요. 연결되면 자동으로 다시 보내요')}
           paint();
         });
@@ -2844,7 +2906,7 @@ $('#btnShare').onclick=function(){
 
 /* ---------------- 초기화 ---------------- */
 $('#btnReset').onclick=function(){
-  sheet('<h3>이 기기에서 로그아웃할까요?</h3><p>이 기기에 저장된 내 정보(닉네임, 게임 최고기록, 사진 슬롯)만 지워져요. 서버에 저장된 mh머니·미션 기록은 그대로이고, 전화번호로 다시 이어할 수 있어요.</p>'+
+  sheet('<h3>이 기기에서 로그아웃할까요?</h3><p>이 기기에 저장된 내 정보(닉네임, 게임 최고기록, 사진 슬롯)만 지워져요. 서버에 저장된 미션·쿠지 카드 기록은 그대로이고, 전화번호로 다시 이어할 수 있어요.</p>'+
     (pendingIds().length?'<div class="note note--danger">서버에 아직 전달되지 않은 미션 '+pendingIds().length+'건이 있어요. 지금 로그아웃하면 그 기록은 전달되지 않을 수 있어요.</div>':'')+
     '<button class="btn btn--danger btn--block" id="okReset">로그아웃</button>'+
     '<button class="btn btn--tertiary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">취소</button>');

@@ -29,7 +29,7 @@ var CFG={
   foot:{len:31,halfSeg:10,r:5.5,side:7,stride:22},
   comboWindow:2.2,
   clearScore:20,          // 보상 1단계와 같음
-  tiers:[20,50,80],       // 보상 단계: 20개 1 · 50개 2 · 80개 3 (사장님 실플레이 50개 기준으로 상향, 2026-10-05)
+  tiers:[20],             // 2026-10-10: 한 판 = 미션 1개(20개 넘기면 달성). 예전 20/50/80 3단계 보상은 폐지       // 보상 단계: 20개 1 · 50개 2 · 80개 3 (사장님 실플레이 50개 기준으로 상향, 2026-10-05)
   // 중후반 요소
   moveFrom:6,             // 이만큼 먹은 뒤부터 움직이는 먹이(굴러가는 귤·기어가는 문어)
   rollSpd:function(st){return Math.min(50,26+st*3)},crawlSpd:function(st){return Math.min(30,14+st*2)},
@@ -151,7 +151,7 @@ function buzz(ms){try{var ua=navigator.userActivation;if(navigator.vibrate&&(!ua
 
 function tierOf(n){var k=0;for(var i=0;i<CFG.tiers.length;i++)if(n>=CFG.tiers[i])k=i+1;return k}
 function coinLbl(){try{if(typeof window.coinName==='function')return window.coinName()}catch(e){}return 'MH머니'}
-function tierLine(){return CFG.tiers.map(function(v,i){return v+'개 '+(i+1)+'개'}).join(' · ')}
+function tierLine(){return '그림자 '+CFG.tiers[0]+'개를 먹으면 미션 달성'}
 
 /* ---------------- HUD / toast ---------------- */
 var HEART='<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.1 5.3 3 1.7-1.9 3.2-3 5.3-3 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z"/></svg>';
@@ -277,7 +277,7 @@ function showIntro(){
       '<figure><img src="'+IMG.f0.src+'" alt=""><figcaption class="is-food">먹이</figcaption><small>그림자로 덮고<br>잠깐 버티기</small></figure>'+
       '<figure><img src="'+IMG.foot.src+'" alt=""><figcaption class="is-foot">사람 발</figcaption><small>그림자가 밟히면<br>목숨 하나</small></figure>'+
     '</div>'+
-    '<p class="panel__line panel__line--goal">시간 제한 없음 · 많이 먹을수록 '+coinLbl()+' 더</p>'+
+    '<p class="panel__line panel__line--goal">시간 제한 없음 · 한 판에 미션 1개</p>'+
     '<p class="panel__line panel__line--muted">'+tierLine()+'</p>'+
     (b.score?'<p class="panel__line panel__line--muted">내 최고 '+b.score+'개</p>':'')+
     '<button class="btn btn--primary" id="bStart" type="button">플레이 시작</button>');
@@ -319,12 +319,12 @@ function gameOver(quit){
   cleared=score>=CFG.clearScore;
   var fi=formOf(score),tier=tierOf(score),nxt=CFG.tiers[tier];
   showPanel('<p class="panel__kicker">'+(quit?'그만하기':'그림자가 지쳤어요')+'</p>'+
-    '<span class="badge '+(tier?'badge--ok':'badge--no')+'">'+(tier?coinLbl()+' '+tier+'개':CFG.tiers[0]+'개부터 '+coinLbl())+'</span>'+
+    '<span class="badge '+(tier?'badge--ok':'badge--no')+'">'+(tier?'미션 달성':CFG.tiers[0]+'개부터 미션 달성')+'</span>'+
     '<canvas class="formimg" id="formCv" width="240" height="240"></canvas>'+
     '<div class="big">'+score+'<small style="font-size:18px">개</small></div>'+
     '<p class="panel__line">'+CFG.forms[fi].name+(isBest&&score>0?' · 최고 기록!':'')+'</p>'+
     '<div class="stats"><div><small>단계</small><strong>'+stage+'</strong></div><div><small>최대 연속</small><strong>'+bestCombo+'</strong></div><div><small>아슬아슬</small><strong>'+nearCount+'</strong></div></div>'+
-    '<p class="panel__line panel__line--muted">'+(nxt?(nxt-score)+'개 더 먹으면 '+coinLbl()+' '+(tier+1)+'개':'최고 보상 달성!')+(b.score&&!isBest?' · 내 최고 '+b.score+'개':'')+'</p>'+
+    '<p class="panel__line panel__line--muted">'+(nxt?(nxt-score)+'개 더 먹으면 미션 달성':'미션 달성!')+(b.score&&!isBest?' · 내 최고 '+b.score+'개':'')+'</p>'+
     '<div class="row"><button class="btn btn--ghost" id="bBack" type="button">놀이터로</button>'+
     '<button class="btn btn--primary" id="bAgain" type="button">다시 도전</button></div>');
   drawFormPreview($('formCv'),score);
@@ -380,7 +380,7 @@ function eat(f,touch,val){
   else if(prev<CFG.hazardFrom&&score>=CFG.hazardFrom)tell('이제 사람 발이 지나가요. 예고선을 보세요!',3,'',2);
   if(score>=CFG.clearScore&&!cleared){cleared=true}
   var tr=tierOf(score);
-  if(tr>tierOf(prev)){var nx=CFG.tiers[tr];tell(coinLbl()+' '+tr+'개 확보!'+(nx?' '+nx+'개 먹으면 '+(tr+1)+'개':' 최고 보상이에요.'),3.5,'good',3)}
+  if(tr>tierOf(prev)){var nx=CFG.tiers[tr];tell('미션 달성! 계속 먹어서 기록에 도전해 보세요',3.5,'good',3)}
   var next=1+Math.floor(score/CFG.stageEvery);
   if(next>stage){stage=next;hud();SND.stage();tell(stage+'단계! 발걸음이 더 바빠져요.',2.5,'',1)}
   if(prev<CFG.hazardFrom&&score>=CFG.hazardFrom)hazardClock=CFG.interval(stage)-1.2; // 첫 발은 1.2초 뒤 예고 시작

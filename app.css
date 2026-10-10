@@ -610,3 +610,12 @@ p{margin:0}
 .dokAct{margin-top:var(--space-3);flex-wrap:wrap}
 .app-header__brand{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .balance,.dpill{white-space:nowrap;flex:none}
+/* 미션 n/3 → 쿠지 카드 */
+.mdots{display:flex;justify-content:center;gap:10px;margin:10px 0 6px}
+.mdot{width:22px;height:22px;border-radius:50%;border:2px dashed var(--color-border-strong)}
+.mdot--on{border:0;background:var(--color-accent)}
+.kcard{text-align:center;padding:var(--space-3) 0}
+.kcard__art{width:150px;aspect-ratio:5/7;margin:0 auto;border-radius:14px;background:var(--color-accent);color:var(--color-accent-ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:20px;font-weight:800;animation:stamp-pop 520ms var(--ease) both;box-shadow:var(--shadow-md)}
+.kcard__art .icon{width:44px;height:44px}
+.kcard__t{font-size:18px;font-weight:800;margin-top:var(--space-4)}
+.kcard__s{font-size:14px;color:var(--color-text-secondary);margin-top:4px}

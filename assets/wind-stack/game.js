@@ -131,7 +131,7 @@ var S={
 /* idlePeek(평상시 빼꼼) / windActive(화면가림, 캔버스) / resultCheer(결과 화면 축하)는 서로 겹치지 않는다.
    idlePeek는 게임 시간(tick의 dt)으로만 돌아 백그라운드 복귀 때 옛 연출이 튀어나오지 않고, 물리·점수에는 관여하지 않는다. */
 var PEEK={enter:0.25,stay:1.0,exit:0.25,quickExit:0.2,minGap:8,maxPerStage:3,earlyItems:3,widthPx:117,craneClear:95,chance:0.5,
- weights:{left:40,right:40,bottom:30,top:10}};
+ weights:{left:40,right:40,bottom:0,top:30}}; // 2026-10-10 사장님: 아래에서 올라오는 연출 금지 → 위에서 내려오는 것만
 var DIR={now:0,lastEnd:-99,count:0,lastPose:null,active:null,heldT:0,plan:null};
 var peekEls={};
 [].forEach.call(document.querySelectorAll('#charLayer .peek'),function(el){
@@ -171,7 +171,7 @@ function startPeek(){
  if(!canPeek())return;
  var total=PEEK.enter+PEEK.stay+PEEK.exit,topSide=null,pool=[];
  ['left','right','bottom','top'].forEach(function(pose){
-  if(pose===DIR.lastPose)return;
+  if(pose===DIR.lastPose||!PEEK.weights[pose])return;
   if(pose==='top'){
    topSide=craneClearOf('left',total)?'left':(craneClearOf('right',total)?'right':null);
    if(!topSide)return;
