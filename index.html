@@ -1049,7 +1049,7 @@ function drawRowsHtml(){
   var dayTxt=ck&&ck.days&&ck.days[0]?fmtDay(ck.days[0]):'10월 31일(토)';
   row('calendar',esc(dayTxt)+' '+esc((ck&&ck.name)||'과수원피스')+' 현장 추첨',(d.drawAt?'추첨 '+esc(d.drawAt):'')+(d.drawPlace?(d.drawAt?' · ':'')+esc(d.drawPlace):'')||'추첨 시각·장소는 확정되면 여기 안내돼요');
   row('qr','과수원피스 현장에서 체크인 QR을 찍어야 추첨에 참여돼요',v&&v.checkedIn?'<b style="color:var(--color-success)">체크인 완료 · 응모됐어요</b>':'당일 현장에서 이 앱의 「오늘 스탬프 찍기」로 체크인 QR을 찍으면 자동 응모돼요');
-  if(d.confirmed&&d.weightMode==='perStamp')row('star','스탬프 1개 = 추첨 기회 1회 (최대 '+((v&&v.max)||7)+'회)','많이 모을수록 유리하지만 당첨이 보장되지는 않아요. 실제 확률은 전체 응모 수에 따라 달라요.');
+  if(d.weightMode==='perStamp')row('star','스탬프 1개 = 응모 1회 (최대 '+((v&&v.max)||7)+'회)','스탬프를 찍으면 따로 응모할 필요 없이 자동으로 쌓여요. 많이 모을수록 유리하지만 당첨이 보장되지는 않아요.'+(v&&v.count?' 지금 내 응모 <b>'+v.count+'회</b>':''));
   else if(d.confirmed&&d.weightMode==='equal')row('star','스탬프 조건을 채우면 1인 1회 응모','');
   else row('star','스탬프를 많이 모은 분께 유리한 방식으로 추첨해요','정확한 응모 방식은 확정되면 여기 안내돼요. 당첨이 보장되지는 않아요.');
   if(d.confirmed&&d.minStamps!=null)row('check','스탬프 '+d.minStamps+'개 이상 모은 분부터 응모돼요','');
