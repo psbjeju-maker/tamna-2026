@@ -52,6 +52,9 @@
     if (play.kind === 'blank') {
       return { label: '꽝', name: play.name || '꽝', img: '', power: '약' };
     }
+    if (play.kind === 'coupon') {
+      return { label: '쿠폰', name: '박서방 5,000원 쿠폰', img: '', power: '중' };
+    }
     if (play.kind === 'coin') {
       return { label: 'mh머니', name: 'mh머니 카드 ' + ((play.cards && play.cards.length) || 1) + '장', img: '', power: '약' };
     }

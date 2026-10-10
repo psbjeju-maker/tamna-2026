@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F1120">
+<title>현장 담당 화면 — 방문 스탬프·쿠폰</title>
+<style>
+@font-face{font-family:SCDream;src:url(../fonts/SCDream4.woff)format('woff');font-weight:400;font-display:swap}
+@font-face{font-family:SCDream;src:url(../fonts/SCDream7.woff)format('woff');font-weight:800;font-display:swap}
+:root{--bg:#0F1120;--sf:#181B2E;--sf2:#21253C;--line:rgba(255,255,255,.12);--tx:#F2F0EA;--dim:#B8B5C6;--mut:#7C7A8C;
+  --acc:#F5B331;--ink:#1A1204;--ok:#4FC3A1;--bad:#F0605A;--safe:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{font-family:SCDream,-apple-system,'Malgun Gothic',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;font-size:16px;line-height:1.5}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px calc(32px + var(--safe))}
+h1{font-size:20px;margin:4px 0 2px}
+h2{font-size:17px;margin:0 0 10px}
+.sub{color:var(--dim);font-size:13px}
+.card{background:var(--sf);border-radius:16px;padding:16px;margin-top:14px}
+.btn{min-height:52px;padding:0 18px;border-radius:14px;background:var(--sf2);font-weight:800;font-size:16px}
+.btn--p{background:var(--acc);color:var(--ink)}
+.btn--ok{background:var(--ok);color:#06231a}
+.btn--bad{background:var(--bad);color:#2a0705}
+.btn--b{width:100%}
+.btn:disabled{opacity:.4}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.row>*{flex:1}
+input,select{width:100%;min-height:50px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-size:17px}
+label{display:block;font-size:13px;color:var(--dim);margin:10px 0 4px;font-weight:800}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--sf);padding:4px;border-radius:14px;margin-top:14px}
+.tabs button{min-height:44px;border-radius:10px;font-weight:800;font-size:14px;color:var(--mut)}
+.tabs button.on{background:var(--sf2);color:var(--tx)}
+.msg{margin-top:10px;font-weight:800;min-height:1.4em}
+.msg.bad{color:var(--bad)}.msg.ok{color:var(--ok)}
+.chip{display:inline-block;padding:4px 10px;border-radius:999px;background:var(--sf2);font-size:13px;font-weight:800}
+.chip.ok{background:rgba(79,195,161,.18);color:var(--ok)}.chip.bad{background:rgba(240,96,90,.18);color:var(--bad)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin-top:10px;font-size:15px}
+.kv dt{color:var(--dim)}.kv dd{margin:0;font-weight:800}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
+[hidden]{display:none!important}
+/* 장소 QR 전체화면 */
+#qrFull{position:fixed;inset:0;background:#fff;color:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;z-index:50}
+#qrFull .pn{font-size:clamp(22px,5vw,40px);font-weight:800;text-align:center}
+#qrFull .lead{font-size:clamp(15px,3.2vw,22px);color:#444;text-align:center}
+#qrFull img{width:min(78vw,62vh);height:auto;image-rendering:pixelated}
+#qrFull .code{font-size:clamp(28px,7vw,56px);font-weight:800;letter-spacing:.18em}
+#qrFull .left{font-size:15px;color:#666}
+#qrFull .state{font-size:clamp(22px,5vw,36px);font-weight:800;color:#B3261E;text-align:center}
+#qrFull .x{position:absolute;top:12px;right:12px;min-height:44px;padding:0 16px;border-radius:999px;background:#eee;font-weight:800;color:#111}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>현장 담당 화면</h1>
+  <p class="sub">탐라문화제 방문 스탬프 · 박서방 쿠폰 · 과수원피스 추첨</p>
+
+  <!-- 로그인 -->
+  <div class="card" id="loginBox">
+    <h2>담당자 로그인</h2>
+    <label for="role">역할</label>
+    <select id="role">
+      <option value="staff">스태프 (축제 부스·과수원피스)</option>
+      <option value="coupon">매장 쿠폰 담당 (박서방)</option>
+      <option value="admin">관리자</option>
+    </select>
+    <label for="pin">PIN</label>
+    <input id="pin" type="password" inputmode="numeric" autocomplete="off">
+    <div class="row"><button class="btn btn--p" id="btnLogin">로그인</button></div>
+    <p class="msg" id="loginMsg"></p>
+  </div>
+
+  <div id="main" hidden>
+    <div class="row" style="align-items:center"><span class="sub" id="who"></span><button class="btn" id="btnLogout" style="flex:none;min-height:40px">로그아웃</button></div>
+    <div class="tabs" id="tabs">
+      <button data-t="qr" class="on">장소 QR</button>
+      <button data-t="cpn">쿠폰 사용</button>
+      <button data-t="ex">예외 인증</button>
+      <button data-t="draw">추첨</button>
+    </div>
+
+    <!-- 장소 QR -->
+    <section data-p="qr">
+      <div class="card">
+        <h2>장소 QR 띄우기</h2>
+        <p class="sub">태블릿을 켜 두면 QR이 자동으로 바뀌어요. 손님은 앱의 「오늘 스탬프 찍기」로 찍어요. 화면 아래 7자리 코드는 카메라가 안 될 때 입력하는 보조 코드예요(같이 바뀜).</p>
+        <label for="place">장소</label>
+        <select id="place">
+          <option value="festival">탐라문화제 체험 부스</option>
+          <option value="store">박서방 제주지점 플리마켓</option>
+          <option value="checkin">과수원피스 추첨 체크인</option>
+        </select>
+        <div class="row"><button class="btn btn--p" id="btnQr">QR 전체화면</button></div>
+        <h2 style="margin-top:18px">오늘 운영 상태</h2>
+        <p class="sub" id="placeState">-</p>
+        <div class="row">
+          <button class="btn btn--ok" data-st="open">운영 중</button>
+          <button class="btn" data-st="paused">잠시 중단</button>
+          <button class="btn btn--bad" data-st="closed">오늘 종료</button>
+        </div>
+        <p class="sub" style="margin-top:8px">상태는 오늘만 적용돼요. 다음 날엔 시간표대로 자동으로 돌아가요. 운영 시간 밖에는 서버가 QR을 내주지 않아요.</p>
+        <p class="msg" id="qrMsg"></p>
+      </div>
+    </section>
+
+    <!-- 쿠폰 사용 -->
+    <section data-p="cpn" hidden>
+      <div class="card">
+        <h2>쿠폰 확인</h2>
+        <div class="row"><button class="btn btn--p" id="btnCpnScan">쿠폰 QR 찍기</button></div>
+        <label for="cpnCode">또는 쿠폰 코드 10자리</label>
+        <div class="row"><input id="cpnCode" maxlength="15" autocomplete="off" style="text-transform:uppercase;flex:2"><button class="btn" id="btnCpnFind">조회</button></div>
+        <p class="msg" id="cpnMsg"></p>
+        <div id="cpnInfo" hidden>
+          <dl class="kv" id="cpnKv"></dl>
+          <div id="cpnUseBox">
+            <label for="seller">셀러 상품에 썼다면 셀러 이름 (선택)</label>
+            <input id="seller" maxlength="40">
+            <label for="sellerAmt">셀러 상품 사용 금액 (선택, 원)</label>
+            <input id="sellerAmt" type="number" inputmode="numeric" min="0">
+            <div class="row"><button class="btn btn--ok btn--b" id="btnUse">사용 완료</button></div>
+            <p class="sub">QR을 읽기만 해서는 처리되지 않아요. 손님 결제를 확인한 뒤 눌러 주세요.</p>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>쿠폰 현황</h2>
+        <div class="row"><button class="btn" id="btnCpnList">불러오기</button></div>
+        <div id="cpnList"></div>
+      </div>
+    </section>
+
+    <!-- 예외 인증 -->
+    <section data-p="ex" hidden>
+      <div class="card">
+        <h2>카메라가 안 될 때 스탬프 대신 찍기</h2>
+        <p class="sub">손님 앱의 「내 기록」 맨 아래 참가코드(6자리)를 받아 입력해요. 오늘·이 장소 운영일에만 되고, 같은 날 같은 장소는 한 번만 찍혀요. 사유가 기록돼요.</p>
+        <label for="exCode">참가코드</label>
+        <input id="exCode" maxlength="6" autocomplete="off" style="text-transform:uppercase">
+        <label for="exPlace">장소</label>
+        <select id="exPlace"><option value="festival">탐라문화제 체험 부스</option><option value="store">박서방 제주지점 플리마켓</option></select>
+        <label for="exReason">사유</label>
+        <input id="exReason" value="카메라 인증 실패" maxlength="80">
+        <div class="row"><button class="btn btn--p" id="btnEx">오늘 스탬프 찍기</button></div>
+        <p class="msg" id="exMsg"></p>
+      </div>
+    </section>
+
+    <!-- 추첨 -->
+    <section data-p="draw" hidden>
+      <div class="card">
+        <h2>과수원피스 추첨 현황</h2>
+        <div class="row"><button class="btn" id="btnDrawSt">현황 불러오기</button></div>
+        <div id="drawSt"></div>
+        <div id="drawAdmin" hidden>
+          <p class="sub" style="margin-top:12px">관리자: 응모 마감 뒤 ① 응모 기록 확정 → ② 추첨. 둘 다 한 번만 되고, 다시 눌러도 처음 결과가 그대로 나와요.</p>
+          <div class="row"><button class="btn" id="btnLock">① 응모 기록 확정</button><button class="btn btn--p" id="btnRun">② 추첨하기</button></div>
+        </div>
+        <p class="msg" id="drawMsg"></p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div id="qrFull" hidden>
+  <button class="x" id="qrClose">닫기</button>
+  <div class="pn" id="qrPlace"></div>
+  <div class="lead" id="qrLead">도채비 앱에서 「오늘 스탬프 찍기」를 눌러 찍어 주세요</div>
+  <img id="qrImg" alt="방문 스탬프 QR">
+  <div class="code" id="qrCode"></div>
+  <div class="left" id="qrLeft"></div>
+  <div class="state" id="qrState" hidden></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="../ev-client.js?v=5"></script>
+<script src="../mqscan.js?v=2"></script>
+<script src="../qr.js"></script>
+<script>
+(function(){
+'use strict';
+var EID='tamna';
+var APP_URL='https://psbjeju-maker.github.io/tamna-2026/';
+var $=function(s){return document.querySelector(s)}, $$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s))};
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function msg(el,t,cls){el.textContent=t||'';el.className='msg'+(cls?' '+cls:'')}
+function hm(ms){return ms?new Date(ms+9*3600e3).toISOString().slice(11,16):'-'}
+function dt(ms){return ms?new Date(ms+9*3600e3).toISOString().slice(5,16).replace('T',' '):'-'}
+var ROLE_TXT={admin:'관리자',staff:'스태프',coupon:'매장 쿠폰 담당'};
+
+function showMain(){
+  var i=EV.sessionInfo();
+  if(!i){$('#loginBox').hidden=false;$('#main').hidden=true;return}
+  $('#loginBox').hidden=true;$('#main').hidden=false;
+  $('#who').textContent=ROLE_TXT[i.role]+'로 로그인됨 · '+dt(i.exp)+'까지';
+  $('#drawAdmin').hidden=i.role!=='admin';
+  if(i.role==='coupon'){ $('#place').value='store'; $('#exPlace').value='store'; }
+  refreshPlaceState();
+}
+$('#btnLogin').onclick=function(){
+  var b=this;b.disabled=true;msg($('#loginMsg'),'확인 중…');
+  EV.pinLogin($('#pin').value.trim(),$('#role').value).then(function(){b.disabled=false;$('#pin').value='';msg($('#loginMsg'),'');showMain()},
+    function(e){b.disabled=false;msg($('#loginMsg'),e.message||'로그인하지 못했어요','bad')});
+};
+$('#btnLogout').onclick=function(){EV.logout();stopQr();showMain()};
+$$('#tabs button').forEach(function(b){b.onclick=function(){
+  $$('#tabs button').forEach(function(x){x.classList.toggle('on',x===b)});
+  $$('section[data-p]').forEach(function(s){s.hidden=s.dataset.p!==b.dataset.t});
+}});
+function fail(el){return function(e){msg(el,(e&&e.message)||'실패했어요. 완료되지 않았어요.','bad')}}
+
+/* ---------- 장소 QR (자동 갱신) ---------- */
+var STATE_TXT={open:'운영 중',paused:'잠시 중단',closed:'오늘 종료','after-close':'운영 시간 끝','before-open':'운영 시작 전','not-today':'오늘은 운영일이 아님'};
+var qrTimer=null, qrLeftTimer=null, qrUntil=0, wake=null;
+function qrData(tok){var q=qrcode(0,'M');q.addData(APP_URL+'?st='+tok);q.make();return q.createDataURL(10,2)}
+function pullQr(){
+  var place=$('#place').value;
+  return EV.staff('staffStampQr',{eventId:EID,place:place}).then(function(r){
+    $('#qrPlace').textContent=r.name;
+    if(r.token){
+      $('#qrImg').src=qrData(r.token);$('#qrImg').hidden=false;
+      $('#qrCode').textContent=r.token;$('#qrCode').hidden=false;$('#qrLead').hidden=false;
+      $('#qrState').hidden=true;
+      qrUntil=r.validUntil-(r.serverTime-Date.now());
+    } else {
+      $('#qrImg').hidden=true;$('#qrCode').hidden=true;$('#qrLead').hidden=true;$('#qrLeft').textContent='';
+      $('#qrState').hidden=false;$('#qrState').textContent=(STATE_TXT[r.state]||r.state)+(r.hint?' — '+r.hint:'');
+      qrUntil=0;
+    }
+    $('#placeState').textContent='지금 상태: '+(STATE_TXT[r.state]||r.state);
+  },function(e){
+    $('#qrState').hidden=false;$('#qrState').textContent='연결 문제 — '+(e.message||'다시 시도 중');
+    $('#qrImg').hidden=true;$('#qrCode').hidden=true;
+  });
+}
+function stopQr(){clearInterval(qrTimer);clearInterval(qrLeftTimer);qrTimer=qrLeftTimer=null;$('#qrFull').hidden=true;try{if(wake){wake.release();wake=null}}catch(e){}}
+$('#btnQr').onclick=function(){
+  $('#qrFull').hidden=false;pullQr();
+  clearInterval(qrTimer);qrTimer=setInterval(pullQr,15000);
+  clearInterval(qrLeftTimer);qrLeftTimer=setInterval(function(){
+    if(!qrUntil)return;var s=Math.max(0,Math.round((qrUntil-Date.now())/1000));
+    $('#qrLeft').textContent='자동으로 바뀌어요 · 이 코드는 '+s+'초 더 유효';
+  },1000);
+  try{if(navigator.wakeLock)navigator.wakeLock.request('screen').then(function(w){wake=w},function(){})}catch(e){}
+  try{if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){})}catch(e){}
+};
+$('#qrClose').onclick=function(){stopQr();try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}};
+function refreshPlaceState(){
+  if(!EV.sessionInfo())return;
+  EV.staff('staffStampQr',{eventId:EID,place:$('#place').value}).then(function(r){$('#placeState').textContent='지금 상태: '+(STATE_TXT[r.state]||r.state)+(r.state==='open'?'':' — '+(r.hint||''))},
+    function(e){$('#placeState').textContent=e.message||'-'});
+}
+$('#place').onchange=refreshPlaceState;
+$$('[data-st]').forEach(function(b){b.onclick=function(){
+  msg($('#qrMsg'),'바꾸는 중…');
+  EV.staff('staffSetPlace',{eventId:EID,place:$('#place').value,status:b.dataset.st}).then(function(){msg($('#qrMsg'),'바꿨어요: '+b.textContent,'ok');refreshPlaceState()},fail($('#qrMsg')));
+}});
+
+/* ---------- 쿠폰 ---------- */
+var curCpn=null;
+function cpnCode(t){t=String(t||'').toUpperCase().replace(/[^A-Z0-9-]/g,'').replace(/^PSBC-?/,'');return /^[A-Z0-9]{10}$/.test(t)?t:''}
+var CST={active:'사용 가능',used:'이미 사용',expired:'기한 만료'};
+function showCpn(c){
+  curCpn=c;$('#cpnInfo').hidden=false;
+  $('#cpnKv').innerHTML='<dt>상태</dt><dd><span class="chip '+(c.status==='active'?'ok':'bad')+'">'+CST[c.status]+'</span></dd>'+
+    '<dt>금액</dt><dd>'+Number(c.amount).toLocaleString()+'원</dd><dt>사용 마감</dt><dd>'+dt(c.expiresAt)+'</dd>'+
+    '<dt>닉네임</dt><dd>'+esc(c.nickname||'-')+'</dd><dt>코드</dt><dd>'+esc(c.code)+'</dd>'+
+    (c.usedAt?'<dt>사용</dt><dd>'+dt(c.usedAt)+' · '+esc(c.usedBy||'')+(c.seller?' · 셀러 '+esc(c.seller)+(c.sellerAmount!=null?' '+Number(c.sellerAmount).toLocaleString()+'원':''):'')+'</dd>':'');
+  $('#cpnUseBox').hidden=c.status!=='active';
+}
+function findCpn(code){
+  code=cpnCode(code);if(!code){msg($('#cpnMsg'),'쿠폰 코드가 아니에요','bad');return}
+  $('#cpnInfo').hidden=true;msg($('#cpnMsg'),'조회 중…');
+  EV.staff('staffCouponLookup',{code:code}).then(function(c){msg($('#cpnMsg'),'');showCpn(c)},fail($('#cpnMsg')));
+}
+$('#btnCpnFind').onclick=function(){findCpn($('#cpnCode').value)};
+$('#btnCpnScan').onclick=function(){MQScan.open({hint:'손님 앱의 쿠폰 QR을 비춰 주세요',parse:cpnCode,badHint:'쿠폰 QR이 아니에요',onToken:function(t){$('#cpnCode').value=t;findCpn(t)}})};
+$('#btnUse').onclick=function(){
+  if(!curCpn)return;var b=this;b.disabled=true;msg($('#cpnMsg'),'처리 중…');
+  var amt=$('#sellerAmt').value.trim();
+  EV.staff('staffCouponUse',{code:curCpn.code,seller:$('#seller').value.trim(),sellerAmount:amt===''?null:Number(amt)}).then(function(r){
+    b.disabled=false;msg($('#cpnMsg'),'사용 완료 처리됐어요','ok');$('#seller').value='';$('#sellerAmt').value='';showCpn(r.coupon);
+  },function(e){b.disabled=false;fail($('#cpnMsg'))(e);EV.staff('staffCouponLookup',{code:curCpn.code}).then(showCpn,function(){})});
+};
+$('#btnCpnList').onclick=function(){
+  $('#cpnList').innerHTML='<p class="sub">불러오는 중…</p>';
+  EV.staff('staffCouponList',{eventId:EID}).then(function(r){
+    var s=r.sum, pre=r.prepared||[];
+    var h='<p>발급 <b>'+s.issued+'</b> · 사용 <b>'+s.used+'</b> · 미사용 <b>'+s.active+'</b> · 만료 <b>'+s.expired+'</b></p>';
+    pre.forEach(function(p){h+='<p class="sub">쿠지 판 「'+esc(p.name)+'」 준비 '+p.total+'장 · 남은 번호 '+p.remaining+' · 이번 판 발급 '+p.issued+' · 중복·마감으로 꽝 처리 '+p.blanked+'</p>'});
+    h+='<p class="sub">중복 당첨·발급 종료로 꽝 처리된 번호가 있으면 실제 발급량은 준비한 쿠폰 수보다 적을 수 있어요.</p>';
+    var sellers=r.items.filter(function(x){return x.seller});
+    if(sellers.length){h+='<table><tr><th>사용</th><th>셀러</th><th>금액</th></tr>'+sellers.map(function(x){return '<tr><td>'+dt(x.usedAt)+'</td><td>'+esc(x.seller)+'</td><td>'+(x.sellerAmount!=null?Number(x.sellerAmount).toLocaleString():'-')+'</td></tr>'}).join('')+'</table>'}
+    $('#cpnList').innerHTML=h;
+  },function(e){$('#cpnList').innerHTML='<p class="msg bad">'+esc(e.message)+'</p>'});
+};
+
+/* ---------- 예외 인증 ---------- */
+$('#btnEx').onclick=function(){
+  var b=this,code=$('#exCode').value.trim().toUpperCase();
+  if(!/^[A-Z0-9]{6}$/.test(code)){msg($('#exMsg'),'참가코드 6자리를 확인해 주세요','bad');return}
+  b.disabled=true;msg($('#exMsg'),'처리 중…');
+  EV.staff('staffGrantStamp',{eventId:EID,code:code,place:$('#exPlace').value,reason:$('#exReason').value.trim()}).then(function(r){
+    b.disabled=false;msg($('#exMsg'),r.already?'오늘 이 장소 스탬프는 이미 있어요 ('+r.count+'/'+r.max+')':'찍었어요 · '+r.count+'/'+r.max,'ok');
+  },function(e){b.disabled=false;fail($('#exMsg'))(e)});
+};
+
+/* ---------- 추첨 ---------- */
+var NR={'not-confirmed':'조건 미확정(confirmed)',weightMode:'응모 산정 방식',minStamps:'최소 스탬프 수',winners:'당첨자 수',checkinRequired:'현장 체크인 필요 여부',entryDeadline:'응모 마감 시각'};
+function drawStatus(){
+  $('#drawSt').innerHTML='<p class="sub">불러오는 중…</p>';
+  EV.staff('staffDrawStatus',{eventId:EID}).then(function(r){
+    var d=r.draw||{}, run=r.run;
+    var dist=Object.keys(r.distribution||{}).sort(function(a,b){return a-b}).map(function(k){return k+'개 '+r.distribution[k]+'명'}).join(' · ');
+    var h='<dl class="kv"><dt>스탬프 모은 사람</dt><dd>'+r.stampers+'명 (총 '+r.stampsTotal+'개)</dd><dt>분포</dt><dd>'+(dist||'-')+'</dd>'+
+      '<dt>과수원피스 체크인</dt><dd>'+r.checkins+'명</dd>'+
+      '<dt>추첨 조건</dt><dd>'+(r.notReady?'<span class="chip bad">미확정: '+esc(NR[r.notReady]||r.notReady)+'</span>':'<span class="chip ok">확정</span> '+esc(d.weightMode==='perStamp'?'스탬프 1개=1회':'1인 1회')+' · 최소 '+d.minStamps+'개 · '+d.winners+'명 · 마감 '+esc(d.entryDeadline))+'</dd>';
+    if(run){
+      h+='<dt>응모 기록</dt><dd>'+(run.status==='done'?'추첨 완료':'확정됨')+' · '+run.entries+'명 · 총 '+run.totalWeight+'회</dd>';
+      if(run.winners)h+='<dt>당첨</dt><dd>'+run.winners.map(function(w){return w.rank+'. '+esc(w.nickname)+' ('+esc(w.code)+' · 끝번호 '+esc(w.last4)+' · 스탬프 '+w.stamps+')'}).join('<br>')+'</dd>';
+    }
+    $('#drawSt').innerHTML=h+'</dl>';
+  },function(e){$('#drawSt').innerHTML='<p class="msg bad">'+esc(e.message)+'</p>'});
+}
+$('#btnDrawSt').onclick=drawStatus;
+$('#btnLock').onclick=function(){
+  if(prompt('응모 기록을 확정합니다. 이후 체크인은 반영되지 않아요. 계속하려면 확정 이라고 입력')!=='확정')return;
+  EV.staff('ownerDrawLock',{eventId:EID}).then(function(r){msg($('#drawMsg'),'확정: '+r.entries+'명 · 총 '+r.totalWeight+'회','ok');drawStatus()},fail($('#drawMsg')));
+};
+$('#btnRun').onclick=function(){
+  if(prompt('추첨은 한 번만 됩니다. 계속하려면 추첨 이라고 입력')!=='추첨')return;
+  EV.staff('ownerDrawRun',{eventId:EID}).then(function(r){msg($('#drawMsg'),(r.duplicate?'이미 추첨됨 · ':'추첨 완료 · ')+r.winners.map(function(w){return w.nickname}).join(', '),'ok');drawStatus()},fail($('#drawMsg')));
+};
+
+showMain();
+})();
+</script>
+</body>
+</html>

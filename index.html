@@ -7,7 +7,7 @@
 <title>도채비와 떠나는 신화 탐험 — 탐라문화제 × 메이커앤하비</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Song+Myung&display=swap">
-<link rel="stylesheet" href="app.css?v=15">
+<link rel="stylesheet" href="app.css?v=17">
 </head>
 <body>
 
@@ -39,6 +39,7 @@
   <symbol id="i-clover" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12c-1-3-4-4.5-6-3s-1 4.5 2 5c-3 .5-4 3.5-2 5s5 .5 6-3c1 3.5 4 4.5 6 3s1-4.5-2-5c3-.5 4-3.5 2-5s-5-.5-6 3z"/><path d="M12 12v9"/></symbol>
   <symbol id="i-gift" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v8h14v-8M12 8v12"/><path d="M12 8c-2-3-6-3-6-1s3 1 6 1zm0 0c2-3 6-3 6-1s-3 1-6 1z"/></symbol>
   <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
   <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"/></symbol>
 </svg>
 
@@ -67,8 +68,8 @@
       <div class="intro__brand">DOCHAEBI'S TREASURE HUNT</div>
       <h1 class="intro__title">도채비와 떠나는<br>신화 탐험</h1>
       <p class="intro__lead">
-        여섯 신을 만나고 게임을 깨면 <b class="coinName">mh머니</b>가 쌓여요. 모은 mh머니로 <b>디지털 쿠지</b>를 맛볼 수 있어요.
-        10월 31일 <b>과수원피스</b>에서는 본편이 열려요.
+        탐라문화제에서 놀고, 박서방에서 구경하고, 과수원피스에서 추첨까지!<br>
+        두 장소에서 <b>방문 스탬프</b>를 모으면 10월 31일 <b>과수원피스</b>의 헌터×헌터 더블찬스 인형 추첨으로 이어져요.
       </p>
       <div class="intro__form">
         <div class="field"><label for="inName">내 이름 (닉네임)</label>
@@ -83,60 +84,59 @@
     </div>
   </section>
 
-  <!-- ========== 홈 ========== -->
+  <!-- ========== 놀기 (홈) ========== -->
   <section class="screen" id="s-home">
-    <p class="greet" id="greet">안녕!</p>
+    <h1 class="headline">탐라문화제에서 놀고,<br>박서방에서 구경하고,<br><em>과수원피스에서 추첨까지!</em></h1>
 
-    <div class="dok" id="homeDok">
-      <img class="dok__face" id="homeDokFace" src="dokebi/exp_smile.png" alt="도채비">
-      <div class="bubble"><div class="bubble__who">도채비의 한마디</div><div class="bubble__text" id="homeDokText">신들이랑 인사했어? 게임도 한 판 해 봐.</div></div>
+    <!-- 미사용 쿠폰이 있으면 맨 위에 크게 -->
+    <div class="cpnBanner" id="homeCoupon" hidden></div>
+
+    <!-- 방문 스탬프 + 경품 -->
+    <div class="stampCard" id="stampCard">
+      <div class="stampCard__top">
+        <img class="stampCard__prize" src="assets/campaign/prize-hxh-doublechance.jpg" alt="헌터×헌터 더블찬스 인형">
+        <div>
+          <div class="stampCard__kicker">방문 스탬프</div>
+          <div class="stampCard__count"><b id="stampN">0</b> / <span id="stampMax">7</span></div>
+          <div class="stampCard__prizeName">경품 · 헌터×헌터 더블찬스 인형</div>
+        </div>
+      </div>
+      <div class="stamps7" id="stamps7"></div>
+      <button class="btn btn--primary btn--block btn--xl" id="btnStamp"><svg class="icon"><use href="#i-qr"/></svg>오늘 스탬프 찍기</button>
+      <p class="caption caption--center" id="stampToday" style="margin-top:8px"></p>
+      <div class="stampCard__foot">
+        <p>스탬프를 모으면 10월 31일 과수원피스 경품 추첨으로 이어져요</p>
+        <button class="btn btn--secondary btn--sm" data-nav="record" data-anchor="drawSec">과수원피스 안내</button>
+      </div>
     </div>
 
-    <div class="stats">
-      <div class="stat"><svg class="icon"><use href="#i-coin"/></svg><div class="stat__label">내 <span class="coinName">mh머니</span></div><div class="stat__num stat__num--luck" id="homeGold">-</div></div>
-      <div class="stat"><svg class="icon"><use href="#i-gift"/></svg><div class="stat__label">쿠지 뽑기</div><div class="stat__num" id="homeTaste">-</div></div>
-    </div>
-    <p class="caption" id="homeSync" style="margin-top:6px"></p>
+    <!-- 지금 추천 -->
+    <button class="btn btn--secondary btn--block btn--xl" id="homeNext" style="margin-top:16px"></button>
+    <p class="caption caption--center" id="homeSync" style="margin-top:8px"></p>
 
-    <div class="btnrow">
-      <button class="btn btn--primary" data-nav="collect"><svg class="icon"><use href="#i-clover"/></svg>mh머니 모으기</button>
-      <button class="btn btn--secondary" data-nav="taste"><svg class="icon"><use href="#i-gift"/></svg>쿠지 뽑기</button>
-    </div>
-
-    <div class="treasure" id="inviteCard" style="margin-top:20px">
-      <div class="treasure__kicker">10월 31일(토)</div>
-      <div class="treasure__prize"><span>과수원피스</span></div>
-      <div class="treasure__label" id="inviteWhere">한림 금능석물원 · 10:30 ~ 16:00</div>
-      <div class="treasure__meta" id="invitePass">항해 패스 6,000원</div>
-      <div class="treasure__dday" id="ddayBig">D-00</div>
-    </div>
-  </section>
-
-  <!-- ========== 복 모으기 ========== -->
-  <section class="screen" id="s-collect">
-    <div class="hero">
-      <h1 class="hero__title"><span class="coinName">mh머니</span> 모으기</h1>
-      <p class="hero__sub">신께 인사하고 게임을 깨면 mh머니가 쌓여요. 받는 양은 서버가 정해서 알려줘요.</p>
+    <!-- 두 장소 -->
+    <div class="section" id="placeSec">
+      <div class="section__head"><h2 class="section__title">오늘 갈 수 있는 곳</h2></div>
+      <p class="section__lead" id="placeGuide"></p>
+      <div class="places" id="places"></div>
     </div>
 
-    <div class="section" style="margin-top:24px">
+    <!-- 여섯 신 찾기 -->
+    <div class="section" id="godsSec">
       <div class="section__head">
-        <h2 class="section__title">여섯 신께 인사</h2>
+        <h2 class="section__title">여섯 신 찾기</h2>
         <span class="section__meta"><span id="progN">0</span> / 6</span>
       </div>
-      <p class="section__lead" id="heroSub">행사장 곳곳에 강림해 계십니다. 가까이 가면 인사할 수 있어요. 인사한 신은 도장이 찍혀요.</p>
+      <p class="section__lead" id="heroSub">행사장 곳곳에 강림해 계십니다. 가까이 가면 인사할 수 있어요.</p>
       <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" id="progWrap" style="margin-top:12px">
         <div class="progress__bar"><i class="progress__fill" id="progFill"></i></div>
       </div>
       <div class="gods" id="crewGrid"></div>
+      <p class="caption" style="margin-top:10px">신 도장은 방문 스탬프와 따로 모여요. 신을 만나면 <span class="coinName">mh머니</span>를 받아요.</p>
     </div>
 
-    <div class="section">
-      <div class="section__head"><h2 class="section__title">스태프 인증</h2></div>
-      <div class="quests" id="staffTodo"></div>
-    </div>
-
-    <div class="section">
+    <!-- 놀이터 -->
+    <div class="section" id="gameSec">
       <div class="section__head">
         <h2 class="section__title">놀이터</h2>
         <span class="section__meta" id="decayTag"></span>
@@ -146,14 +146,89 @@
         <button class="btn btn--secondary btn--sm" data-game="catch">도전</button>
       </div>
       <div class="game">
-        <div><div class="game__title">영등할망의 바람탑</div><div class="game__desc">무작위로 나오는 열 가지 물건을 크레인으로 쌓으세요. 영등할망이 바람으로 돕거나 장난칩니다.</div><div class="game__best" id="best-stack">최고 0점</div></div>
+        <div><div class="game__title">영등할망의 바람탑</div><div class="game__desc">무작위로 나오는 열 가지 물건을 크레인으로 쌓으세요.</div><div class="game__best" id="best-stack">최고 0점</div></div>
         <button class="btn btn--secondary btn--sm" data-game="stack">도전</button>
       </div>
       <div class="game">
-        <div><div class="game__title">도채비 그림자 대소동</div><div class="game__desc">손전등을 움직이면 그림자가 반대로 뻗어요. 그림자로 먹이를 덮어 꿀꺽, 지나가는 사람 발은 피하세요.</div><div class="game__best" id="best-sun">최고 기록 없음</div></div>
+        <div><div class="game__title">도채비 그림자 대소동</div><div class="game__desc">그림자로 먹이를 덮어 꿀꺽, 지나가는 사람 발은 피하세요.</div><div class="game__best" id="best-sun">최고 기록 없음</div></div>
         <button class="btn btn--secondary btn--sm" data-game="sun">도전</button>
       </div>
-      <p class="caption" style="margin-top:12px" id="gameNote">게임을 끝까지 깨면 서버에 기록돼요. 지급 여부와 양은 서버가 알려줘요.</p>
+      <p class="caption" style="margin-top:12px" id="gameNote">게임을 끝까지 깨면 <span class="coinName">mh머니</span>를 받아요.</p>
+    </div>
+
+    <!-- 포토카드 · 오늘 이벤트 · 도채비 -->
+    <div class="section">
+      <div class="section__head"><h2 class="section__title">더 놀기</h2></div>
+      <div class="quests">
+        <button class="quest quest--link" type="button" data-nav="photo">
+          <svg class="icon"><use href="#i-camera"/></svg>
+          <div><div class="quest__title">포토카드 만들기</div><div class="quest__desc">사진으로 나만의 랜덤 카드 · SNS 인증도 여기서</div></div>
+          <svg class="icon icon--sm"><use href="#i-external"/></svg>
+        </button>
+        <div id="staffTodo"></div>
+        <button class="quest quest--link" type="button" data-nav="dokebi">
+          <img class="quest__face" src="dokebi/exp_wink.png" alt="">
+          <div><div class="quest__title">도채비에게 물어보기</div><div class="quest__desc">탐라문화제·스탬프·쿠폰이 궁금하면</div></div>
+          <svg class="icon icon--sm"><use href="#i-external"/></svg>
+        </button>
+      </div>
+      <div class="note note--plain" id="todayEvent" style="margin-top:14px" hidden></div>
+    </div>
+  </section>
+
+  <!-- ========== 내 기록 ========== -->
+  <section class="screen" id="s-record">
+    <div class="hero">
+      <h1 class="hero__title">내 기록</h1>
+      <p class="hero__sub" id="recHello">모은 것들이 서버에 저장돼요. 다른 폰에서도 전화번호로 이어 볼 수 있어요.</p>
+    </div>
+
+    <div class="section" id="couponSec" style="margin-top:20px">
+      <div class="section__head"><h2 class="section__title">내 쿠폰</h2></div>
+      <div id="couponBox"><p class="caption">아직 받은 쿠폰이 없어요. 쿠지에서 5,000원 쿠폰이 나올 수 있어요.</p></div>
+    </div>
+
+    <div class="section">
+      <div class="section__head">
+        <h2 class="section__title">방문 스탬프</h2>
+        <span class="section__meta"><span id="recStampN">0</span> / <span id="recStampMax">7</span></span>
+      </div>
+      <div class="stamps7 stamps7--big" id="recStamps7"></div>
+      <p class="caption" style="margin-top:10px">탐라문화제 부스는 하루 1개씩 최대 5개, 박서방 플리마켓은 토·일 하루 1개씩 최대 2개예요.</p>
+    </div>
+
+    <div class="section">
+      <div class="section__head">
+        <h2 class="section__title">신 도장</h2>
+        <span class="section__meta"><span id="recGodN">0</span> / 6</span>
+      </div>
+      <div class="godDots" id="recGods"></div>
+    </div>
+
+    <div class="section">
+      <div class="section__head"><h2 class="section__title">쿠지 기록</h2></div>
+      <div id="tasteList"></div>
+    </div>
+
+    <div class="section" id="drawSec">
+      <div class="section__head"><h2 class="section__title">과수원피스 경품 추첨</h2></div>
+      <div class="drawCard">
+        <img src="assets/campaign/prize-hxh-doublechance.jpg" alt="헌터×헌터 더블찬스 인형" loading="lazy">
+        <div class="drawCard__body">
+          <div class="drawCard__name">헌터×헌터 더블찬스 인형</div>
+          <div class="rows" id="drawRows"></div>
+        </div>
+      </div>
+      <div style="margin-top:12px">
+        <a class="btn btn--secondary btn--block" id="lnkGuide" target="_blank" rel="noopener">과수원피스 안내 페이지</a>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="divider"></div>
+      <p class="caption">참가자 <b id="meName">-</b> · 참가코드 <b id="meCode">-</b></p>
+      <button class="btn btn--tertiary btn--block" id="btnReset" style="margin-top:8px"><svg class="icon"><use href="#i-trash"/></svg>이 기기에서 로그아웃</button>
+      <p class="caption caption--center" style="margin-top:8px;opacity:.6">로그아웃해도 서버 기록은 그대로예요. 전화번호로 다시 이어할 수 있어요.</p>
     </div>
   </section>
 
@@ -188,20 +263,17 @@
       <div id="tasteResult"></div>
     </div>
 
-    <div class="section">
-      <div class="section__head"><h2 class="section__title" style="font-size:17px">내 쿠지 기록</h2></div>
-      <div id="tasteList"></div>
+    <div class="note note--plain" style="margin-top:20px" id="tasteCouponNote">
+      <b>5,000원 쿠폰도 들어 있어요</b><br>
+      5,000원 쿠폰은 행사 기간 중 1인 1회만 당첨됩니다. 이후 같은 쿠폰을 뽑으면 꽝으로 처리됩니다. 다른 상품은 계속 당첨될 수 있습니다.
+      <div id="tasteCouponClosed" style="margin-top:8px;font-weight:700;color:var(--color-accent-strong)" hidden></div>
     </div>
-
-    <div class="note" style="margin-top:20px">
-      <b>10월 31일(토) 과수원피스</b><br>
-      <span id="tasteInvite">한림 금능석물원 · 10:30 ~ 16:00 · 항해 패스 6,000원</span>
-      <div style="margin-top:10px"><a class="btn btn--secondary btn--sm" id="lnkPreview2" target="_blank" rel="noopener">행사 미리보기</a></div>
-    </div>
+    <button class="btn btn--tertiary btn--block" data-nav="record" style="margin-top:12px">내 쿠지 기록 · 쿠폰 보기</button>
   </section>
 
   <!-- ========== 포토카드 ========== -->
   <section class="screen" id="s-photo">
+    <button class="backlink" type="button" data-nav="home"><svg class="icon icon--sm"><use href="#i-close"/></svg>놀기로 돌아가기</button>
     <div class="hero">
       <h1 class="hero__title">오늘의 나를 카드로!</h1>
       <p class="hero__sub">사진을 넣으면 나만의 랜덤 포토카드가 탄생해요. 완성하고 SNS에 올려 부스 스태프에게 보여주면 mh머니 인증을 받을 수 있어요.</p>
@@ -273,41 +345,30 @@
 
   <!-- ========== 도채비 ========== -->
   <section class="screen" id="s-dokebi">
+    <button class="backlink" type="button" data-nav="home"><svg class="icon icon--sm"><use href="#i-close"/></svg>놀기로 돌아가기</button>
     <div class="dokstage">
       <img class="dokstage__img" id="dokBig" src="dokebi/fullbody.png" alt="도채비">
       <div class="bubble bubble--big"><div class="bubble__who">도채비</div><div class="bubble__text" id="dokBigText">뭐 궁금한 거 있어?</div></div>
     </div>
+    <div class="btnrow dokAct" id="dokAct" hidden></div>
     <div class="chips" id="dokAsk">
+      <button class="chip chip--btn" data-ask="festival">탐라문화제가 뭐야?</button>
+      <button class="chip chip--btn" data-ask="stamp">스탬프는 뭐야?</button>
       <button class="chip chip--btn" data-ask="treasure">쿠지가 뭐야?</button>
       <button class="chip chip--btn" data-ask="luck">mh머니는 어떻게 모아?</button>
-      <button class="chip chip--btn" data-ask="where">과수원피스가 어디야?</button>
+      <button class="chip chip--btn" data-ask="coupon">쿠폰은 어디서 써?</button>
+      <button class="chip chip--btn" data-ask="where">과수원피스가 뭐야?</button>
       <button class="chip chip--btn" data-ask="who">넌 누구야?</button>
       <button class="chip chip--btn" data-ask="random">아무 말이나 해줘</button>
-    </div>
-    <div class="section">
-      <div class="section__head"><h2 class="section__title" style="font-size:17px">과수원피스 STAMPEDE</h2></div>
-      <p class="section__lead" id="mainInfo">2026.10.31(토) 한림 금능석물원 · 10:30~16:00 · 항해 패스 6,000원</p>
-      <div class="btnrow" style="margin-top:12px">
-        <a class="btn btn--secondary" id="lnkGuide" target="_blank" rel="noopener">행사 미리보기</a>
-      </div>
-      <p class="section__lead" id="boothInfo" style="margin-top:14px"></p>
-    </div>
-    <div class="section">
-      <div class="divider"></div>
-      <p class="caption">참가자 <b id="meName">-</b> · 참가코드 <b id="meCode">-</b></p>
-      <button class="btn btn--tertiary btn--block" id="btnReset" style="margin-top:8px"><svg class="icon"><use href="#i-trash"/></svg>이 기기에서 로그아웃</button>
-      <p class="caption caption--center" style="margin-top:8px;opacity:.6">로그아웃해도 서버 기록은 그대로예요. 전화번호로 다시 이어할 수 있어요.</p>
     </div>
   </section>
 </div>
 
-<!-- 하단 내비게이션 (5탭) -->
-<nav id="tabs" class="nav" aria-label="주 메뉴"><div class="nav__in nav__in--5">
-  <button class="tab on" data-go="home"><svg class="icon"><use href="#i-home"/></svg>홈</button>
-  <button class="tab" data-go="collect"><svg class="icon"><use href="#i-clover"/></svg>mh머니 모으기</button>
+<!-- 하단 내비게이션 (3탭: 놀기 / 쿠지 / 내 기록) — 포토카드·도채비는 놀기 안의 하위 화면 -->
+<nav id="tabs" class="nav" aria-label="주 메뉴"><div class="nav__in nav__in--3">
+  <button class="tab on" data-go="home"><svg class="icon"><use href="#i-compass"/></svg>놀기</button>
   <button class="tab" data-go="taste"><svg class="icon"><use href="#i-gift"/></svg>쿠지</button>
-  <button class="tab" data-go="photo"><svg class="icon"><use href="#i-camera"/></svg>포토카드</button>
-  <button class="tab" data-go="dokebi"><img class="tab__face" src="dokebi/exp_default.png" alt="">도채비</button>
+  <button class="tab" data-go="record"><svg class="icon"><use href="#i-ticket"/></svg>내 기록</button>
 </div></nav>
 
 <!-- 도채비 팝업 말풍선 (랜덤 대화 · 보상 피드백) -->
@@ -369,10 +430,11 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="config.js?v=taste1"></script>
 <script src="live.js"></script>
-<script src="ev-client.js?v=4"></script>
-<script src="mqscan.js"></script>
+<script src="ev-client.js?v=5"></script>
+<script src="mqscan.js?v=2"></script>
+<script src="qr.js"></script>
 <script src="mhcards.js?v=9"></script>
-<script src="kujiboard.js?v=3"></script>
+<script src="kujiboard.js?v=4"></script>
 <script>
 (function(){
 'use strict';
@@ -619,6 +681,7 @@ function sync(){
   net.syncing=true;
   return EV.state(EID).then(function(st){
     V=st;net.offline=false;net.syncing=false;net.loaded=true;
+    if(st&&st.serverTime)skew=st.serverTime-Date.now();
     if(st&&st.participant&&st.participant.nickname&&st.participant.nickname!==S.name){S.name=st.participant.nickname;save()}
     C.crew.forEach(function(c){ if(missionDone(c.missionId)&&!S.crew[c.id]){S.crew[c.id]=today()} });
     save();paint();return st;
@@ -695,22 +758,33 @@ var CLAIMING='<p class="caption">서버에 기록하는 중…</p>';
 function fillRw(res){var el=$('#rwBody');if(el)el.innerHTML=resultHtml(res)}
 
 /* ---------------- 화면 전환 ---------------- */
-var GO_ALIAS={wanted:'collect',game:'collect',shop:'taste',more:'taste',treasure:'taste',info:'dokebi'};
-function go(id){
+/* 2026-10-10 개편: 하단 탭은 놀기(home) / 쿠지(taste) / 내 기록(record) 3개.
+   예전 '모으기(collect)'는 놀기 안의 '여섯 신 찾기'로 합쳤고, 포토카드·도채비는 놀기의 하위 화면이다. */
+var GO_ALIAS={wanted:'home#godsSec',game:'home#gameSec',collect:'home#godsSec',shop:'taste',more:'taste',treasure:'taste',info:'dokebi'};
+var TAB_OF={home:'home',photo:'home',dokebi:'home',taste:'taste',record:'record'};
+function go(id,anchor){
   id=GO_ALIAS[id]||id;
+  if(id.indexOf('#')>0){anchor=anchor||id.split('#')[1];id=id.split('#')[0]}
   if(!$('#s-'+id))id='home';
   $$('.screen').forEach(function(s){s.classList.remove('on')});
   $('#s-'+id).classList.add('on');
-  $$('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.go===id)});
-  if(id==='collect')paintGame();
+  $$('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.go===TAB_OF[id])});
+  if(id==='home'){paintGame();paintCampaign();sync()}
   if(id==='taste'){paintTaste();sync()}
+  if(id==='record'){paintRecord();sync()}
   if(id==='dokebi')dokScreen();
-  window.scrollTo(0,0);
+  var el=anchor&&document.getElementById(anchor);
+  if(el&&el.scrollIntoView)setTimeout(function(){el.scrollIntoView({behavior:'smooth',block:'start'})},60);
+  else window.scrollTo(0,0);
   if(id!=='dokebi')maybeDokPop();
 }
 $$('.tab').forEach(function(t){t.onclick=function(){go(t.dataset.go)}});
-$$('[data-nav]').forEach(function(b){b.onclick=function(){go(b.dataset.nav)}});
-$('#balBtn').onclick=function(){go('collect')};
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-nav]');if(!b)return;
+  if(b.closest('#modal'))closeModal();
+  go(b.dataset.nav,b.dataset.anchor);
+});
+$('#balBtn').onclick=function(){go('home','godsSec')};
 $('#ddayPill').onclick=function(){go('home')};
 $('#brandHome').onclick=function(e){e.preventDefault();go('home')};
 
@@ -768,13 +842,15 @@ function enter(){
   sync().then(function(){retryPending()});
   if(!S.flags.tasteIntro){S.flags.tasteIntro=1;save();
     setTimeout(function(){playCinema('도채비',TASTE_LINES,null,'face')},400);}
-  refreshLive();refreshPlayerPos();
+  refreshLive();refreshPlayerPos();loadLive();
+  takeUrlStamp();
   if(entered)return;
   entered=true;
   var everyMs=(C.liveLocation&&C.liveLocation.playerRefreshMs)||25000;
   setInterval(refreshLive,everyMs);
   setInterval(refreshPlayerPos,everyMs);
   setInterval(function(){ if(!S.code)return; if(pendingIds().length)retryPending(); else if(net.offline)sync(); },20000);
+  setInterval(function(){ if(S.code&&!document.hidden){sync();loadLive()} },90000); // 장소 운영 상태·쿠폰 만료 갱신
   window.addEventListener('online',function(){ if(S.code){sync().then(function(){retryPending()})} });
   document.addEventListener('visibilitychange',function(){ if(!document.hidden&&S.code)sync() });
 }
@@ -815,35 +891,239 @@ function syncLine(){
 }
 function paint(){
   var c=coins();
-  setNum($('#goldN'),c);setNum($('#homeGold'),c);
+  setNum($('#goldN'),c);
   $$('.coinName').forEach(function(e){e.textContent=coinName()});
   $('#meName').textContent=S.name||'-';$('#meCode').textContent=S.code||'-';
-  $('#greet').textContent='안녕, '+(S.name||'순례자')+'!';
   var days=dday(), dtxt=days===0?'D-DAY':'D-'+days;
-  $('#ddayN').textContent=dtxt;$('#ddayBig').textContent=dtxt;
-  var k=kujiCfg(), w=V&&V.wallet;
-  $('#homeTaste').textContent=w?(w.playCount+(k&&k.playLimit!=null?' / '+k.playLimit:'')+'회'):'-';
+  $('#ddayN').textContent=dtxt;
   $('#homeSync').textContent=syncLine();
-  $('#inviteWhere').textContent=C.mainEventPlace+' · '+C.mainEventHours;
-  $('#invitePass').textContent=C.mainEventPass;
-  $('#tasteInvite').textContent=C.mainEventPlace+' · '+C.mainEventHours+' · '+C.mainEventPass;
-  $('#lnkGuide').href=C.guideUrl;$('#lnkPreview2').href=C.guideUrl;
-  $('#mainInfo').textContent='2026.10.31(토) '+C.mainEventPlace+' · '+C.mainEventHours+' · '+C.mainEventPass;
-  $('#boothInfo').innerHTML='지금 여기 · '+C.boothName+'<br>'+C.festivalName+' '+C.festivalDates+'<br>'+C.boothWhere;
-  var hd=homeDokLine(days);
-  $('#homeDokText').textContent=hd.text;$('#homeDokFace').src='dokebi/exp_'+hd.face+'.png';
-  $('#homeDok').classList.toggle('dok--day',days===0);
-  paintCrew();paintStaff();paintTaste();paintGame();
+  $('#lnkGuide').href=C.guideUrl;
+  paintCrew();paintStaff();paintTaste();paintGame();paintCampaign();paintRecord();
 }
-function homeDokLine(days){
+/* ============================================================
+   방문 스탬프 · 장소 · 쿠폰 · 과수원피스 추첨 (2026-10-10)
+   날짜·장소·운영시간·추첨 조건은 전부 서버 설정(evCfg.campaign / evCfg.coupon)에서 온다.
+   설정에 없는 값은 지어내지 않고 '확인 중'으로 둔다. 스탬프·쿠폰 상태는 서버 응답(V.campaign / V.coupon)만 믿는다.
+   ============================================================ */
+var skew=0; // 서버 시각 - 기기 시각
+function srvNow(){return Date.now()+skew}
+function kstParts(ms){var d=new Date(ms+9*3600e3);return {day:d.toISOString().slice(0,10),hm:d.toISOString().slice(11,16)}}
+function kstToday(){return kstParts(srvNow()).day}
+function kstHMNow(){return kstParts(srvNow()).hm}
+function fmtHM(ms){return ms?kstParts(ms).hm:''}
+var WD='일월화수목금토';
+function fmtDay(day,short){var d=new Date(day+'T12:00:00+09:00');var m=+day.slice(5,7),dd=+day.slice(8,10);return short?m+'.'+dd:m+'월 '+dd+'일('+WD[d.getUTCDay()]+')'}
+function campCfg(){var c=cfgNow();return (c&&c.campaign&&c.campaign.enabled!==false&&c.campaign.places)?c.campaign:null}
+function couponCfg(){var c=cfgNow();return (c&&c.coupon)||null}
+function campV(){return (V&&V.campaign)||null}
+var PLACE_KEYS=['festival','store'];
+var PLACE_FALLBACK={festival:'탐라문화제 체험 부스',store:'박서방 제주지점 플리마켓'};
+function placeDef(k){var cp=campCfg();if(!cp)return null;return k==='checkin'?cp.checkin:cp.places[k]}
+function placeName(k){var p=placeDef(k);return (p&&p.name)||PLACE_FALLBACK[k]||k}
+/* 서버가 계산한 오늘 상태(open/paused/closed/before-open/after-close/not-today). 없으면 날짜만으로 추정 */
+function placeState(k){
+  var v=campV();if(v&&v.places&&v.places[k])return v.places[k];
+  var p=placeDef(k);if(!p)return null;
+  return (p.days||[]).indexOf(kstToday())>=0?'open':'not-today';
+}
+function hoursText(p){
+  if(!p)return '운영 시간 확인 중';
+  if(p.open&&p.close)return p.open+' ~ '+p.close;
+  if(p.open)return p.open+'부터';
+  return '운영 시간 확인 중';
+}
+function daysText(k){
+  var p=placeDef(k);if(!p||!(p.days||[]).length)return '';
+  var d=p.days;return fmtDay(d[0],true)+(d.length>1?' ~ '+fmtDay(d[d.length-1],true):'')+(k==='store'?' (토·일)':'');
+}
+var STATE_TXT={open:'운영 중','paused':'잠시 중단',closed:'오늘 종료','after-close':'오늘 종료','before-open':'운영 전','not-today':'오늘은 쉬어요'};
+function mapUrl(p){
+  if(!p)return '';
+  if(p.mapUrl&&/^https:\/\//.test(p.mapUrl))return p.mapUrl;
+  if(p.address)return 'https://map.naver.com/p/search/'+encodeURIComponent(p.address);
+  return '';
+}
+function placeCardHtml(k){
+  var p=placeDef(k), st=placeState(k), url=mapUrl(p), dim=st&&st!=='open'&&st!=='before-open';
+  return '<div class="place'+(dim?' place--dim':'')+'">'+
+    '<div class="place__head"><svg class="icon"><use href="#i-'+(k==='store'?'store':'map')+'"/></svg><b>'+esc(placeName(k))+'</b>'+
+      (st?'<span class="chip'+(st==='open'?' chip--success':'')+'">'+esc(STATE_TXT[st]||st)+'</span>':'')+'</div>'+
+    '<div class="place__meta">'+esc(daysText(k))+(daysText(k)?' · ':'')+esc(hoursText(p))+'</div>'+
+    (p&&p.address?'<div class="place__meta">'+esc(p.address)+'</div>':'')+
+    (url?'<a class="btn btn--secondary btn--sm" href="'+esc(url)+'" target="_blank" rel="noopener"><svg class="icon icon--sm"><use href="#i-compass"/></svg>길찾기</a>':'<p class="caption">위치 안내 준비 중</p>')+
+  '</div>';
+}
+function placeGuideText(){
+  var f=placeState('festival'), s=placeState('store');
+  if(!campCfg())return '방문 스탬프 설정을 불러오는 중이에요.';
+  var fo=f&&f!=='not-today', so=s&&s!=='not-today';
+  if(fo&&so)return '오늘은 두 장소 모두 스탬프를 받을 수 있어요. 같은 날 두 곳에 가면 2개!';
+  if(fo)return '오늘은 탐라문화제 부스에서 스탬프 1개를 받을 수 있어요.'+(futureDays('store')?' 박서방 플리마켓은 토·일에 열려요.':'');
+  if(so)return '오늘은 박서방 플리마켓에서 스탬프를 받을 수 있어요.';
+  return '오늘은 스탬프를 받는 날이 아니에요.';
+}
+function futureDays(k){var p=placeDef(k),t=kstToday();return !!(p&&(p.days||[]).some(function(d){return d>t}))}
+/* 7칸: 날짜순, 같은 날은 부스 → 매장 */
+function stampSlots(){
+  var cp=campCfg();if(!cp)return [];
+  var out=[];
+  PLACE_KEYS.forEach(function(k){(((cp.places[k]||{}).days)||[]).forEach(function(d){out.push({day:d,place:k})})});
+  out.sort(function(a,b){return a.day<b.day?-1:a.day>b.day?1:(a.place==='festival'?-1:1)});
+  return out;
+}
+function hasStamp(day,place){var v=campV();return !!(v&&(v.stamps||[]).some(function(x){return x.day===day&&x.place===place}))}
+function stamps7Html(){
+  var slots=stampSlots(), t=kstToday();
+  if(!slots.length)return '<p class="caption">스탬프 날짜를 불러오는 중이에요.</p>';
+  return slots.map(function(x){
+    var got=hasStamp(x.day,x.place), today=x.day===t;
+    return '<div class="stamp'+(got?' stamp--got':'')+(today&&!got?' stamp--today':'')+(x.day<t&&!got?' stamp--past':'')+'">'+
+      '<div class="stamp__dot">'+(got?'<svg class="icon icon--sm"><use href="#i-check"/></svg>':'')+'</div>'+
+      '<div class="stamp__d">'+fmtDay(x.day,true)+'</div><div class="stamp__p">'+(x.place==='store'?'매장':'부스')+'</div></div>';
+  }).join('');
+}
+function myCoupon(){return (V&&V.coupon)||null}
+function couponLive(c){if(!c)return null;if(c.status==='active'&&srvNow()>c.expiresAt)return 'expired';return c.status}
+function paintCampaign(){
+  var cp=campCfg(), v=campV();
+  var max=(v&&v.max)||(cp?stampSlots().length:7), n=(v&&v.count)||0;
+  $('#stampN').textContent=n;$('#stampMax').textContent=max;
+  $('#stamps7').innerHTML=stamps7Html();
+  var anyToday=PLACE_KEYS.some(function(k){var s=placeState(k);return s&&s!=='not-today'})||placeState('checkin')==='open';
+  var b=$('#btnStamp');
+  b.disabled=!cp||!anyToday;
+  var todayTxt='';
+  if(!cp)todayTxt=net.offline?'서버와 연결되면 열려요.':'스탬프 설정을 불러오는 중이에요.';
+  else if(placeState('checkin')&&placeState('checkin')!=='not-today')todayTxt=v&&v.checkedIn?'과수원피스 체크인 완료 · 추첨에 참여했어요':'과수원피스 현장의 체크인 QR을 찍으면 추첨에 참여돼요';
+  else if(!anyToday)todayTxt='오늘은 스탬프를 받는 날이 아니에요.';
+  else{
+    var got=PLACE_KEYS.filter(function(k){return hasStamp(kstToday(),k)}).map(placeName);
+    todayTxt=got.length?'오늘 받은 스탬프: '+got.join(', '):'장소에 있는 QR을 찍으면 오늘 스탬프가 찍혀요';
+  }
+  $('#stampToday').textContent=todayTxt;
+  /* 장소 카드 */
+  $('#places').innerHTML=PLACE_KEYS.map(placeCardHtml).join('');
+  $('#placeGuide').textContent=placeGuideText();
+  /* 쿠폰 배너 — 미사용·유효할 때만 */
+  var c=myCoupon(), cs=couponLive(c), hb=$('#homeCoupon');
+  if(c&&cs==='active'){
+    var sp=placeDef('store'), url=mapUrl(sp)||mapUrl({address:'제주시 월랑로 59'});
+    hb.hidden=false;
+    hb.innerHTML='<div class="cpnBanner__amt">5,000원 쿠폰</div><div class="cpnBanner__due">오늘 <b>'+esc(fmtHM(c.expiresAt))+'</b>까지 · 박서방 제주지점</div>'+
+      '<div class="btnrow" style="margin-top:12px"><button class="btn btn--primary" data-nav="record" data-anchor="couponSec">쿠폰 보기</button>'+
+      '<a class="btn btn--secondary" href="'+esc(url)+'" target="_blank" rel="noopener">매장 길찾기</a></div>';
+  } else hb.hidden=true;
+  /* 지금 추천 버튼 */
+  var nb=$('#homeNext'), met=C.crew.filter(isMet).length, k=kujiCfg(), cost=k&&k.cost, cn=coins();
+  var rec;
+  if(c&&cs==='active')rec={t:'내 쿠폰 사용하러 가기',go:['record','couponSec'],i:'ticket'};
+  else if(met<C.crew.length&&placeState('festival')==='open')rec={t:'신 찾기',go:['home','godsSec'],i:'compass'};
+  else if(cost!=null&&cn!=null&&cn>=cost&&k.enabled!==false)rec={t:'쿠지 뽑기',go:['taste'],i:'gift'};
+  else rec={t:'신 찾기',go:['home','godsSec'],i:'compass'};
+  nb.innerHTML='<svg class="icon"><use href="#i-'+rec.i+'"/></svg>'+esc(rec.t);
+  nb.onclick=function(){go(rec.go[0],rec.go[1])};
+  /* 오늘 이벤트 — 운영자가 evLive 공지를 띄우면 보인다 */
+  var te=$('#todayEvent'), notice=LIVE&&LIVE.notice;
+  te.hidden=!notice; if(notice)te.innerHTML='<b>오늘 이벤트</b><br>'+esc(notice);
+}
+function couponCardHtml(c){
+  var st=couponLive(c), cc=couponCfg()||{}, sp=placeDef('store');
+  var url=mapUrl(sp)||mapUrl({address:'제주시 월랑로 59'});
+  var qr='';
+  if(st==='active'&&window.qrcode){try{var q=qrcode(0,'M');q.addData('PSBC-'+c.code);q.make();qr=q.createDataURL(6,2)}catch(e){}}
+  var badge=st==='used'?'사용 완료':st==='expired'?'기한 만료':'';
+  return '<div class="cpn'+(st!=='active'?' cpn--off':'')+'">'+
+    '<div class="cpn__img"><img src="assets/campaign/coupon.jpg" alt="박서방 5,000원 쿠폰">'+(badge?'<span class="cpn__stamp">'+badge+'</span>':'')+'</div>'+
+    '<div class="cpn__title">박서방 제주지점 5,000원 쿠폰</div>'+
+    '<div class="cpn__due">'+(st==='active'?'오늘 <b>'+esc(fmtHM(c.expiresAt))+'</b>까지':st==='used'?esc(fmtDay(kstParts(c.usedAt||c.issuedAt).day))+' 사용했어요':'사용 기한이 지났어요')+'</div>'+
+    '<div class="cpn__terms">'+esc(cc.terms||'매장 직원에게 이 화면의 QR을 보여 주세요. 사용 조건은 매장에서 안내해 드려요.')+'</div>'+
+    (st==='active'?(qr?'<img class="cpn__qr" src="'+qr+'" alt="쿠폰 사용 QR">':'')+'<div class="cpn__code">'+esc(c.code)+'</div>'+
+      '<p class="caption caption--center">화면 캡처는 사용 증명이 아니에요. 직원이 이 QR로 확인해요.</p>'+
+      '<a class="btn btn--secondary btn--block" href="'+esc(url)+'" target="_blank" rel="noopener" style="margin-top:10px"><svg class="icon icon--sm"><use href="#i-compass"/></svg>박서방 제주지점 길찾기</a>':'')+
+  '</div>';
+}
+function drawRowsHtml(){
+  var cp=campCfg(), v=campV(), d=(cp&&cp.draw)||{}, ck=cp&&cp.checkin;
+  var rows=[];
+  var row=function(i,t,s){rows.push('<div class="row"><svg class="icon"><use href="#i-'+i+'"/></svg><div><div class="row__title">'+t+'</div>'+(s?'<div class="row__desc">'+s+'</div>':'')+'</div></div>')};
+  var dayTxt=ck&&ck.days&&ck.days[0]?fmtDay(ck.days[0]):'10월 31일(토)';
+  row('calendar',esc(dayTxt)+' '+esc((ck&&ck.name)||'과수원피스')+' 현장 추첨',(d.drawAt?'추첨 '+esc(d.drawAt):'')+(d.drawPlace?(d.drawAt?' · ':'')+esc(d.drawPlace):'')||'추첨 시각·장소는 확정되면 여기 안내돼요');
+  row('qr','과수원피스 현장에서 체크인 QR을 찍어야 추첨에 참여돼요',v&&v.checkedIn?'<b style="color:var(--color-success)">체크인 완료 · 응모됐어요</b>':'당일 현장에서 이 앱의 「오늘 스탬프 찍기」로 체크인 QR을 찍으면 자동 응모돼요');
+  if(d.confirmed&&d.weightMode==='perStamp')row('star','스탬프 1개 = 추첨 기회 1회 (최대 '+((v&&v.max)||7)+'회)','많이 모을수록 유리하지만 당첨이 보장되지는 않아요. 실제 확률은 전체 응모 수에 따라 달라요.');
+  else if(d.confirmed&&d.weightMode==='equal')row('star','스탬프 조건을 채우면 1인 1회 응모','');
+  else row('star','스탬프를 많이 모은 분께 유리한 방식으로 추첨해요','정확한 응모 방식은 확정되면 여기 안내돼요. 당첨이 보장되지는 않아요.');
+  if(d.confirmed&&d.minStamps!=null)row('check','스탬프 '+d.minStamps+'개 이상 모은 분부터 응모돼요','');
+  if(d.confirmed&&d.winners)row('gift','당첨 '+d.winners+'명','');
+  if(d.absentRule)row('info',esc(d.absentRule),'');
+  if(d.claimDeadline)row('clock','경품 수령 기한 · '+esc(d.claimDeadline),'');
+  if(v&&v.draw&&v.draw.won===true)row('gift','<b style="color:var(--color-accent-strong)">축하해요! 당첨됐어요</b>','현장 스태프에게 이 화면을 보여 주세요.');
+  return rows.join('');
+}
+function paintRecord(){
+  var v=campV();
+  $('#recStampN').textContent=(v&&v.count)||0;$('#recStampMax').textContent=(v&&v.max)||stampSlots().length||7;
+  $('#recStamps7').innerHTML=stamps7Html();
   var met=C.crew.filter(isMet).length;
-  if(days===0)return {text:'드디어 왔구나!! 오늘 과수원피스 열리는 날이야!',face:'excited'};
-  if(days===1)return {text:'내일이 과수원피스야. 한림 금능석물원에서 만나!',face:'surprise'};
-  if(days<=7)return {text:'D-'+days+'! 과수원피스가 일주일도 안 남았어.',face:'surprise'};
-  if(met===0)return {text:'신들이랑 인사했어? 게임도 한 판 해 봐.',face:'smile'};
-  if(met<C.crew.length)return {text:'벌써 '+met+'분이랑 인사했네. 나머지 신들도 찾아봐!',face:'wink'};
-  return {text:'여섯 신을 다 만났네! 쿠지도 한 번 맛보고 가.',face:'laugh'};
+  $('#recGodN').textContent=met;
+  $('#recGods').innerHTML=C.crew.map(function(c){var m=isMet(c);return '<span class="godDot'+(m?' godDot--on':'')+'">'+(m?'<img src="'+c.photo+'" alt="">':'')+'<i>'+(m?esc(c.name):'???')+'</i></span>'}).join('');
+  var c=myCoupon();
+  $('#couponBox').innerHTML=c?couponCardHtml(c):'<p class="caption">아직 받은 쿠폰이 없어요. 쿠지에서 5,000원 쿠폰이 나올 수 있어요(1인 1회).</p>';
+  $('#drawRows').innerHTML=drawRowsHtml();
 }
+/* 오늘 스탬프 찍기 → 기존 QR 스캐너. 카메라가 안 되면 화면 아래 7자리 코드로 입력 */
+function stampTokenFrom(t){
+  t=String(t||'').trim();
+  var m=/[?&]st=([A-Za-z0-9]{7})\b/.exec(t);if(m)return m[1].toUpperCase();
+  return /^[A-Za-z0-9]{7}$/.test(t)?t.toUpperCase():'';
+}
+function openStampScan(){
+  if(!window.MQScan){toast('잠시 후 다시 눌러 주세요');return}
+  MQScan.open({hint:'장소에 있는 방문 스탬프 QR을 네모 안에 맞춰 주세요',parse:stampTokenFrom,
+    badHint:'방문 스탬프 QR이 아니에요. 장소 화면의 QR을 비춰 주세요.',onToken:claimStampTok,onManual:openStampCode});
+}
+function openStampCode(){
+  sheet('<h3>코드로 스탬프 찍기</h3><p>장소 화면의 QR 아래에 있는 7자리 코드를 입력하세요. 코드는 잠시 뒤 바뀌어요.</p>'+
+    '<div class="field" style="margin-top:12px"><label for="stCode">7자리 코드</label><input id="stCode" maxlength="7" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:.2em"></div>'+
+    '<button class="btn btn--primary btn--block" id="stGo">스탬프 찍기</button>'+
+    '<button class="btn btn--tertiary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">닫기</button>');
+  $('#stGo').onclick=function(){var t=stampTokenFrom($('#stCode').value);if(!t){toast('7자리 코드를 확인해 주세요');return}closeModal();claimStampTok(t)};
+}
+var stampBusy=false;
+function claimStampTok(tok){
+  if(stampBusy)return;stampBusy=true;
+  toast('스탬프 확인 중…');
+  EV.claimStamp(EID,tok).then(function(r){
+    stampBusy=false;
+    sync().then(function(){paintCampaign();paintRecord()});
+    if(r.checkin){
+      sheet(dokSheetHtml('excited',r.already?'이미 체크인했어! 추첨에 응모돼 있어.':'과수원피스 체크인 완료! 헌터×헌터 더블찬스 인형 추첨에 응모됐어.')+
+        '<p class="caption caption--center" style="margin-top:10px">내 방문 스탬프 '+r.count+'개</p>'+
+        '<button class="btn btn--primary btn--block" data-nav="record" data-anchor="drawSec">추첨 안내 보기</button>');
+      return;
+    }
+    if(r.already){toast('오늘 '+placeName(r.place)+' 스탬프는 이미 찍었어요 ('+r.count+' / '+r.max+')');return}
+    try{if(navigator.vibrate)navigator.vibrate([40,40,80])}catch(e){}
+    sheet('<div class="stampHit"><div class="stampHit__ring"><svg class="icon icon--lg"><use href="#i-check"/></svg></div>'+
+      '<div class="stampHit__place">'+esc(placeName(r.place))+'</div>'+
+      '<div class="stampHit__n">'+r.count+' <span>/ '+r.max+'</span></div></div>'+
+      dokSheetHtml('laugh',r.count>=r.max?'일곱 개 다 모았어! 10월 31일 과수원피스에서 체크인하면 추첨에 들어가.':'오늘 스탬프 찍었어! 모은 스탬프는 과수원피스 추첨으로 이어져.')+
+      '<button class="btn btn--primary btn--block" style="margin-top:12px" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">확인</button>');
+    try{beep(660,0.08,'triangle',0.08);setTimeout(function(){beep(990,0.12,'triangle',0.08)},90)}catch(e){}
+  },function(e){
+    stampBusy=false;
+    if(e.reason==='not-registered'){lostRegistration();return}
+    toast(e.retryable?'연결이 불안정해요. 다시 찍어 주세요 — 완료로 기록되지 않았어요.':(e.message||'스탬프를 찍지 못했어요'));
+  });
+}
+$('#btnStamp').onclick=openStampScan;
+/* 장소 안내 시트(도채비 답변 버튼용) */
+function placeSheet(k){
+  sheet('<h3>'+esc(placeName(k))+'</h3>'+placeCardHtml(k)+
+    '<p class="caption" style="margin-top:10px">'+(k==='store'?'피규어·굿즈 셀러 플리마켓이 열려요. 스탬프는 토·일 하루 1개씩.':'여섯 신 찾기·게임·코스프레 체험이 있어요. 스탬프는 하루 1개씩.')+'</p>'+
+    '<button class="btn btn--tertiary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">닫기</button>');
+}
+var LIVE=null;
+function loadLive(){ if(!EV.readLive)return; EV.readLive(EID).then(function(l){LIVE=l;paintCampaign()},function(){}); }
 function dday(){
   var t=new Date(C.mainEventDate)-new Date();
   return Math.max(0,Math.ceil(t/86400000));
@@ -917,7 +1197,7 @@ function paintStaff(){
   var m=missionCfg('sns'), done=missionDone('sns');
   var el=$('#staffTodo');
   if(net.loaded&&(!m||m.enabled===false)){
-    el.innerHTML='<p class="caption">지금 열려 있는 스태프 인증이 없어요.</p>';
+    el.innerHTML='';
   } else {
     el.innerHTML='<div class="quest'+(done?' quest--done':'')+'"><svg class="icon"><use href="#i-'+(done?'check':'message')+'"/></svg>'+
       '<div><div class="quest__title">SNS 인증</div><div class="quest__desc">'+(done?'인증 완료 · 새 게시물을 올리면 또 받을 수 있어요':'SNS에 올린 화면을 스태프에게 보여 주고, 스태프가 보여 주는 QR을 찍어요')+'</div></div>'+
@@ -996,6 +1276,11 @@ function paintTaste(){
   b.textContent=demo?"시연으로 뽑기":"쿠지 뽑기";
   need.textContent=why||(V?'':'서버에서 내 기록을 불러오는 중이에요.');
   lim.textContent=(w&&k)?('내 쿠지 '+w.playCount+'회'+(k.playLimit!=null?' / 최대 '+k.playLimit+'회':'')):'';
+  var cc=couponCfg(), cl=$('#tasteCouponClosed');
+  var closedNow=!!(cc&&(cc.enabled===false||(cc.issueUntil&&kstHMNow()>cc.issueUntil)));
+  cl.hidden=!closedNow;
+  if(closedNow)cl.textContent=cc.enabled===false?'지금은 5,000원 쿠폰 발급이 멈춰 있어요. 쿠폰 번호를 뽑으면 꽝으로 처리돼요.':'오늘 쿠폰 발급은 '+cc.issueUntil+'에 끝났어요. 지금 쿠폰 번호를 뽑으면 꽝으로 처리돼요.';
+  $('#tasteCouponNote').hidden=!cc;
   var box=$('#tasteResultBox');
   if(lastPlay){box.hidden=false;$('#tasteResult').innerHTML=playHtml(lastPlay)}
   else box.hidden=true;
@@ -1005,13 +1290,15 @@ function paintTaste(){
 /* 매 판을 한 줄씩 다 나열하면 여러 번 뽑을수록 길어지기만 해서,
    꽝/카드는 횟수로 합치고 실물 상품만 이름을 남긴다(요약, 2026-10-02). */
 function tasteSummaryHtml(pl){
-  var blanks=0, coinsSum=0, items=[];
+  var blanks=0, coinsSum=0, items=[], cpn=0;
   pl.forEach(function(p){
     if(p.kind==='blank')blanks++;
     else if(p.kind==='coin')coinsSum+=(p.coinReward||1);
+    else if(p.kind==='coupon')cpn++;
     else items.push(p);
   });
   var parts=['총 '+pl.length+'회'];
+  if(cpn)parts.push('5,000원 쿠폰 '+cpn+'장');
   if(items.length)parts.push('실물 '+items.length+'개');
   if(coinsSum)parts.push(coinName()+' '+coinsSum+'장');
   if(blanks)parts.push('꽝 '+blanks+'번');
@@ -1024,7 +1311,11 @@ function tasteSummaryHtml(pl){
 function safeImg(u){return (typeof u==='string'&&(/^https?:\/\//.test(u)||/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(u)||/^[\w\-\/.]+\.(png|jpe?g|webp|gif)$/i.test(u)))?u:''}
 function playHtml(p){
   var img=safeImg(p.image);
-  if(p.kind==='blank')return '<div class="reward"><div class="reward__num" style="font-size:24px">'+esc(p.name||'꽝')+'</div><div class="reward__label">이번엔 아쉽게 꽝이에요. 다음 기회에 또 도전해요</div></div>';
+  if(p.kind==='coupon'&&p.coupon)return '<div class="reward"><div class="reward__num" style="font-size:24px">박서방 5,000원 쿠폰</div><div class="reward__label">오늘 '+esc(fmtHM(p.coupon.expiresAt))+'까지 박서방 제주지점에서 쓸 수 있어요</div></div>'+
+    '<button class="btn btn--primary btn--block" data-nav="record" data-anchor="couponSec" style="margin-top:12px">내 쿠폰 보기</button>';
+  if(p.kind==='blank'&&p.couponNote==='dup')return '<div class="reward"><div class="reward__num" style="font-size:24px">꽝</div><div class="reward__label">5,000원 쿠폰은 이미 받아서 이번엔 꽝으로 처리됐어요</div></div>';
+  if(p.kind==='blank'&&p.couponNote==='closed')return '<div class="reward"><div class="reward__num" style="font-size:24px">꽝</div><div class="reward__label">오늘 쿠폰 발급이 끝나서 꽝으로 처리됐어요</div></div>';
+  if(p.kind==='blank')return '<div class="reward"><div class="reward__num" style="font-size:24px">'+esc(p.name||'꽝')+'</div><div class="reward__label">이번엔 꽝이에요</div></div>';
   if(p.kind==='coin')return '<div class="reward"><div class="reward__num" style="font-size:24px">'+esc(coinName())+' '+esc(p.coinReward||1)+'장</div><div class="reward__label">다음 미션으로 카드를 더 모아 보세요</div></div>';
   var s='<div class="reward">'+(img?'<img src="'+esc(img)+'" alt="" style="max-width:160px;max-height:160px;border-radius:12px;margin-bottom:8px">':'')+
     '<div class="reward__num" style="font-size:24px">'+esc(p.name||'-')+'</div>'+
@@ -1043,6 +1334,9 @@ $('#btnTaste').onclick=function(){
 };
 function afterPlay(r,bookBefore){
   lastPlay=r.play;
+  var p=r.play||{};
+  if(p.kind==='coupon'&&p.coupon)setTimeout(function(){dokPop('오늘 박서방에서 쓸 수 있는 5,000원 쿠폰이야. 마감 시간을 확인하고 가봐!','excited',6500)},900);
+  else if(p.kind==='blank')setTimeout(function(){dokPop(p.couponNote==='dup'?'쿠폰은 한 사람에 한 장이라 이번엔 꽝이야. 다른 상품은 계속 나올 수 있어.':'아쉽다, 꽝이야. 다음 판에 또 해 봐.','smile',4500)},900);
   return sync().then(function(){paintTaste();
     if(r.play&&r.play.cards&&r.play.cards.length&&window.MH)setTimeout(function(){MH.reveal(r.play.cards,{book:bookBefore,title:'아쉽! 대신 '+coinName()+' 카드',onClose:paintAlbum})},500);
     var el=$('#tasteResultBox');if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'center'});
@@ -1101,7 +1395,7 @@ function grantCrew(hit){
       fillRw(res);
       if(res.ok&&C.crew.every(isMet)){
         var ex=$('#rwExtra');
-        if(ex)ex.innerHTML='<div class="note" style="margin-top:16px"><b>여섯 신께 모두 인사했어요.</b><br>10월 31일(토) '+esc(C.mainEventPlace)+'에서 과수원피스가 열려요.</div>';
+        if(ex)ex.innerHTML='<div class="note" style="margin-top:16px"><b>여섯 신께 모두 인사했어요.</b><br>신 도장과 별개로, 방문 스탬프는 장소 QR로 하루 하나씩 모여요.</div>';
       }
     });
   }
@@ -1112,7 +1406,7 @@ function grantCrew(hit){
 }
 $('#trackClose').onclick=closeTracker;
 $('#trackScanBtn').onclick=greetGod;
-$('#btnSns').onclick=function(){if(window.KB)askStaffPin();else toast('잠시 후 다시 눌러 주세요')};
+$('#btnSns').onclick=scanSnsQr;
 /* 나침반 화면의 "인사하기" — QR/코드 없이 바로 인사 처리 */
 function greetGod(){
   var hit=trackGod;
@@ -1137,15 +1431,15 @@ var CINE_LINES=null, cineIdx=0, cineDone=null;
 /* 오프닝 — 등록 화면 뜨기 전, 처음 한 번만 재생. 진행자는 도채비. */
 /* 오프닝은 표정 전환 없이 전신컷 하나로만 진행(사장님 지정) */
 var OPENING_LINES=[
-  {img:'dokebi/fullbody.png', text:'안녕! 나는 도채비야.'},
-  {img:'dokebi/fullbody.png', text:'탐라문화제에 여섯 신이 전부 강림해 있어. 나까지 여섯.'},
+  {img:'dokebi/fullbody.png', text:'안녕! 나는 도채비야. 탐라문화제에 온 걸 환영해.'},
+  {img:'dokebi/fullbody.png', text:'여기 메이커앤하비 부스엔 제주 신화의 여섯 신이 강림해 있어. 나까지 여섯.'},
   {img:'dokebi/fullbody.png', text:'그냥 들여보낼 수는 없지. 나랑 씨름 한 판 하자!'}
 ];
-/* 등록 직후 한 번 — 맛보기 안내(숫자·보상은 말하지 않는다: 서버가 정한다) */
+/* 등록 직후 한 번 — 오늘 할 일 안내(숫자·보상은 말하지 않는다: 서버가 정한다) */
 var TASTE_LINES=[
-  {img:'dokebi/exp_smile.png', text:'등록 끝! 여기선 무료로 디지털 쿠지를 맛볼 수 있어.'},
-  {img:'dokebi/exp_wink.png', text:'신들께 인사하고, 놀이터에서 놀고, 포토카드를 만들면 mh머니가 쌓여.'},
-  {img:'dokebi/exp_excited.png', text:'mh머니가 모이면 쿠지 탭에서 한 번 뽑아봐. 그럼 시작해볼까?'}
+  {img:'dokebi/exp_smile.png', text:'등록 끝! 부스에서 여섯 신을 찾고 게임을 하면 mh머니가 쌓여. 그걸로 쿠지를 뽑을 수 있어.'},
+  {img:'dokebi/exp_wink.png', text:'그리고 「오늘 스탬프 찍기」! 부스랑 박서방 플리마켓에서 하루 하나씩 QR을 찍으면 방문 스탬프가 모여.'},
+  {img:'dokebi/exp_excited.png', text:'모은 스탬프는 10월 31일 과수원피스의 헌터×헌터 더블찬스 인형 추첨으로 이어져. 그럼 놀아 볼까?'}
 ];
 /* ---- 씨름: 3초 동안 마구 누르기. 결과는 늘 도채비 승(개그) ---- */
 function startSsireum(onDone){
@@ -1191,7 +1485,8 @@ $('#dokpop').onclick=function(e){ if(e.target.closest('.dokpop__x'))return; $('#
 /* 앱은 탐라문화제 기간(10/17~21, D-14~D-10)에만 열어두므로 대사도 "지금 행사장에 있는 사람" 기준으로 쓴다 */
 var DOK_RANDOM=[
   {t:function(){var n=C.crew.filter(function(c){return !isMet(c)}).length;return '여섯 신이 지금 행사장 어딘가에 계셔. 아직 못 만난 신이 '+n+'분!'},f:'surprise',when:function(){return C.crew.some(function(c){return !isMet(c)})}},
-  {t:function(){return '10월 31일이 '+dday()+'일 뒤야. 한림 금능석물원에서 과수원피스가 열려!'},f:'excited'},
+  {t:'오늘 방문 스탬프 찍었어? 장소에 있는 QR을 찍으면 하루 하나씩 모여.',f:'excited',when:function(){var v=campV();return !!campCfg()&&!(v&&(v.stamps||[]).some(function(x){return x.day===kstToday()}))}},
+  {t:'주말엔 박서방 제주지점에서 피규어·굿즈 플리마켓이 열려. 거기서도 스탬프를 받을 수 있어!',f:'wink',when:function(){var s=placeState('store');return !!s&&s!=='not-today'}},
   {t:'포토카드 만들어 봤어? 신이랑 찍은 사진으로 만들면 예뻐.',f:'smile',when:function(){return !missionDone('photo')}},
   {t:'놀이터에서 귤 좀 잘라봐. 재밌어.',f:'laugh'},
   {t:'mh머니가 모였으면 쿠지 탭에서 한 번 뽑아봐.',f:'wink',when:function(){var c=coins();return c!=null&&c>0}},
@@ -1203,21 +1498,31 @@ function pickDok(){
   return {t:typeof l.t==='function'?l.t():l.t,f:l.f};
 }
 function maybeDokPop(){
+  if(uiBusy())return;
   var t=d();t.dok=t.dok||0;
   if(t.dok>=3||Math.random()>0.28)return;
   var line=pickDok();
   t.dok++;save();
-  setTimeout(function(){dokPop(line.t,line.f)},350);
+  setTimeout(function(){if(!uiBusy())dokPop(line.t,line.f)},350);
 }
 /* ---- 도채비 화면 ---- */
+/* b: 답변 아래 버튼 [라벨, 동작]. 동작 = 'place:festival' | 'place:store' | 화면#앵커 */
 var DOK_ASK={
-  treasure:{t:function(){var k=kujiCfg();return '디지털 쿠지야. mh머니로 여기서 뽑아볼 수 있어.'+(k&&k.demoMode?' 지금은 시연이라 실물 지급은 없어.':'')},f:'wink'},
-  luck:{t:'여섯 신께 인사하고, 놀이터 게임을 하고, 포토카드를 만들면 mh머니가 쌓여. 얼마나 쌓이는지는 서버가 알려줘.',f:'smile'},
-  where:{t:'10월 31일(토) 한림 금능석물원에서 10시 30분부터 4시까지야. 항해 패스는 6,000원.',f:'excited'},
+  festival:{t:'제주 문화와 신화를 만나는 축제야! 우리 메이커앤하비 부스에서는 여섯 신을 찾고, 게임과 코스프레를 즐길 수 있어. 피규어·굿즈 플리마켓은 박서방 제주지점에서 열려. 아래에서 두 장소를 확인해봐!',f:'excited',
+    b:[['체험 부스 안내','place:festival'],['박서방 플리마켓 안내','place:store']]},
+  stamp:{t:'탐라문화제는 하루 하나씩 5개, 박서방 토·일 플리마켓은 하루 하나씩 2개! 최대 7개의 방문 스탬프를 모을 수 있어. 모은 기록은 과수원피스의 헌터×헌터 더블찬스 인형 추첨과 연결돼. 정확한 응모 조건은 아래에서 확인해봐!',f:'wink',
+    b:[['내 스탬프','record#recStamps7'],['추첨 안내','record#drawSec']]},
+  treasure:{t:function(){var k=kujiCfg();return '디지털 쿠지야. mh머니로 번호를 골라 뽑아. 5,000원 쿠폰도 들어 있는데, 쿠폰은 행사 기간 중 한 사람에 한 번만 당첨돼.'+(k&&k.demoMode?' 지금은 시연이라 실물 지급은 없어.':'')},f:'wink',b:[['쿠지 뽑으러 가기','taste']]},
+  luck:{t:'여섯 신께 인사하고, 놀이터 게임을 하고, 포토카드를 만들면 mh머니가 쌓여. 얼마나 쌓이는지는 서버가 알려줘.',f:'smile',b:[['여섯 신 찾기','home#godsSec']]},
+  coupon:{t:'쿠지에서 나온 5,000원 쿠폰은 받은 날 박서방 제주지점에서 써. 마감 시간이 쿠폰에 적혀 있으니까 꼭 확인하고, 매장 직원에게 쿠폰 QR을 보여 주면 돼!',f:'smile',
+    b:[['내 쿠폰','record#couponSec'],['박서방 위치','place:store']]},
+  where:{t:'10월 31일에 열리는 과수원피스야. 방문 스탬프를 모은 기록이 거기서 헌터×헌터 더블찬스 인형 추첨으로 이어져. 추첨은 현장에서 체크인한 사람만 참여할 수 있어!',f:'excited',
+    b:[['추첨 안내','record#drawSec']]},
   who:{t:'뿔 달린 거 상상했지? 그건 오니야, 난 도채비라고!',f:'pout'}
 };
 function dokScreen(){
   $('#dokBigText').textContent='뭐 궁금한 거 있어? 아래에서 골라봐.';
+  $('#dokAct').hidden=true;
 }
 $$('#dokAsk [data-ask]').forEach(function(b){
   b.onclick=function(){
@@ -1226,7 +1531,16 @@ $$('#dokAsk [data-ask]').forEach(function(b){
     else line=DOK_ASK[k];
     $('#dokBigText').textContent=typeof line.t==='function'?line.t():line.t;
     $('#dokBig').src='dokebi/exp_'+line.f+'.png';$('#dokBig').style.maxHeight='240px';
+    var act=$('#dokAct');
+    act.hidden=!(line.b&&line.b.length);
+    act.innerHTML=(line.b||[]).map(function(x){return '<button class="btn btn--secondary" data-dact="'+esc(x[1])+'">'+esc(x[0])+'</button>'}).join('');
   };
+});
+$('#dokAct').addEventListener('click',function(e){
+  var b=e.target.closest('[data-dact]');if(!b)return;
+  var a=b.dataset.dact;
+  if(a.indexOf('place:')===0){placeSheet(a.slice(6));return}
+  var p=a.split('#');go(p[0],p[1]);
 });
 /* 표정이 대사마다 매번 바뀌면 산만하다는 피드백(2026-09-14) 반영 —
    감정이 실제로 바뀌는 지점에서만 표정을 바꾼다(7줄에 4번만 전환). */
@@ -2543,6 +2857,18 @@ $('#btnReset').onclick=function(){
   $('#okReset').onclick=function(){localStorage.removeItem(KEY);try{EV.logout()}catch(e){}location.reload()};
 };
 
+/* ---------------- 장소 QR을 폰 카메라 앱으로 찍어 들어온 경우(?st=코드) ----------------
+   코드는 잠깐만 유효하므로 등록 전이면 이 탭에서만 기억했다가 등록·이어하기 직후 바로 보낸다. */
+(function(){
+  var m=/[?&]st=([A-Za-z0-9]{7})\b/.exec(location.search);
+  if(!m)return;
+  try{sessionStorage.setItem('tamna.st',m[1].toUpperCase())}catch(e){}
+  try{history.replaceState(null,'',location.pathname)}catch(e){}
+})();
+function takeUrlStamp(){
+  var t=null;try{t=sessionStorage.getItem('tamna.st');sessionStorage.removeItem('tamna.st')}catch(e){}
+  if(t)setTimeout(function(){claimStampTok(t)},600);
+}
 /* ---------------- 부팅 ---------------- */
 loadPublicCfg();
 if(S.name&&S.code){$('#s-intro').classList.remove('on');enter();}

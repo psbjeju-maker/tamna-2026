@@ -121,7 +121,21 @@
       'person-limit': '받을 수 있는 보물 수를 채웠어요.',
       'card-id-required': '지급한 카드 종류를 선택해 주세요.',
       'already-given': '이미 지급된 결과예요.',
-      'no-tier': '아직 보상을 받을 단계에 도달하지 못했어요.'
+      'no-tier': '아직 보상을 받을 단계에 도달하지 못했어요.',
+      'stamp-token-bad': '방문 스탬프 QR이 아니에요.',
+      'stamp-token-expired': '시간이 지났거나 맞지 않는 QR이에요. 지금 화면에 떠 있는 QR을 다시 찍어 주세요.',
+      'stamp-locked': '잘못된 QR을 너무 많이 찍었어요. 10분 뒤 다시 해 주세요.',
+      'campaign-off': '방문 스탬프가 아직 열리지 않았어요.',
+      'place-not-today': '오늘은 이 장소 스탬프가 없는 날이에요.',
+      'place-paused': '지금은 잠시 운영을 멈췄어요.',
+      'place-closed': '오늘 운영이 끝났어요.',
+      'place-before-open': '아직 운영 시작 전이에요.',
+      'place-after-close': '오늘 운영 시간이 끝났어요.',
+      'draw-locked': '추첨 응모가 이미 마감됐어요.',
+      'coupon-used': '이미 사용한 쿠폰이에요.',
+      'coupon-expired': '사용 기한이 지난 쿠폰이에요.',
+      'coupon-unknown': '없는 쿠폰이에요.',
+      'coupon-code': '쿠폰 QR이 아니에요.'
     };
     if (m[reason]) return m[reason];
     if (code === 'unauthenticated') return '로그인 정보가 없어요. 새로고침해 주세요.';
@@ -191,8 +205,15 @@
     confirmMission: function (eventId, missionId, pin) { return withRid('c.' + eventId + '.' + missionId, 'confirmMission', { eventId: eventId, missionId: missionId, pin: pin }, true); },
     submitClue: function (eventId, clueId, answer) { return raw('submitClue', { eventId: eventId, clueId: clueId, answer: answer }, true); },
     claimTreasure: function (eventId, code) { return withRid('t.' + eventId, 'claimTreasure', { eventId: eventId, answer: code }, true); },
+    /* 방문 스탬프 — 장소 QR(또는 같은 7자리 보조 코드). 같은 날 같은 장소는 서버가 한 번만 기록한다 */
+    claimStamp: function (eventId, token) { return raw('claimStamp', { eventId: eventId, token: token }, true); },
+    /* 행사 진행 공개 문서(evLive) — 장소 운영 상태(places) 등. 누구나 읽을 수 있다 */
+    readLive: async function (eventId) {
+      try { var app = await boot(); var d = await app.firestore().doc('evLive/' + eventId).get(); return d.exists ? d.data() : null; }
+      catch (e) { throw norm(e); }
+    },
     /* ---- 스태프 / 관리자 ---- */
-    pinLogin: async function (pin, role) {
+    pinLogin: async function (pin, role) { // role: 'staff' | 'admin' | 'coupon'(매장 쿠폰 담당)
       var r = await raw('pinLogin', { pin: pin, role: role || 'staff' }, false);
       try { sessionStorage.setItem(SESSION_KEY, r.session); sessionStorage.setItem(SESSION_KEY + '.info', JSON.stringify({ role: r.role, exp: r.expiresAt })); } catch (e) {}
       return r;
