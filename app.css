@@ -631,3 +631,17 @@ p{margin:0}
 .tt__row--live{background:var(--color-accent-soft)}
 .tt__row--done,.tt--past{opacity:.45}
 .kcard__img{width:150px;aspect-ratio:400/604;object-fit:cover;margin:0 auto;border-radius:8px;box-shadow:var(--shadow-md);animation:stamp-pop 520ms var(--ease) both}
+
+/* 방문 스탬프: 탐라문화제(주황) / 박서방 매장(코발트) 묶음 구분 */
+.stamps7{display:flex;flex-direction:column;gap:10px}
+.stampGrp{border-radius:14px;padding:10px;border:2px solid var(--g)}
+.stampGrp--festival{--g:#E8742A;background:#FFF3EA}
+.stampGrp--store{--g:#1E5AA8;background:#EAF1FA}
+.stampGrp__head{display:flex;align-items:center;gap:8px;margin-bottom:8px;color:var(--g);font-size:15px}
+.stampGrp__head img{width:28px;height:28px;border-radius:50%;object-fit:contain;background:#fff}
+.stampGrp__head .icon{width:22px;height:22px}
+.stampGrp__row{display:grid;grid-template-columns:repeat(auto-fit,minmax(48px,1fr));gap:6px}
+.stampGrp .stamp{background:#fff}
+.stampGrp .stamp__dot{border-color:var(--g)}
+.stampGrp .stamp--got .stamp__dot{background:var(--g);color:#fff}
+.stampGrp .stamp--today{outline-color:var(--g)}

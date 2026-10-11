@@ -1052,11 +1052,16 @@ function hasStamp(day,place){var v=campV();return !!(v&&(v.stamps||[]).some(func
 function stamps7Html(){
   var slots=stampSlots(), t=kstToday();
   if(!slots.length)return '<p class="caption">스탬프 날짜를 불러오는 중이에요.</p>';
-  return slots.map(function(x){
-    var got=hasStamp(x.day,x.place), today=x.day===t;
-    return '<div class="stamp'+(got?' stamp--got':'')+(today&&!got?' stamp--today':'')+(x.day<t&&!got?' stamp--past':'')+'">'+
-      '<div class="stamp__dot">'+(got?'<svg class="icon icon--sm"><use href="#i-check"/></svg>':'')+'</div>'+
-      '<div class="stamp__d">'+fmtDay(x.day,true)+'</div><div class="stamp__p">'+(x.place==='store'?'매장':'부스')+'</div></div>';
+  var head={festival:'<div class="stampGrp__head"><svg class="icon"><use href="#i-map"/></svg><b>탐라문화제 부스</b></div>',
+    store:'<div class="stampGrp__head"><img src="assets/brand/logo.png" alt=""><b>박서방 매장</b></div>'};
+  return PLACE_KEYS.map(function(k){
+    var arr=slots.filter(function(x){return x.place===k});if(!arr.length)return '';
+    return '<div class="stampGrp stampGrp--'+k+'">'+head[k]+'<div class="stampGrp__row">'+arr.map(function(x){
+      var got=hasStamp(x.day,x.place), today=x.day===t;
+      return '<div class="stamp'+(got?' stamp--got':'')+(today&&!got?' stamp--today':'')+(x.day<t&&!got?' stamp--past':'')+'">'+
+        '<div class="stamp__dot">'+(got?'<svg class="icon icon--sm"><use href="#i-check"/></svg>':'')+'</div>'+
+        '<div class="stamp__d">'+fmtDay(x.day,true)+'</div></div>';
+    }).join('')+'</div></div>';
   }).join('');
 }
 function myCoupon(){return (V&&V.coupon)||null}
