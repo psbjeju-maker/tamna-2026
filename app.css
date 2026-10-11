@@ -630,3 +630,4 @@ p{margin:0}
 .tt__row span{font-size:15.5px;font-weight:700;line-height:1.3}
 .tt__row--live{background:var(--color-accent-soft)}
 .tt__row--done,.tt--past{opacity:.45}
+.kcard__img{width:150px;aspect-ratio:400/604;object-fit:cover;margin:0 auto;border-radius:8px;box-shadow:var(--shadow-md);animation:stamp-pop 520ms var(--ease) both}
