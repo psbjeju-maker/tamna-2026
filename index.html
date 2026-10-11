@@ -1466,9 +1466,19 @@ function playHtml(p){
     '<div class="reward__label">'+(p.demo?'시연용 · 실물 지급 없음':'서버에 기록됐어요')+'</div></div>';
   if(!p.demo&&p.pickup&&p.pickup.code){
     s+='<div class="note" style="margin-top:12px"><b>수령 코드 '+esc(p.pickup.code)+'</b><br>스태프에게 이 코드를 보여주세요.</div>';
+    if(p.pickup.status==='pending'&&p.createdAt)s+='<div class="note note--danger" style="margin-top:8px"><b>당첨 후 15분 안에 수령해 주세요!</b><br><span class="claimLeft" data-at="'+(+p.createdAt)+'"></span></div>';
   }
   return s;
 }
+function tickClaimLeft(){
+  $$('.claimLeft').forEach(function(e){
+    var left=+e.dataset.at+15*60000-Date.now();
+    if(left<=0){e.textContent='수령 시간이 지났어요. 서둘러 스태프에게 문의해 주세요.';return}
+    var m=Math.floor(left/60000),sc=Math.floor(left%60000/1000);
+    e.textContent='남은 시간 '+m+':'+(sc<10?'0':'')+sc;
+  });
+}
+setInterval(tickClaimLeft,1000);
 $('#btnTaste').onclick=function(){
   var b=$('#btnTaste');if(b.disabled)return;
   var k=kujiCfg(),w=V&&V.wallet,cost=(w&&w.kujiCost!=null)?w.kujiCost:(k&&k.cost!=null?k.cost:null),bk=(V&&V.cardBook)||{},have=0;
