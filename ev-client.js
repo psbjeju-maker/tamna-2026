@@ -135,7 +135,9 @@
       'coupon-used': '이미 사용한 쿠폰이에요.',
       'coupon-expired': '사용 기한이 지난 쿠폰이에요.',
       'coupon-unknown': '없는 쿠폰이에요.',
-      'coupon-code': '쿠폰 QR이 아니에요.'
+      'coupon-code': '쿠폰 QR이 아니에요.',
+      'ticket-unknown': '뽑기권 QR이 아니에요.',
+      'ticket-used': '이미 사용한 뽑기권이에요.'
     };
     if (m[reason]) return m[reason];
     if (code === 'unauthenticated') return '로그인 정보가 없어요. 새로고침해 주세요.';
@@ -206,6 +208,8 @@
     submitClue: function (eventId, clueId, answer) { return raw('submitClue', { eventId: eventId, clueId: clueId, answer: answer }, true); },
     claimTreasure: function (eventId, code) { return withRid('t.' + eventId, 'claimTreasure', { eventId: eventId, answer: code }, true); },
     /* 방문 스탬프 — 장소 QR(또는 같은 7자리 보조 코드). 같은 날 같은 장소는 서버가 한 번만 기록한다 */
+    /* 뽑기권 QR(1회용, MH머니 카드 5장/10장) */
+    claimTicketCard: function (eventId, token) { return raw('claimTicketCard', { eventId: eventId, token: token }, true); },
     claimStamp: function (eventId, token) { return raw('claimStamp', { eventId: eventId, token: token }, true); },
     /* 행사 진행 공개 문서(evLive) — 장소 운영 상태(places) 등. 누구나 읽을 수 있다 */
     readLive: async function (eventId) {

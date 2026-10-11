@@ -443,7 +443,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="config.js?v=taste4"></script>
 <script src="live.js"></script>
-<script src="ev-client.js?v=5"></script>
+<script src="ev-client.js?v=6"></script>
 <script src="mqscan.js?v=2"></script>
 <script src="qr.js"></script>
 <script src="mhcards.js?v=9"></script>
@@ -1160,6 +1160,7 @@ function stampTokenFrom(t){
 }
 /* QR 한 번이면 끝 (2026-10-10): 장소 스탬프 QR이든 현장 미션 QR이든 같은 스캐너로 찍으면 알아서 처리한다 */
 function anyQrFrom(t){
+  var tk=/[?&]tk=([A-Za-z0-9]{12})\b/.exec(String(t||''));if(tk)return 'tk:'+tk[1].toUpperCase();
   var st=stampTokenFrom(t);if(st)return 'st:'+st;
   var mq=window.MQScan&&MQScan.tokenFrom(t);if(mq)return 'mq:'+mq;
   return '';
@@ -1167,6 +1168,27 @@ function anyQrFrom(t){
 function onAnyQr(v){
   if(v.indexOf('st:')===0)return claimStampTok(v.slice(3));
   if(v.indexOf('mq:')===0)return claimBoothQr(v.slice(3));
+  if(v.indexOf('tk:')===0)return claimTicketTok(v.slice(3));
+}
+/* 뽑기권 QR: 찍으면 MH머니 카드 5장/10장이 한 번에 들어온다(1회용) */
+var ticketBusy=false;
+function claimTicketTok(token){
+  if(ticketBusy)return;ticketBusy=true;
+  var bk=JSON.parse(JSON.stringify((V&&V.cardBook)||{}));
+  EV.claimTicketCard(EID,token).then(function(r){
+    ticketBusy=false;
+    if(r.already){toast('이미 받은 뽑기권이에요');sync();return}
+    sync().then(function(){paint()});
+    if(window.MH&&MH.reveal&&r.cards&&r.cards.length)MH.reveal(r.cards,{book:bk,title:'뽑기권! MH머니 카드 '+r.tickets+'장',onClose:function(){
+      sheet(dokSheetHtml('excited','MH머니 카드 '+r.tickets+'장이 들어왔어! 쿠지 탭에서 하이엔드 피규어 당첨 기회를 얻어 봐!')+
+        '<button class="btn btn--primary btn--block" data-nav="taste" style="margin-top:12px">쿠지 뽑으러 가기</button>');
+      paintAlbum();
+    }});
+    else toast('MH머니 카드 '+r.tickets+'장이 들어왔어요');
+  },function(e){
+    ticketBusy=false;
+    toast(e.retryable?'연결이 불안정해요. 다시 찍어 주세요 — 받지 않은 상태예요.':(e.message||'뽑기권을 쓰지 못했어요'));
+  });
 }
 function openStampScan(){
   if(!window.MQScan){toast('잠시 후 다시 눌러 주세요');return}
@@ -2974,6 +2996,8 @@ $('#btnReset').onclick=function(){
 /* ---------------- 장소 QR을 폰 카메라 앱으로 찍어 들어온 경우(?st=코드) ----------------
    코드는 잠깐만 유효하므로 등록 전이면 이 탭에서만 기억했다가 등록·이어하기 직후 바로 보낸다. */
 (function(){
+  var k=/[?&]tk=([A-Za-z0-9]{12})\b/.exec(location.search);
+  if(k){try{sessionStorage.setItem('tamna.tk',k[1].toUpperCase())}catch(e){}try{history.replaceState(null,'',location.pathname)}catch(e){}return}
   var m=/[?&]st=([A-Za-z0-9]{7})\b/.exec(location.search);
   if(!m)return;
   try{sessionStorage.setItem('tamna.st',m[1].toUpperCase())}catch(e){}
@@ -2982,6 +3006,8 @@ $('#btnReset').onclick=function(){
 function takeUrlStamp(){
   var t=null;try{t=sessionStorage.getItem('tamna.st');sessionStorage.removeItem('tamna.st')}catch(e){}
   if(t)setTimeout(function(){claimStampTok(t)},600);
+  var k=null;try{k=sessionStorage.getItem('tamna.tk');sessionStorage.removeItem('tamna.tk')}catch(e){}
+  if(k)setTimeout(function(){claimTicketTok(k)},700);
 }
 /* ---------------- 부팅 ---------------- */
 loadPublicCfg();

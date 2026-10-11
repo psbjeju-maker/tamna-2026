@@ -30,7 +30,7 @@ h2{font-size:17px;margin:0 0 10px}
 .row>*{flex:1}
 input,select{width:100%;min-height:50px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-size:17px}
 label{display:block;font-size:13px;color:var(--dim);margin:10px 0 4px;font-weight:800}
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--sf);padding:4px;border-radius:14px;margin-top:14px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--sf);padding:4px;border-radius:14px;margin-top:14px}
 .tabs button{min-height:44px;border-radius:10px;font-weight:800;font-size:14px;color:var(--mut)}
 .tabs button.on{background:var(--sf2);color:var(--tx)}
 .msg{margin-top:10px;font-weight:800;min-height:1.4em}
@@ -50,6 +50,12 @@ td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
 #qrFull .code{font-size:clamp(28px,7vw,56px);font-weight:800;letter-spacing:.18em}
 #qrFull .left{font-size:15px;color:#666}
 #qrFull .state{font-size:clamp(22px,5vw,36px);font-weight:800;color:#B3261E;text-align:center}
+#tkPrint{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm;padding:6mm;background:#fff;color:#111}
+.tkc{border:1px dashed #999;border-radius:3mm;padding:4mm;text-align:center;break-inside:avoid}
+.tkc img{width:34mm;height:34mm;image-rendering:pixelated}
+.tkc b{display:block;font-size:15pt;margin-top:2mm}
+.tkc small{display:block;font-size:8.5pt;color:#444;margin-top:1mm;line-height:1.35}
+@media print{body{background:#fff}.wrap,#qrFull{display:none!important}#tkPrint{display:grid!important}}
 #qrFull .x{position:absolute;top:12px;right:12px;min-height:44px;padding:0 16px;border-radius:999px;background:#eee;font-weight:800;color:#111}
 </style>
 </head>
@@ -77,6 +83,7 @@ td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
     <div class="row" style="align-items:center"><span class="sub" id="who"></span><button class="btn" id="btnLogout" style="flex:none;min-height:40px">로그아웃</button></div>
     <div class="tabs" id="tabs">
       <button data-t="qr" class="on">장소 QR</button>
+      <button data-t="tk">뽑기권 QR</button>
       <button data-t="ex">예외 인증</button>
       <button data-t="draw">추첨</button>
     </div>
@@ -132,6 +139,25 @@ td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
       </div>
     </section>
 
+    <!-- 뽑기권 QR -->
+    <section data-p="tk" hidden>
+      <div class="card">
+        <h2>뽑기권 QR 만들기 (관리자)</h2>
+        <p class="sub">종이에 인쇄해서 건네는 1회용 QR이에요. 손님이 도채비 앱의 「오늘 스탬프 찍기」나 폰 카메라로 찍으면 MH머니 카드가 바로 들어와요. 한 장은 한 번만 쓸 수 있어요.</p>
+        <label for="tkKind">종류</label>
+        <select id="tkKind"><option value="5">MH머니 카드 5장</option><option value="10">MH머니 카드 10장</option></select>
+        <label for="tkCount">몇 장 만들까요?</label>
+        <input id="tkCount" type="number" inputmode="numeric" min="1" max="500" value="10">
+        <div class="row"><button class="btn btn--p" id="btnTkMake">만들기</button></div>
+        <p class="msg" id="tkMsg"></p>
+      </div>
+      <div class="card">
+        <h2>뽑기권 목록 · 인쇄</h2>
+        <div class="row"><button class="btn" id="btnTkList">불러오기</button><button class="btn btn--p" id="btnTkPrint">안 쓴 것 인쇄</button></div>
+        <div id="tkList"></div>
+      </div>
+    </section>
+
     <!-- 예외 인증 -->
     <section data-p="ex" hidden>
       <div class="card">
@@ -164,6 +190,7 @@ td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
   </div>
 </div>
 
+<div id="tkPrint" hidden></div>
 <div id="qrFull" hidden>
   <button class="x" id="qrClose">닫기</button>
   <div class="pn" id="qrPlace"></div>
@@ -175,7 +202,7 @@ td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="../ev-client.js?v=5"></script>
+<script src="../ev-client.js?v=6"></script>
 <script src="../mqscan.js?v=2"></script>
 <script src="../qr.js"></script>
 <script>
@@ -296,6 +323,37 @@ $('#btnCpnList').onclick=function(){
     $('#cpnList').innerHTML=h;
   },function(e){$('#cpnList').innerHTML='<p class="msg bad">'+esc(e.message)+'</p>'});
 };
+
+/* ---------- 뽑기권 QR ---------- */
+var tkItems=[];
+function tkQr(tok){var q=qrcode(0,'M');q.addData(APP_URL+'?tk='+tok);q.make();return q.createDataURL(6,2)}
+function tkRender(){
+  var used=tkItems.filter(function(x){return x.status==='used'}).length;
+  var by={5:0,10:0};tkItems.forEach(function(x){if(x.status!=='used')by[x.cards]=(by[x.cards]||0)+1});
+  $('#tkList').innerHTML='<p>전체 <b>'+tkItems.length+'</b>장 · 사용 <b>'+used+'</b> · 안 쓴 5장권 <b>'+by[5]+'</b> · 10장권 <b>'+by[10]+'</b></p>'+
+    '<table><tr><th>번호</th><th>종류</th><th>상태</th></tr>'+tkItems.slice().reverse().slice(0,200).map(function(x){return '<tr><td>'+x.no+'</td><td>'+x.cards+'장</td><td>'+(x.status==='used'?'사용 '+dt(x.usedAt):'안 씀')+'</td></tr>'}).join('')+'</table>';
+}
+$('#btnTkList').onclick=function(){
+  $('#tkList').innerHTML='<p class="sub">불러오는 중…</p>';
+  EV.staff('staffTicketCards',{eventId:EID}).then(function(r){tkItems=r.items;tkRender()},function(e){$('#tkList').innerHTML='<p class="msg bad">'+esc(e.message)+'</p>'});
+};
+$('#btnTkMake').onclick=function(){
+  var b=this,n=parseInt($('#tkCount').value,10),k=parseInt($('#tkKind').value,10);
+  if(!(n>=1&&n<=500)){msg($('#tkMsg'),'1~500장 사이로 입력해 주세요','bad');return}
+  b.disabled=true;msg($('#tkMsg'),'만드는 중…');
+  EV.staff('ownerMakeTicketCards',{eventId:EID,count:n,cards:k}).then(function(r){
+    b.disabled=false;msg($('#tkMsg'),k+'장 뽑기권 '+r.items.length+'장을 만들었어요. 아래에서 인쇄하세요.','ok');$('#btnTkList').click();
+  },function(e){b.disabled=false;fail($('#tkMsg'))(e)});
+};
+$('#btnTkPrint').onclick=function(){
+  var list=tkItems.filter(function(x){return x.status!=='used'});
+  if(!list.length){toastMsg('먼저 불러오기를 눌러 주세요');return}
+  $('#tkPrint').innerHTML=list.map(function(x){return '<div class="tkc"><img src="'+tkQr(x.token)+'" alt=""><b>MH머니 카드 '+x.cards+'장</b>'+
+    '<small>도채비 앱 「오늘 스탬프 찍기」 또는 폰 카메라로 찍기<br>1회용 · No.'+x.no+'</small></div>'}).join('');
+  $('#tkPrint').hidden=false;
+  setTimeout(function(){window.print();$('#tkPrint').hidden=true},300);
+};
+function toastMsg(t){msg($('#tkMsg'),t,'bad')}
 
 /* ---------- 예외 인증 ---------- */
 $('#btnEx').onclick=function(){
