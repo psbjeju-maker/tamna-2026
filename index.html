@@ -280,6 +280,20 @@
       <div id="tasteResult"></div>
     </div>
 
+    <div class="section kujiPool">
+      <div class="section__head"><h2 class="section__title" style="font-size:17px">뽑으면 이런 게 나와요</h2></div>
+      <div class="poolGrid">
+        <div class="pool"><div class="pool__img pool__img--fig"><svg class="icon"><use href="#i-gift"/></svg></div><b>하이엔드 피규어</b><span>당첨되면 현장에서 수령</span></div>
+        <div class="pool"><div class="pool__img"><img src="assets/campaign/coupon.jpg" alt="" loading="lazy"></div><b>5,000원 쿠폰</b><span>박서방 제주지점 사용</span></div>
+        <div class="pool"><div class="pool__img"><img src="assets/cards/back.webp" alt="" loading="lazy"></div><b>MH머니 카드</b><span>한 번 더 뽑을 기회</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section__head"><h2 class="section__title" style="font-size:17px">내 카드 도감</h2><span class="section__meta"><span id="tasteAlbumN">0</span> / 13종</span></div>
+      <div id="tasteAlbum" style="margin-top:12px"></div>
+    </div>
+
     <button class="btn btn--tertiary btn--block" data-nav="record" style="margin-top:12px">내 쿠지 기록 · 쿠폰 보기</button>
   </section>
 
@@ -1410,6 +1424,7 @@ function paintAlbum(){
   var el=$('#mhAlbum');if(!el||!window.MH)return;
   var bk=(V&&V.cardBook)||{};MH.album(el,bk);
   var n=MH.kinds(bk);$('#albumN').textContent=n;
+  var ta=$('#tasteAlbum');if(ta){MH.album(ta,bk);$('#tasteAlbumN').textContent=n}
   $('#albumLead').textContent=n===0?'미션을 깰 때마다 13종 중 한 장이 랜덤으로 나와요. 어떤 카드가 나올지 모아 보세요!':n>=13?'13종을 다 모았어요! 대단해요.':'13종 중 '+n+'종을 모았어요. 아직 못 본 카드가 '+(13-n)+'종 남았어요!';
 }
 function paintTaste(){
