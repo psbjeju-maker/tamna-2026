@@ -72,7 +72,7 @@ export const KujiSeal = (() => {
     host.appendChild(cv);
     const ctx = cv.getContext('2d');
 
-    let MW=0, MH=0, raf=0, alive=true;
+    let MW=0, MH=0, raf=0, alive=true, LITE=false, slow=0, fcount=0;
     const CARD = {x:0,y:0,w:0,h:0};
     let item = { label:'', name:'', img:'', power:'약' };
     let pic = null;
@@ -88,7 +88,7 @@ export const KujiSeal = (() => {
 
     function resize(){
       const r = host.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio||1, 2);
+      const dpr = Math.min(window.devicePixelRatio||1, LITE?1:1.5);
       MW = Math.round(r.width); MH = Math.round(r.height);
       cv.width = Math.round(MW*dpr); cv.height = Math.round(MH*dpr);
       ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -362,7 +362,8 @@ export const KujiSeal = (() => {
       const R=Math.hypot(MW,MH)*.62*appear;
       ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.translate(cx,cy);
       for(let layer=0;layer<2;layer++){
-        const n=layer?10:18, dir=layer?-1:1, wd=layer?.34:.5;
+        if(LITE&&layer) continue;
+        const n=LITE?8:(layer?6:12), dir=layer?-1:1, wd=layer?.34:.5;
         for(let i=0;i<n;i++){
           const a=dir*t*(layer?.28:.42)+i/n*Math.PI*2, hw=Math.PI/n*wd;
           const [r,g,b]=hueRgb(i*360/n+t*90+layer*40);
@@ -425,7 +426,7 @@ export const KujiSeal = (() => {
       for(let i=0;i<=6;i++) gr.addColorStop(i/6,rgbS(hueRgb(i*60+t*170)));
       ctx.lineJoin='round'; ctx.lineWidth=Math.max(4,lfs*.11); ctx.strokeStyle='rgba(20,10,40,.92)';
       ctx.strokeText(item.label,x,y);
-      ctx.shadowColor=rgbS(hueRgb(t*140)); ctx.shadowBlur=30+12*Math.sin(t*6);
+      if(!LITE){ ctx.shadowColor=rgbS(hueRgb(t*140)); ctx.shadowBlur=14; }
       ctx.fillStyle=gr; ctx.fillText(item.label,x,y);
       ctx.shadowBlur=0;
       ctx.lineWidth=Math.max(1.5,lfs*.035); ctx.strokeStyle='rgba(255,255,255,.95)'; ctx.strokeText(item.label,x,y);
@@ -536,8 +537,10 @@ export const KujiSeal = (() => {
     let last=performance.now();
     function frame(now){
       if(!alive) return;
-      const dt=Math.min(.032,(now-last)/1000); last=now;
+      const raw=(now-last)/1000, dt=Math.min(.032,raw); last=now;
       update(dt);
+      /* 프레임이 계속 느리면(저사양 폰) 효과를 줄이고 해상도를 낮춘다 */
+      if(!LITE && raw>0.034 && raw<0.5){ if(++slow>=12){ LITE=true; resize(); } } else if(raw<=0.034 && slow>0) slow--;
       ctx.clearRect(0,0,MW,MH);
       drawBg();
       // 다 뗀 뒤에는 제비가 물러나고 상품이 그 자리에 올라온다
