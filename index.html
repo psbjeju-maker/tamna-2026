@@ -91,25 +91,6 @@
     <!-- 미사용 쿠폰이 있으면 맨 위에 크게 -->
     <div class="cpnBanner" id="homeCoupon" hidden></div>
 
-    <!-- 방문 스탬프 + 경품 -->
-    <div class="stampCard" id="stampCard">
-      <div class="stampCard__top">
-        <img class="stampCard__prize" src="assets/campaign/prize-hxh-doublechance.jpg" alt="헌터×헌터 더블찬스 인형">
-        <div>
-          <div class="stampCard__kicker">방문 스탬프</div>
-          <div class="stampCard__count"><b id="stampN">0</b> / <span id="stampMax">7</span></div>
-          <div class="stampCard__prizeName">경품 · 헌터×헌터 더블찬스 인형</div>
-        </div>
-      </div>
-      <div class="stamps7" id="stamps7"></div>
-      <button class="btn btn--primary btn--block btn--xl" id="btnStamp"><svg class="icon"><use href="#i-qr"/></svg>오늘 스탬프 찍기</button>
-      <p class="caption caption--center" id="stampToday" style="margin-top:8px"></p>
-      <div class="stampCard__foot">
-        <p>스탬프를 모으면 10월 31일 과수원피스 경품 추첨으로 이어져요</p>
-        <button class="btn btn--secondary btn--sm" data-nav="record" data-anchor="drawSec">과수원피스 안내</button>
-      </div>
-    </div>
-
     <!-- 지금 추천 -->
     <button class="btn btn--secondary btn--block btn--xl" id="homeNext" style="margin-top:16px"></button>
     <p class="caption caption--center" id="homeSync" style="margin-top:8px"></p>
@@ -185,6 +166,24 @@
         </button>
       </div>
       <div class="note note--plain" id="todayEvent" style="margin-top:14px" hidden></div>
+    </div>
+    <!-- 방문 스탬프 + 경품 (맨 아래, 2026-10-12) -->
+    <div class="stampCard" id="stampCard" style="margin-top:24px">
+      <div class="stampCard__top">
+        <img class="stampCard__prize" src="assets/campaign/prize-hxh-doublechance.jpg" alt="헌터×헌터 더블찬스 인형">
+        <div>
+          <div class="stampCard__kicker">방문 스탬프</div>
+          <div class="stampCard__count"><b id="stampN">0</b> / <span id="stampMax">7</span></div>
+          <div class="stampCard__prizeName">경품 · 헌터×헌터 더블찬스 인형</div>
+        </div>
+      </div>
+      <div class="stamps7" id="stamps7"></div>
+      <button class="btn btn--primary btn--block btn--xl" id="btnStamp"><svg class="icon"><use href="#i-qr"/></svg>오늘 스탬프 찍기</button>
+      <p class="caption caption--center" id="stampToday" style="margin-top:8px"></p>
+      <div class="stampCard__foot">
+        <p>스탬프를 모으면 10월 31일 과수원피스 경품 추첨으로 이어져요</p>
+        <button class="btn btn--secondary btn--sm" data-nav="record" data-anchor="drawSec">과수원피스 안내</button>
+      </div>
     </div>
   </section>
 
