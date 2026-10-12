@@ -648,11 +648,12 @@ p{margin:0}
 
 /* 쿠지 탭: 뽑기 상품 안내 */
 .stats:has(.stat[hidden]){grid-template-columns:1fr}
-.kujiPool{margin-top:var(--space-6,28px)}
-.poolGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3);margin-top:var(--space-3)}
-.pool{display:flex;flex-direction:column;align-items:center;text-align:center;padding:var(--space-3);border-radius:14px;background:var(--color-surface)}
-.pool__img{width:100%;aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:var(--color-bg);display:flex;align-items:center;justify-content:center}
+.kujiPool{margin-top:28px}
+.poolGrid{display:flex;flex-direction:column;gap:var(--space-3);margin-top:var(--space-3)}
+.pool{display:grid;grid-template-columns:84px 1fr;grid-template-rows:auto auto;column-gap:14px;align-items:center;padding:var(--space-3);border-radius:14px;background:var(--color-surface)}
+.pool__img{grid-row:1/3;width:84px;height:56px;border-radius:8px;overflow:hidden;background:var(--color-bg);display:flex;align-items:center;justify-content:center;position:relative}
 .pool__img img{width:100%;height:100%;object-fit:cover}
-.pool__img--fig .icon{width:40px;height:40px;color:var(--color-accent)}
-.pool b{font-size:13px;font-weight:800;margin-top:8px;line-height:1.3}
-.pool span{font-size:11.5px;color:var(--color-text-muted);margin-top:3px;line-height:1.4}
+.pool__img--cpn img{position:absolute;left:50%;top:50%;width:50.13%;height:auto;max-width:none;transform:translate(-50%,-50%) rotate(90deg)}
+.pool__img--fig .icon{width:28px;height:28px;color:var(--color-accent)}
+.pool b{font-size:14.5px;font-weight:800;align-self:end}
+.pool span{font-size:12.5px;color:var(--color-text-muted);align-self:start;margin-top:2px}
