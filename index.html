@@ -482,6 +482,14 @@ function refreshPlayerPos(){
    다시 멀어졌다가 재접근하면 또 트리거된다(재도전/재인사).
    이미 인사드린 신이면 반가운 인사말만 다시 뜬다. */
 var NEAR_M = 30;
+/* 2026-10-12: 스태프가 '고정 모드'면 한 번 보낸 위치를 그대로 믿는다(화면이 꺼져 갱신이 없어도).
+   이동 모드는 예전처럼 staleMs(90초) 넘게 소식 없으면 '자리 비움'. 고정도 8시간 지나면 무시(끄는 걸 잊은 경우) */
+function liveStale(h){
+  if(!h||!h.updatedAt||!h.updatedAt.toMillis)return false;
+  var age=Date.now()-h.updatedAt.toMillis();
+  if(h.mode==='fixed')return age>8*3600e3;
+  return age>(C.liveLocation.staleMs||90000);
+}
 var nearState = {};
 function uiBusy(){
   return $('#modal').classList.contains('on') || $('#stage').classList.contains('on') ||
@@ -493,7 +501,7 @@ function checkProximity(){
   Object.keys(liveHints).forEach(function(gid){
     var h=liveHints[gid];
     if(!h||!h.active||h.lat==null){nearState[gid]=false;return}
-    if(h.updatedAt&&h.updatedAt.toMillis&&(Date.now()-h.updatedAt.toMillis()>(C.liveLocation.staleMs||90000))){nearState[gid]=false;return}
+    if(liveStale(h)){nearState[gid]=false;return}
     var d=TamnaLive.distanceM(playerPos.lat,playerPos.lng,h.lat,h.lng);
     if(d>=NEAR_M){nearState[gid]=false;return}
     if(nearState[gid])return; /* 같은 접근에서 이미 처리함 — 붙어있는 동안 반복 트리거 방지 */
@@ -618,7 +626,7 @@ function closeTracker(){
 function trackTick(){
   if(!trackGod)return;
   var h=liveHints[trackGod.id];
-  var stale=h&&h.updatedAt&&h.updatedAt.toMillis&&(Date.now()-h.updatedAt.toMillis()>(C.liveLocation.staleMs||90000));
+  var stale=liveStale(h);
   if(!h||!h.active||h.lat==null||stale){
     showTrkQ();
     $('#trackDist').textContent='신호 없음';
@@ -645,7 +653,7 @@ function liveHintHtml(c){
   var h=liveHints[c.id];
   if(!h||!h.active||h.lat==null)return '';
   if(h.updatedAt&&h.updatedAt.toMillis){
-    if(Date.now()-h.updatedAt.toMillis() > (C.liveLocation.staleMs||90000))return '';
+    if(liveStale(h))return '';
   }
   if(playerPos){
     var d=TamnaLive.distanceM(playerPos.lat,playerPos.lng,h.lat,h.lng);
@@ -1321,7 +1329,7 @@ function askMeetAgain(c){
 }
 function seekGod(c){
   var h=liveHints[c.id];
-  var stale=h&&h.updatedAt&&h.updatedAt.toMillis&&(Date.now()-h.updatedAt.toMillis()>(C.liveLocation.staleMs||90000));
+  var stale=liveStale(h);
   var isLive=h&&h.active&&h.lat!=null&&!stale;
   if(isLive)openTracker(c);
   else toast('아직 위치 신호가 없어요. 잠시 후 다시 확인해 주세요');

@@ -39,6 +39,14 @@ h1{font-size:19px;font-weight:800;margin:6px 0 4px}
 .toggle.on{background:linear-gradient(180deg,#F58C87,#B8433E);color:#2A0E22;
   animation:pulse 1.6s ease-in-out infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(240,96,90,.4)}50%{box-shadow:0 0 0 14px rgba(240,96,90,0)}}
+.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px}
+.mode{display:flex;flex-direction:column;gap:6px;align-items:center;padding:16px 6px;border-radius:16px;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.12);color:var(--txt);min-height:110px}
+.mode b{font-size:17px}
+.mode small{font-size:11.5px;color:var(--dim);line-height:1.45}
+.mode.on[data-mode=move]{border-color:var(--teal);background:rgba(79,195,161,.16)}
+.mode.on[data-mode=fixed]{border-color:var(--gold);background:rgba(245,179,49,.16)}
+.mode.on[data-mode=off]{border-color:var(--coral);background:rgba(240,96,90,.14)}
+.mode:disabled{opacity:.5}
 .status{text-align:center;font-size:12px;color:var(--dim);margin-top:10px;line-height:1.6}
 .status b{color:var(--txt)}
 .adminlink{display:block;text-align:center;margin-top:22px;font-size:11.5px;color:var(--dim);text-decoration:none}
@@ -55,10 +63,8 @@ h1{font-size:19px;font-weight:800;margin:6px 0 4px}
   <h1>신 위치 공유</h1>
 
   <div class="warn">
-    <b>이 페이지는 손님용이 아닙니다.</b> "근무 시작"을 누른 동안만, 실제 위치를 약
-    <b id="fuzzTxt">25m</b> 오차로 흐려서 참가자 앱에 "가까워요" 힌트로만 보여줍니다.
-    정확한 위치·지도 핀은 어디에도 안 뜹니다. "근무 종료"를 누르면 즉시 사라지고,
-    행사가 끝나면 전체 초기화합니다.
+    <b>이 페이지는 손님용이 아닙니다.</b> 실제 위치를 약 <b id="fuzzTxt">25m</b> 오차로 흐려서 참가자 앱에 방향 힌트로만 보여 줍니다.<br>
+    <b>이동 모드</b> 걸을 때 · 화면 켜 두기 &nbsp;/&nbsp; <b>고정 모드</b> 한 자리에 있을 때 · 한 번 보내면 화면 꺼도 유지 &nbsp;/&nbsp; <b>쉬기</b> 위치 끄기
   </div>
 
   <div class="card">
@@ -66,10 +72,13 @@ h1{font-size:19px;font-weight:800;margin:6px 0 4px}
     <div class="godgrid" id="godGrid"></div>
   </div>
 
-  <button class="toggle off" id="toggleBtn">근무 시작</button>
+  <div class="modes">
+    <button class="mode" data-mode="move"><b>이동 모드</b><small>걸어 다니는 동안 실시간 전송<br>화면을 켜 두세요</small></button>
+    <button class="mode" data-mode="fixed"><b>고정 모드</b><small>지금 자리에 한 번 고정<br>화면 꺼져도 유지</small></button>
+    <button class="mode" data-mode="off"><b>쉬기</b><small>위치 끄기<br>참가자에게 안 보임</small></button>
+  </div>
   <div class="status" id="statusTxt">꺼져 있음 · 참가자에게 위치가 안 보입니다</div>
 
-  <a class="adminlink" href="../admin.html">관리자 화면 →</a>
 </div>
 <div id="toast"></div>
 
@@ -95,7 +104,7 @@ function paintGrid(){
     b.className='godbtn'+(c.id===selected?' on':'');
     b.textContent=c.name;
     b.onclick=function(){
-      if(watching){toast('근무 중엔 못 바꿔요. 먼저 근무 종료하세요');return}
+      if(mode!=='off'){toast('먼저 「쉬기」를 누르고 신을 바꿔 주세요');return}
       selected=c.id;localStorage.setItem(KEY,selected);paintGrid();
     };
     g.appendChild(b);
@@ -106,46 +115,100 @@ paintGrid();
 function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');
   clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('on')},2400)}
 
-/* ---- 위치 전송 ---- */
-var watchId=null, watching=false, lastSent=0;
+/* ---- 위치 전송: 이동 / 고정 / 쉬기 (2026-10-12) ----
+   이동 = watchPosition 으로 계속 전송(화면 켜 둠, 꺼짐 방지 요청).
+   고정 = 위치를 몇 초 모아 가장 정확한 값 한 번만 보내고 끝(mode:'fixed'). 화면이 꺼지거나 다른 앱을 켜도 그 위치가 유지된다.
+   쉬기 = active:false 로 지움. 마지막 모드는 이 폰에 기억해 둔다(다시 열면 표시만 복원, 이동 모드면 전송 재개). */
+var MODE_KEY='tamna_staff_mode';
+var watchId=null, lastSent=0, mode='off', wake=null, fixBusy=false;
 var UPDATE_MS = C.liveLocation.updateMs||8000;
+var FUZZ = C.liveLocation.fuzzMeters||25;
 
 function godName(){var c=C.crew.filter(function(x){return x.id===selected})[0];return c?c.name:selected}
-
+function hhmm(){return new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}
+function paintModes(){
+  document.querySelectorAll('.mode').forEach(function(b){b.classList.toggle('on',b.dataset.mode===mode)});
+}
+function setMode(m){mode=m;try{localStorage.setItem(MODE_KEY,JSON.stringify({mode:m,god:selected}))}catch(e){}paintModes()}
+function stopWatch(){if(watchId!=null){navigator.geolocation.clearWatch(watchId);watchId=null}}
+function keepAwake(on){
+  try{
+    if(on&&navigator.wakeLock&&!wake)navigator.wakeLock.request('screen').then(function(w){wake=w;w.addEventListener('release',function(){wake=null})},function(){});
+    if(!on&&wake){wake.release();wake=null}
+  }catch(e){}
+}
+function canGeo(){
+  if(!navigator.geolocation){toast('이 기기/브라우저는 위치 기능을 지원하지 않습니다');return false}
+  if(!L.hasDb()){toast('서버 연결 실패 — 오프라인이거나 설정 오류입니다');return false}
+  return true;
+}
 function onPos(pos){
+  if(mode!=='move')return;
   var now=Date.now();
   if(now-lastSent<UPDATE_MS)return;
   lastSent=now;
-  var f=L.fuzz(pos.coords.latitude,pos.coords.longitude,C.liveLocation.fuzzMeters||25);
-  L.setLive(selected,f.lat,f.lng,true,{name:godName()}).then(function(ok){
-    $('#statusTxt').innerHTML=ok
-      ? '🟢 공유 중 · <b>'+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})+'</b> 마지막 전송'
-      : '⚠️ 전송 실패 — 네트워크를 확인하세요';
+  var f=L.fuzz(pos.coords.latitude,pos.coords.longitude,FUZZ);
+  L.setLive(selected,f.lat,f.lng,true,{name:godName(),mode:'move'}).then(function(ok){
+    $('#statusTxt').innerHTML=ok?'🟢 이동 모드 · <b>'+hhmm()+'</b> 마지막 전송 · 화면을 켜 두세요':'⚠️ 전송 실패 — 네트워크를 확인하세요';
   });
 }
 function onPosErr(err){
   toast('위치 권한이 필요합니다: '+(err&&err.message?err.message:'알 수 없는 오류'));
-  stopSharing();
+  if(mode==='move')goOff();
 }
-function startSharing(){
-  if(!navigator.geolocation){toast('이 기기/브라우저는 위치 기능을 지원하지 않습니다');return}
-  if(!L.hasDb()){toast('서버 연결 실패 — 오프라인이거나 설정 오류입니다');return}
-  watching=true;
-  $('#toggleBtn').textContent='근무 종료';
-  $('#toggleBtn').className='toggle on';
-  $('#statusTxt').textContent='위치 요청 중…';
+function goMove(){
+  if(!canGeo())return;
+  setMode('move');lastSent=0;stopWatch();keepAwake(true);
+  $('#statusTxt').textContent='이동 모드 · 위치 요청 중…';
   watchId=navigator.geolocation.watchPosition(onPos,onPosErr,{enableHighAccuracy:true,maximumAge:5000,timeout:15000});
 }
-function stopSharing(){
-  watching=false;
-  if(watchId!=null){navigator.geolocation.clearWatch(watchId);watchId=null}
-  $('#toggleBtn').textContent='근무 시작';
-  $('#toggleBtn').className='toggle off';
-  $('#statusTxt').textContent='꺼져 있음 · 참가자에게 위치가 안 보입니다';
-  L.setLive(selected,null,null,false,{name:godName()});
+function goFixed(){
+  if(!canGeo()||fixBusy)return;
+  fixBusy=true;stopWatch();keepAwake(false);
+  $('#statusTxt').textContent='📍 지금 자리를 잡는 중… (몇 초)';
+  var best=null, t0=Date.now(), wid=null;
+  function done(){
+    if(wid!=null)navigator.geolocation.clearWatch(wid);
+    fixBusy=false;
+    if(!best){toast('위치를 못 잡았어요. 밖이 보이는 곳에서 다시 눌러 주세요');paintModes();return}
+    var f=L.fuzz(best.coords.latitude,best.coords.longitude,FUZZ);
+    L.setLive(selected,f.lat,f.lng,true,{name:godName(),mode:'fixed'}).then(function(ok){
+      if(!ok){$('#statusTxt').textContent='⚠️ 전송 실패 — 네트워크를 확인하고 다시 눌러 주세요';return}
+      setMode('fixed');
+      $('#statusTxt').innerHTML='📍 고정 모드 · <b>'+hhmm()+'</b> 위치로 고정됨<br>이제 화면을 꺼도 되고 다른 앱을 써도 돼요. 움직이면 「이동 모드」를 눌러 주세요.';
+    });
+  }
+  /* 4초 동안 모아 정확도가 가장 좋은 값을 쓴다(첫 값은 부정확한 경우가 많음) */
+  wid=navigator.geolocation.watchPosition(function(p){
+    if(!best||p.coords.accuracy<best.coords.accuracy)best=p;
+    if(Date.now()-t0>4000||(best&&best.coords.accuracy<=15))done();
+  },function(e){wid=null;fixBusy=false;toast('위치 권한이 필요합니다: '+(e&&e.message||''));},{enableHighAccuracy:true,maximumAge:0,timeout:15000});
+  setTimeout(function(){if(fixBusy)done()},7000);
 }
-$('#toggleBtn').onclick=function(){ watching?stopSharing():startSharing(); };
-window.addEventListener('pagehide',function(){ if(watching)L.setLive(selected,null,null,false); });
+function goOff(){
+  stopWatch();keepAwake(false);setMode('off');
+  $('#statusTxt').textContent='꺼져 있음 · 참가자에게 위치가 안 보입니다';
+  L.setLive(selected,null,null,false,{name:godName(),mode:'off'});
+}
+document.querySelectorAll('.mode').forEach(function(b){b.onclick=function(){
+  var m=b.dataset.mode;
+  if(m==='move')goMove();else if(m==='fixed')goFixed();else goOff();
+}});
+/* 이동 모드에서 다른 앱 갔다 오면 바로 다시 보내고 꺼짐 방지도 다시 요청 */
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden||mode!=='move')return;
+  lastSent=0;keepAwake(true);
+  if(watchId==null)goMove();
+  toast('이동 모드 다시 전송 중');
+});
+/* 다시 열었을 때 마지막 모드 복원 */
+(function(){
+  var s=null;try{s=JSON.parse(localStorage.getItem(MODE_KEY)||'null')}catch(e){}
+  if(!s||s.god!==selected)return paintModes();
+  if(s.mode==='move')goMove();
+  else if(s.mode==='fixed'){mode='fixed';paintModes();$('#statusTxt').innerHTML='📍 고정 모드 유지 중 · 움직이면 「이동 모드」, 쉴 때는 「쉬기」'}
+  else paintModes();
+})();
 })();
 </script>
 </body>
