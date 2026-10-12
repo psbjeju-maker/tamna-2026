@@ -10,7 +10,7 @@
   var PER = 100, CSS_ID = 'kb-css';
   var mods = null;
   function loadMods() {
-    if (!mods) mods = Promise.all([import('./seal.js?v=2'), import('./sfx.js')]).then(function (m) { return { seal: m[0].KujiSeal, sfx: m[1] }; }).catch(function () { return null; });
+    if (!mods) mods = Promise.all([import('./seal.js?v=3'), import('./sfx.js')]).then(function (m) { return { seal: m[0].KujiSeal, sfx: m[1] }; }).catch(function () { return null; });
     return mods;
   }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }

@@ -88,7 +88,7 @@ export const KujiSeal = (() => {
 
     function resize(){
       const r = host.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio||1, LITE?1:1.5);
+      const dpr = Math.min(window.devicePixelRatio||1, 2);
       MW = Math.round(r.width); MH = Math.round(r.height);
       cv.width = Math.round(MW*dpr); cv.height = Math.round(MH*dpr);
       ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -359,22 +359,8 @@ export const KujiSeal = (() => {
     const rgbS = a => `rgb(${a[0]},${a[1]},${a[2]})`;
     function rbBack(){
       const t=S.rt, cx=MW*.5, cy=MH*.40, appear=easeOut(clamp(t/.8,0,1));
-      const R=Math.hypot(MW,MH)*.62*appear;
-      ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.translate(cx,cy);
-      for(let layer=0;layer<2;layer++){
-        if(LITE&&layer) continue;
-        const n=LITE?8:(layer?6:12), dir=layer?-1:1, wd=layer?.34:.5;
-        for(let i=0;i<n;i++){
-          const a=dir*t*(layer?.28:.42)+i/n*Math.PI*2, hw=Math.PI/n*wd;
-          const [r,g,b]=hueRgb(i*360/n+t*90+layer*40);
-          const gr=ctx.createRadialGradient(0,0,0,0,0,R);
-          const al=(layer?.30:.46)*(0.8+0.2*Math.sin(t*3+i));
-          gr.addColorStop(0,`rgba(${r},${g},${b},${al})`);
-          gr.addColorStop(.55,`rgba(${r},${g},${b},${al*.4})`);
-          gr.addColorStop(1,`rgba(${r},${g},${b},0)`);
-          ctx.fillStyle=gr; ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,R,a-hw,a+hw); ctx.closePath(); ctx.fill();
-        }
-      }
+            ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.translate(cx,cy);
+      /* 회전 광선은 렉의 원인이라 없앴다(2026-10-12) — 가운데 빛무리만 남긴다 */
       const hr=Math.min(MW,MH)*(.30+.03*Math.sin(t*4))*appear;
       const hg=ctx.createRadialGradient(0,0,0,0,0,hr);
       hg.addColorStop(0,'rgba(255,255,255,.85)'); hg.addColorStop(.35,'rgba(255,255,255,.28)'); hg.addColorStop(1,'rgba(255,255,255,0)');
@@ -540,7 +526,7 @@ export const KujiSeal = (() => {
       const raw=(now-last)/1000, dt=Math.min(.032,raw); last=now;
       update(dt);
       /* 프레임이 계속 느리면(저사양 폰) 효과를 줄이고 해상도를 낮춘다 */
-      if(!LITE && raw>0.034 && raw<0.5){ if(++slow>=12){ LITE=true; resize(); } } else if(raw<=0.034 && slow>0) slow--;
+      if(!LITE && raw>0.034 && raw<0.5){ if(++slow>=12){ LITE=true; } } else if(raw<=0.034 && slow>0) slow--;
       ctx.clearRect(0,0,MW,MH);
       drawBg();
       // 다 뗀 뒤에는 제비가 물러나고 상품이 그 자리에 올라온다
