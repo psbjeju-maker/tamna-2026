@@ -1162,7 +1162,7 @@ function paintRecord(){
   $('#recGods').innerHTML=C.crew.map(function(c){var m=everMet(c);return '<span class="godDot'+(m?' godDot--on':'')+'">'+(m?'<img src="'+c.photo+'" alt="">':'')+'<i>'+(m?esc(c.name):'???')+'</i></span>'}).join('');
   var c=myCoupon();
   var cp=couponPlay();
-  $('#couponBox').innerHTML=cp?playHtml(cp):'<p class="caption">아직 당첨된 쿠폰이 없어요. 쿠지에서 5,000원 쿠폰이 나올 수 있어요(부스에서 실물로 받아요).</p>';
+  $('#couponBox').innerHTML=cp?playHtml(cp):'<p class="caption">아직 당첨된 쿠폰이 없어요. 쿠지에서 5,000원 쿠폰이 나올 수 있어요. 쿠폰은 하루에 1장만 받을 수 있고, 부스에서 실물로 받아요.</p>';
   $('#drawRows').innerHTML=drawRowsHtml();
 }
 /* 오늘 스탬프 찍기 → 기존 QR 스캐너. 카메라가 안 되면 화면 아래 7자리 코드로 입력 */
