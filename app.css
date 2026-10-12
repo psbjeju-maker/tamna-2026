@@ -664,3 +664,13 @@ p{margin:0}
 .zoom[hidden]{display:none}
 .zoom img{max-width:100%;max-height:100%;border-radius:12px;object-fit:contain}
 .zoom__x{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);right:12px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.16);color:#fff;display:flex;align-items:center;justify-content:center}
+
+/* 놀기 화면: 무엇을 눌러야 하는지 분명하게 */
+.howto{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.howto__step{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:14px;background:var(--color-surface);border:1px solid var(--color-border-strong)}
+.howto__step b{width:24px;height:24px;border-radius:50%;background:var(--color-accent);color:var(--color-accent-ink);display:grid;place-items:center;font-size:14px;font-weight:800}
+.howto__step strong{display:block;font-size:13.5px;font-weight:800;line-height:1.35;color:var(--color-text)}
+.howto__step span{display:block;font-size:12px;color:var(--color-text-secondary);margin-top:3px;line-height:1.4}
+.quest--link{padding-left:var(--space-3);padding-right:var(--space-3)}
+.quest__go{justify-self:end;padding:8px 14px;border-radius:999px;background:var(--color-surface-elevated);border:1px solid var(--color-border-strong);color:var(--color-text);font-size:13.5px;font-weight:700;white-space:nowrap}
+.quest__go--qr{background:var(--color-accent);border-color:var(--color-accent);color:var(--color-accent-ink)}

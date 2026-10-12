@@ -7,7 +7,7 @@
 <title>도채비와 떠나는 신화 탐험 — 탐라문화제 × 메이커앤하비</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Song+Myung&display=swap">
-<link rel="stylesheet" href="app.css?v=24">
+<link rel="stylesheet" href="app.css?v=25">
 </head>
 <body>
 
@@ -91,6 +91,13 @@
     <!-- 미사용 쿠폰이 있으면 맨 위에 크게 -->
     <div class="cpnBanner" id="homeCoupon" hidden></div>
 
+    <!-- 이렇게 해요 -->
+    <div class="howto">
+      <div class="howto__step"><b>1</b><div><strong>미션 하기</strong><span>게임·신 만나기·포토카드</span></div></div>
+      <div class="howto__step"><b>2</b><div><strong>3개 달성 = 카드 1장</strong><span>MH머니 카드가 생겨요</span></div></div>
+      <div class="howto__step"><b>3</b><div><strong>쿠지 탭에서 뽑기</strong><span>피규어·쿠폰 도전</span></div></div>
+    </div>
+
     <!-- 지금 추천 -->
     <button class="btn btn--secondary btn--block btn--xl" id="homeNext" style="margin-top:16px"></button>
     <p class="caption caption--center" id="homeSync" style="margin-top:8px"></p>
@@ -131,15 +138,15 @@
       </div>
       <div class="game">
         <div><div class="game__title">황금귤 캐치</div><div class="game__desc">30초 동안 떨어지는 귤을 잘라 터뜨리세요. 폭탄은 피할 것.</div><div class="game__best" id="best-catch">최고 0점</div></div>
-        <button class="btn btn--secondary btn--sm" data-game="catch">도전</button>
+        <button class="btn btn--primary btn--sm" data-game="catch">도전</button>
       </div>
       <div class="game">
         <div><div class="game__title">영등할망의 바람탑</div><div class="game__desc">무작위로 나오는 열 가지 물건을 크레인으로 쌓으세요.</div><div class="game__best" id="best-stack">최고 0점</div></div>
-        <button class="btn btn--secondary btn--sm" data-game="stack">도전</button>
+        <button class="btn btn--primary btn--sm" data-game="stack">도전</button>
       </div>
       <div class="game">
         <div><div class="game__title">도채비 그림자 대소동</div><div class="game__desc">그림자로 먹이를 덮어 꿀꺽, 지나가는 사람 발은 피하세요.</div><div class="game__best" id="best-sun">최고 기록 없음</div></div>
-        <button class="btn btn--secondary btn--sm" data-game="sun">도전</button>
+        <button class="btn btn--primary btn--sm" data-game="sun">도전</button>
       </div>
       <p class="caption" style="margin-top:12px" id="gameNote">게임을 깨면 미션 1개 달성! 미션 하나를 깰 때마다 MH머니 카드 1장이 나와요.</p>
     </div>
@@ -151,18 +158,18 @@
         <button class="quest quest--link" type="button" data-nav="photo">
           <svg class="icon"><use href="#i-camera"/></svg>
           <div><div class="quest__title">포토카드 만들기</div><div class="quest__desc">사진으로 나만의 랜덤 카드 · SNS 인증도 여기서</div></div>
-          <svg class="icon icon--sm"><use href="#i-external"/></svg>
+          <span class="quest__go">만들기</span>
         </button>
         <button class="quest quest--link" type="button" id="btnBoothQr">
           <svg class="icon"><use href="#i-qr"/></svg>
           <div><div class="quest__title">현장 미션 QR 찍기</div><div class="quest__desc">코스프레 체험·이벤트 등 부스 미션을 하고 스태프 QR을 찍으면 바로 미션 달성</div></div>
-          <svg class="icon icon--sm"><use href="#i-external"/></svg>
+          <span class="quest__go quest__go--qr">QR 인증</span>
         </button>
         <div id="staffTodo"></div>
         <button class="quest quest--link" type="button" data-nav="dokebi">
           <img class="quest__face" src="dokebi/exp_wink.png" alt="">
           <div><div class="quest__title">도채비에게 물어보기</div><div class="quest__desc">탐라문화제·스탬프·쿠폰이 궁금하면</div></div>
-          <svg class="icon icon--sm"><use href="#i-external"/></svg>
+          <span class="quest__go">물어보기</span>
         </button>
       </div>
       <div class="note note--plain" id="todayEvent" style="margin-top:14px" hidden></div>
