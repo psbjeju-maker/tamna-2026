@@ -94,7 +94,7 @@
     <!-- 이렇게 해요 -->
     <div class="howto">
       <div class="howto__step"><b>1</b><div><strong>미션 하기</strong><span>게임·신 만나기·포토카드</span></div></div>
-      <div class="howto__step"><b>2</b><div><strong id="howtoCost">3개 달성 = 카드 1장</strong><span>MH머니 카드가 생겨요</span></div></div>
+      <div class="howto__step"><b>2</b><div><strong id="howtoCost">미션 달성 = 쿠지 1번</strong><span>MH머니 카드가 생겨요</span></div></div>
       <div class="howto__step"><b>3</b><div><strong>쿠지 탭에서 뽑기</strong><span>피규어·쿠폰 도전</span></div></div>
     </div>
 
@@ -980,7 +980,7 @@ function paint(){
   $('#meName').textContent=S.name||'-';$('#meCode').textContent=S.code||'-';
   var days=dday(), dtxt=days===0?'D-DAY':'D-'+days;
   $('#ddayN').textContent=dtxt;
-  var hc=$('#howtoCost');if(hc)hc.textContent=kCost()+'개 달성 = 카드 1장';
+  var hc=$('#howtoCost');if(hc)hc.textContent=(kCost()>1?'미션 '+kCost()+'개 달성':'미션 달성')+' = 쿠지 1번';
   $('#homeSync').textContent=syncLine();
   $('#lnkGuide').href=C.guideUrl;
   paintCrew();paintStaff();paintTaste();paintGame();paintCampaign();paintRecord();paintAlbum();
