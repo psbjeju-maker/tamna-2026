@@ -465,6 +465,7 @@ p{margin:0}
 .balance--luck{background:var(--color-luck-soft);color:var(--color-luck)}
 .balance small{font-size:12px;font-weight:700;margin-left:-2px;opacity:.85}
 .dpill{min-height:40px;padding:0 14px;border-radius:var(--radius-pill);background:var(--color-accent-soft);color:var(--color-accent-strong);font-weight:800;font-size:15px}
+.dpill small{font-size:11px;font-weight:600;margin-right:6px;opacity:.85}
 .greet{font-size:22px;font-weight:800;letter-spacing:-.01em;margin-top:var(--space-5)}
 .dok{display:grid;grid-template-columns:64px 1fr;gap:var(--space-3);align-items:start;margin-top:var(--space-4)}
 .dok__face{width:64px;height:auto;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,.35))}
