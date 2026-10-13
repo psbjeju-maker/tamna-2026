@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>탐라문화제 포토프레임</title>
+<meta property="og:title" content="탐라문화제 포토프레임">
+<meta property="og:description" content="방금 찍은 사진에 탐라문화제 포스터를 붙여보세요">
+<style>
+@font-face{font-family:"JejuGothic";src:url("../fonts/JejuGothic.woff2") format("woff2");font-display:swap}
+:root{
+  --navy:#1b2a7a; --navy-deep:#121c55; --orange:#f26a1b; --yellow:#ffd43b;
+  --paper:#fffaf0; --ink:#1a1a2e; --muted:#6b6f8a; --line:#e6e2d6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--navy-deep)}
+body{font-family:"JejuGothic",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--paper);
+  min-height:100vh;min-height:100svh;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:520px;margin:0 auto;padding:28px 16px calc(32px + env(safe-area-inset-bottom))}
+header{text-align:center;margin-bottom:20px}
+.eyebrow{display:inline-block;font-size:13px;letter-spacing:.08em;color:var(--yellow);border:1px solid rgba(255,212,59,.5);
+  padding:4px 12px;border-radius:999px;margin-bottom:12px}
+h1{font-size:30px;line-height:1.25;font-weight:700}
+h1 em{font-style:normal;color:var(--orange)}
+.sub{margin-top:8px;font-size:15px;color:rgba(255,250,240,.75);line-height:1.5}
+
+.stage{position:relative;background:var(--navy);border-radius:20px;overflow:hidden;min-height:340px;
+  display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.08)}
+.empty{text-align:center;padding:40px 20px}
+.empty .demo{width:150px;transform:rotate(-7deg);border:6px solid #fff;border-radius:4px;box-shadow:0 12px 30px rgba(0,0,0,.45);margin-bottom:22px}
+.empty p{font-size:15px;color:rgba(255,250,240,.8);line-height:1.6}
+#result{display:none;width:100%;height:auto}
+.busy{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(18,28,85,.6);font-size:16px}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:16px;
+  font:inherit;font-size:19px;font-weight:700;padding:18px;cursor:pointer;margin-top:14px}
+.btn--main{background:var(--orange);color:#fff;box-shadow:0 6px 0 #b84a0c}
+.btn--main:active{transform:translateY(3px);box-shadow:0 3px 0 #b84a0c}
+.btn--ghost{background:rgba(255,255,255,.1);color:var(--paper);font-size:16px;padding:14px}
+.btn svg{width:22px;height:22px}
+
+.opts{display:none;margin-top:16px;gap:10px}
+.seg{display:flex;flex:1;background:rgba(255,255,255,.08);border-radius:12px;padding:4px}
+.seg button{flex:1;border:0;background:none;color:rgba(255,250,240,.7);font:inherit;font-size:15px;padding:10px 4px;border-radius:9px;cursor:pointer}
+.seg button.on{background:var(--paper);color:var(--navy);font-weight:700}
+.optLabel{font-size:13px;color:rgba(255,250,240,.6);margin:14px 2px 6px}
+
+.after{display:none}
+.hint{margin-top:12px;font-size:14px;text-align:center;color:var(--yellow);line-height:1.5}
+.caption{margin-top:22px;background:var(--paper);color:var(--ink);border-radius:16px;padding:18px}
+.caption h2{font-size:16px;margin-bottom:8px;color:var(--navy)}
+.caption pre{white-space:pre-wrap;font:inherit;font-size:15px;line-height:1.6;color:var(--ink)}
+.caption .btn{background:var(--navy);color:#fff;font-size:16px;padding:13px;margin-top:12px}
+footer{margin-top:26px;text-align:center;font-size:12px;color:rgba(255,250,240,.45);line-height:1.6}
+input[type=file]{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">제65회 탐라문화제 · 10.17 – 10.21</span>
+    <h1>방금 찍은 사진에<br><em>탐라문화제</em>를 붙여요</h1>
+    <p class="sub">사진만 고르면 포스터가 쏙 들어가요.<br>저장해서 SNS에 자랑해 주세요!</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="empty" id="empty">
+      <img class="demo" src="flyer.jpg" alt="탐라문화제 포스터">
+      <p>아래 버튼을 눌러<br>함께 찍은 사진을 골라주세요</p>
+    </div>
+    <img id="result" alt="완성된 사진">
+    <div class="busy" id="busy">사진 만드는 중…</div>
+  </div>
+
+  <label class="btn btn--main" id="pickBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="2"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg>
+    <span id="pickTxt">사진 고르기</span>
+    <input type="file" id="file" accept="image/*">
+  </label>
+
+  <div id="optsBox" style="display:none">
+    <div class="optLabel">포스터 위치</div>
+    <div class="seg" id="posSeg">
+      <button data-v="left">왼쪽 아래</button>
+      <button data-v="right" class="on">오른쪽 아래</button>
+    </div>
+    <div class="optLabel">포스터 크기</div>
+    <div class="seg" id="sizeSeg">
+      <button data-v="0.26">작게</button>
+      <button data-v="0.33" class="on">보통</button>
+      <button data-v="0.41">크게</button>
+    </div>
+  </div>
+
+  <div class="after" id="after">
+    <button class="btn btn--main" id="saveBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
+      사진 저장하기
+    </button>
+    <p class="hint" id="hint">저장이 안 되면 위 사진을 <b>꾹 눌러서</b> 저장해 주세요</p>
+
+    <div class="caption">
+      <h2>올릴 때 이 문구도 같이 써주세요</h2>
+      <pre id="capText">탐라문화제 놀러 왔어요!
+10월 17일(토) ~ 21일(수), 제주 시민복지타운광장 일대
+다들 놀러 오세요
+
+#탐라문화제 #제65회탐라문화제 #제주축제 #제주가볼만한곳</pre>
+      <button class="btn" id="copyBtn">문구 복사하기</button>
+    </div>
+  </div>
+
+  <footer>사진은 이 폰 안에서만 처리되고 어디에도 올라가지 않아요.</footer>
+</div>
+
+<script>
+(function(){
+  var FLYER_SRC = 'flyer.jpg';
+  var MAX_SIDE = 2400;           // 결과 사진 긴 변 최대 px
+  var state = { pos:'right', size:0.33, photo:null, blob:null, url:null };
+
+  var flyer = new Image();
+  var flyerReady = new Promise(function(res){ flyer.onload = res; flyer.onerror = res; });
+  flyer.src = FLYER_SRC;
+
+  var $ = function(id){ return document.getElementById(id); };
+  var file = $('file'), result = $('result'), busy = $('busy');
+
+  function seg(id, key, parse){
+    $(id).addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b) return;
+      [].forEach.call(this.children, function(c){ c.classList.toggle('on', c === b); });
+      state[key] = parse(b.dataset.v);
+      if(state.photo) render();
+    });
+  }
+  seg('posSeg', 'pos', String);
+  seg('sizeSeg', 'size', parseFloat);
+
+  file.addEventListener('change', function(){
+    var f = file.files && file.files[0]; if(!f) return;
+    busy.style.display = 'flex';
+    var img = new Image();
+    img.onload = function(){ state.photo = img; render(); };
+    img.onerror = function(){ busy.style.display = 'none'; alert('사진을 열 수 없어요. 다른 사진으로 해볼까요?'); };
+    img.src = URL.createObjectURL(f);
+    file.value = '';
+  });
+
+  function roundRect(ctx, x, y, w, h, r){
+    ctx.beginPath(); ctx.moveTo(x+r, y); ctx.arcTo(x+w, y, x+w, y+h, r); ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r); ctx.closePath();
+  }
+
+  function render(){
+    busy.style.display = 'flex';
+    Promise.all([flyerReady, document.fonts ? document.fonts.load('700 40px JejuGothic') : null]).then(draw);
+  }
+
+  function draw(){
+    var p = state.photo;
+    var sc = Math.min(1, MAX_SIDE / Math.max(p.naturalWidth, p.naturalHeight));
+    var W = Math.round(p.naturalWidth * sc), H = Math.round(p.naturalHeight * sc);
+    var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    var ctx = cv.getContext('2d');
+    ctx.drawImage(p, 0, 0, W, H);
+
+    var short = Math.min(W, H);
+    var right = state.pos === 'right';
+    // 포스터 크기: 짧은 변 기준
+    var fw = short * state.size;
+    var fh = fw * (flyer.naturalHeight / flyer.naturalWidth || 1.414);
+    var border = fw * 0.045;
+    var cardW = fw + border*2, cardH = fh + border*2;
+    var angle = (right ? 7 : -7) * Math.PI / 180;
+    var margin = short * 0.05;
+    // 회전 후에도 화면 안에 들어오도록 회전 박스 크기만큼 띄움
+    var rotW = Math.abs(cardW*Math.cos(angle)) + Math.abs(cardH*Math.sin(angle));
+    var rotH = Math.abs(cardW*Math.sin(angle)) + Math.abs(cardH*Math.cos(angle));
+    var cx = right ? W - margin - rotW/2 : margin + rotW/2;
+    var cy = H - margin - rotH/2 - short*0.02;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+    // 그림자 + 흰 테두리(인화지 느낌)
+    ctx.shadowColor = 'rgba(0,0,0,.42)';
+    ctx.shadowBlur = short * 0.035;
+    ctx.shadowOffsetY = short * 0.012;
+    ctx.fillStyle = '#fff';
+    roundRect(ctx, -cardW/2, -cardH/2, cardW, cardH, border*0.5);
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.drawImage(flyer, -fw/2, -fh/2, fw, fh);
+
+    // 마스킹 테이프
+    var tw = cardW * 0.42, th = cardW * 0.11;
+    ctx.save();
+    ctx.translate(0, -cardH/2);
+    ctx.rotate((right ? -9 : 9) * Math.PI / 180);
+    ctx.fillStyle = 'rgba(255,212,59,.82)';
+    ctx.fillRect(-tw/2, -th/2, tw, th);
+    ctx.fillStyle = 'rgba(255,255,255,.18)';
+    for(var i = 0; i < 6; i++) ctx.fillRect(-tw/2 + i*tw/6, -th/2, tw/12, th);
+    ctx.restore();
+
+    // 말풍선 라벨
+    var label = '탐라문화제 놀러오세요!';
+    var fs = cardW * 0.085;
+    ctx.font = '700 ' + fs + 'px JejuGothic, sans-serif';
+    var lw = ctx.measureText(label).width + fs*1.2, lh = fs*1.75;
+    var ly = cardH/2 + lh*0.15;
+    ctx.save();
+    ctx.translate(0, ly);
+    ctx.rotate((right ? -4 : 4) * Math.PI / 180);
+    ctx.shadowColor = 'rgba(0,0,0,.3)'; ctx.shadowBlur = fs*0.4; ctx.shadowOffsetY = fs*0.12;
+    ctx.fillStyle = '#f26a1b';
+    roundRect(ctx, -lw/2, -lh/2, lw, lh, lh/2);
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, 0, fs*0.05);
+    ctx.restore();
+
+    ctx.restore();
+
+    cv.toBlob(function(b){
+      state.blob = b;
+      if(state.url) URL.revokeObjectURL(state.url);
+      state.url = URL.createObjectURL(b);
+      result.src = state.url;
+      result.style.display = 'block';
+      $('empty').style.display = 'none';
+      $('optsBox').style.display = 'block';
+      $('after').style.display = 'block';
+      $('pickTxt').textContent = '다른 사진으로 바꾸기';
+      $('pickBtn').classList.replace('btn--main', 'btn--ghost');
+      busy.style.display = 'none';
+    }, 'image/jpeg', 0.92);
+  }
+
+  $('saveBtn').addEventListener('click', function(){
+    if(!state.blob) return;
+    var name = 'tamna2026_' + Date.now() + '.jpg';
+    var f = null;
+    try{ f = new File([state.blob], name, {type:'image/jpeg'}); }catch(e){}
+    if(f && navigator.canShare && navigator.canShare({files:[f]})){
+      navigator.share({files:[f]}).catch(function(){});
+      return;
+    }
+    var a = document.createElement('a');
+    a.href = state.url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+
+  $('copyBtn').addEventListener('click', function(){
+    var t = $('capText').textContent, btn = this;
+    var done = function(){ btn.textContent = '복사됐어요!'; setTimeout(function(){ btn.textContent = '문구 복사하기'; }, 1600); };
+    if(navigator.clipboard) navigator.clipboard.writeText(t).then(done, fallback); else fallback();
+    function fallback(){
+      var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta);
+      ta.select(); try{ document.execCommand('copy'); done(); }catch(e){} ta.remove();
+    }
+  });
+})();
+</script>
+</body>
+</html>
