@@ -744,8 +744,22 @@ function sync(){
     paint();return null;
   });
 }
+var autoRecovering=false;
 function lostRegistration(){
-  S.name='';S.code='';S.crew={};save();V=null;
+  /* 뒤로가기·앱 재진입 등으로 로그인만 풀린 경우: 이 기기에 보관한 번호·닉네임으로 조용히 이어하기(다시 입력시키지 않음) */
+  if(S.rp&&S.rp.p&&S.rp.n&&!autoRecovering){
+    autoRecovering=true;
+    EV.recover(S.rp.p,S.rp.n).then(function(r){
+      autoRecovering=false;
+      if(r&&r.ok){S.name=r.nickname||S.rp.n;S.code=r.code;save();sync();return}
+      hardLost();
+    },function(e){autoRecovering=false;if(e&&e.retryable){net.offline=true;paint()}else hardLost()});
+    return;
+  }
+  hardLost();
+}
+function hardLost(){
+  S.name='';S.code='';S.crew={};S.rp=null;save();V=null;
   $('#hud').classList.remove('on');$('#tabs').classList.remove('on');
   $$('.screen').forEach(function(s){s.classList.remove('on')});
   $('#s-intro').classList.add('on');
@@ -889,7 +903,7 @@ $('#btnStart').onclick=function(){
   var b=$('#btnStart');b.disabled=true;b.textContent='등록하는 중…';
   EV.register(n,p).then(function(r){
     b.disabled=false;b.textContent='시작하기';
-    S.name=r.nickname||n;S.code=r.code;save();
+    S.name=r.nickname||n;S.code=r.code;S.rp={p:p,n:S.name};save();
     enter();
   },function(e){
     b.disabled=false;b.textContent='시작하기';
@@ -914,12 +928,26 @@ function openRecover(phoneVal){
     var b=$('#rcGo');b.disabled=true;b.textContent='확인하는 중…';
     EV.recover(p,nk).then(function(r){
       b.disabled=false;b.textContent='이어하기';
-      if(r&&r.ok){S.name=r.nickname||'';S.code=r.code;save();closeModal();toast('기록을 이어서 불러왔어요');enter()}
+      if(r&&r.ok){S.name=r.nickname||'';S.code=r.code;S.rp={p:p,n:S.name};save();closeModal();toast('기록을 이어서 불러왔어요');enter()}
       else toast((r&&r.error)||'번호와 닉네임이 맞지 않아요');
     },function(e){b.disabled=false;b.textContent='이어하기';toast(e.message||'잠시 후 다시 해 주세요')});
   };
 }
 $('#btnRecover').onclick=function(){openRecover($('#inPhone').value.trim())};
+
+/* 뒤로가기: 앱 밖으로 나가지 않고 게임→창→홈 순서로 한 단계씩만 되돌린다 */
+(function(){
+  try{history.replaceState({tn:0},'');history.pushState({tn:1},'')}catch(e){return}
+  window.addEventListener('popstate',function(){
+    try{history.pushState({tn:1},'')}catch(e){}
+    var st=$('#stage');
+    if(st&&st.classList.contains('on')){stopGame();return}
+    if($('#modal').classList.contains('on')){closeModal();return}
+    var home=$('#s-home');
+    if(home&&!home.classList.contains('on')&&$('#hud').classList.contains('on')){go('home');return}
+    toast('앱을 끄려면 홈 버튼을 눌러 주세요');
+  });
+})();
 
 var entered=false;
 function enter(){
