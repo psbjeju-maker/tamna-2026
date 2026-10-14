@@ -116,6 +116,16 @@ input[type=file]{display:none}
     <button class="btn btn--ghost" id="sheetClose" style="max-width:320px;margin-top:0">닫기</button>
   </div>
 
+  <div id="confirm" style="display:none;position:fixed;inset:0;z-index:10;background:rgba(10,14,44,.7);align-items:center;justify-content:center;padding:24px">
+    <div style="background:var(--paper);color:var(--ink);border-radius:20px;padding:26px 20px 20px;width:100%;max-width:340px;text-align:center">
+      <p style="font-size:20px;font-weight:700;color:var(--navy)">사진을 저장하시겠습니까?</p>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn--ghost" id="cfNo" style="margin:0;background:#e9e5d8;color:var(--ink)">취소</button>
+        <button class="btn btn--main" id="cfYes" style="margin:0">저장</button>
+      </div>
+    </div>
+  </div>
+
   <footer>사진은 이 폰 안에서만 처리되고 어디에도 올라가지 않아요.</footer>
 </div>
 
@@ -262,7 +272,7 @@ input[type=file]{display:none}
     document.body.appendChild(a); a.click(); a.remove();
   }
 
-  $('saveBtn').addEventListener('click', function(){
+  function doSave(){
     if(!state.blob) return;
     // 카톡·인스타 등 인앱 브라우저는 다운로드/공유가 막혀 있으니 꾹 눌러 저장 화면으로
     if(IN_APP){ showSheet(); return; }
@@ -278,7 +288,10 @@ input[type=file]{display:none}
     }
     try{ download(name); }catch(e){ showSheet(); return; }
     if(IS_IOS) setTimeout(showSheet, 600);
-  });
+  }
+  $('saveBtn').addEventListener('click', function(){ if(state.blob) $('confirm').style.display = 'flex'; });
+  $('cfNo').addEventListener('click', function(){ $('confirm').style.display = 'none'; });
+  $('cfYes').addEventListener('click', function(){ $('confirm').style.display = 'none'; doSave(); });
 
   $('copyBtn').addEventListener('click', function(){
     var t = $('capText').textContent, btn = this;
