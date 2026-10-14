@@ -257,10 +257,23 @@ input[type=file]{display:none}
 
   var UA = navigator.userAgent || '';
   var IN_APP = /KAKAOTALK|Instagram|FBAN|FBAV|Line\/|NAVER|DaumApps|; wv\)/i.test(UA);
+  // 카톡은 열자마자 기본 브라우저로 자동 전환 (인앱에서는 이미지 저장이 막혀 있음). 한 번만 시도
+  if(/KAKAOTALK/i.test(UA)){
+    var tried = 0; try{ tried = sessionStorage.getItem('kkExt'); }catch(e){}
+    if(!tried){
+      try{ sessionStorage.setItem('kkExt','1'); }catch(e){}
+      location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+    }
+  }
   var IS_IOS = /iPhone|iPad|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
 
   function showSheet(){
-    $('sheetImg').src = state.url;
+    // 카톡 등 인앱은 blob: 주소 이미지를 저장하지 못한다 -> data URL로 보여준다
+    try{
+      var fr = new FileReader();
+      fr.onload = function(){ $('sheetImg').src = fr.result; };
+      fr.readAsDataURL(state.blob);
+    }catch(e){ $('sheetImg').src = state.url; }
     $('sheet').style.display = 'flex';
   }
   $('sheetClose').addEventListener('click', function(){ $('sheet').style.display = 'none'; });
