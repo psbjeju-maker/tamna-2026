@@ -574,7 +574,7 @@ p{margin:0}
 
 .godDots{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:var(--space-3)}
 .godDot{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;color:var(--color-text-muted);text-align:center;line-height:1.2}
-.godDot img{width:44px;height:44px;border-radius:50%;object-fit:cover}
+.godDot img{width:44px;height:44px;border-radius:50%;object-fit:cover;object-position:50% 22%}
 .godDot:not(.godDot--on)::before{content:'';width:44px;height:44px;border-radius:50%;border:2px dashed var(--color-border-strong)}
 .godDot--on{color:var(--color-text)}
 
