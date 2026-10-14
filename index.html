@@ -45,6 +45,8 @@
 
 <div id="app">
 
+  <div id="inappBar" hidden><span>카톡·SNS 안에서는 사진 저장이 안 될 수 있어요</span><button type="button" id="inappOpen">크롬/사파리로 열기</button><button type="button" id="inappX" aria-label="닫기">×</button></div>
+
   <!-- 헤더: 어느 화면에서든 mh머니(서버 잔액)과 D-day가 보인다 -->
   <header class="app-header" id="hud">
     <div class="app-header__row">
@@ -3061,6 +3063,27 @@ $('#btnShare').onclick=function(){
     } else showCardImage(blob);
   });
 };
+
+/* ---------------- 인앱브라우저 안내 배너 ---------------- */
+(function(){
+  var ua=navigator.userAgent||'';
+  var kakao=/KAKAOTALK/i.test(ua), inApp=kakao||/Instagram|FBAN|FBAV|FB_IAB|Line\/|NAVER|DaumApps/i.test(ua);
+  var bar=document.getElementById('inappBar');
+  if(!inApp||!bar)return;
+  try{if(sessionStorage.getItem('inappBarX'))return}catch(e){}
+  bar.hidden=false;
+  document.getElementById('inappX').onclick=function(){bar.hidden=true;try{sessionStorage.setItem('inappBarX','1')}catch(e){}};
+  document.getElementById('inappOpen').onclick=function(){
+    var url=location.href, android=/Android/i.test(ua);
+    if(kakao){location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(url);return}
+    if(android){
+      location.href='intent://'+url.replace(/^https?:\/\//,'')+'#Intent;scheme=https;package=com.android.chrome;end';return;
+    }
+    var done=function(){toast('주소를 복사했어요. 사파리를 열어 붙여넣어 주세요')};
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(done,function(){toast('우측 하단 메뉴(···)에서 "Safari로 열기"를 눌러 주세요')})}
+    else toast('우측 하단 메뉴(···)에서 "Safari로 열기"를 눌러 주세요');
+  };
+})();
 
 /* ---------------- 초기화 ---------------- */
 $('#btnReset').onclick=function(){

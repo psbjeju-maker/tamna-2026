@@ -675,3 +675,11 @@ p{margin:0}
 .quest--link{padding-left:var(--space-3);padding-right:var(--space-3)}
 .quest__go{justify-self:end;padding:8px 14px;border-radius:999px;background:var(--color-surface-elevated);border:1px solid var(--color-border-strong);color:var(--color-text);font-size:13.5px;font-weight:700;white-space:nowrap}
 .quest__go--qr{background:var(--color-accent);border-color:var(--color-accent);color:var(--color-accent-ink)}
+
+/* 인앱브라우저 안내 배너 */
+#inappBar{position:sticky;top:0;z-index:80;display:flex;align-items:center;gap:var(--space-2);padding:calc(var(--safe-t) + 8px) var(--space-3) 8px;background:var(--color-accent);color:#1a1405;font-size:13px;font-weight:600;line-height:1.35}
+#inappBar[hidden]{display:none}
+#inappBar span{flex:1;min-width:0}
+#inappBar button{border:0;font:inherit;cursor:pointer}
+#inappOpen{background:#1a1405;color:var(--color-accent);border-radius:8px;padding:8px 10px;white-space:nowrap}
+#inappX{background:transparent;color:#1a1405;font-size:20px;line-height:1;padding:4px 6px}
