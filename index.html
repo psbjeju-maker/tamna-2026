@@ -3011,23 +3011,55 @@ $('#btnNewCard').onclick=function(){
   $('#result').classList.remove('on');
   $('#btnMake').scrollIntoView({behavior:'smooth',block:'center'});
 };
+function cardFileName(){
+  var d8=new Date(), ymd=d8.getFullYear()+String(d8.getMonth()+1).padStart(2,'0')+String(d8.getDate()).padStart(2,'0');
+  return '탐라_포토카드_'+currentCard.rarityLabel+'_'+ymd+'.png';
+}
+function cardBlob(cb){
+  var canvas=$('#cardCanvas');
+  try{
+    canvas.toBlob(function(blob){
+      if(blob)return cb(blob);
+      try{var u=canvas.toDataURL('image/png'),p=u.split(','),bin=atob(p[1]),arr=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);cb(new Blob([arr],{type:'image/png'}))}catch(e){cb(null)}
+    },'image/png');
+  }catch(e){cb(null)}
+}
+/* 길게 눌러 저장하는 이미지 화면: 인앱브라우저(카톡·인스타 등)·iOS처럼 다운로드/공유가 막힌 곳의 확실한 폴백 */
+function showCardImage(blob){
+  var url=blob?URL.createObjectURL(blob):$('#cardCanvas').toDataURL('image/png');
+  sheet('<h3>사진을 길게 눌러 저장하세요</h3><p>아래 사진을 손가락으로 꾹 누르면 "이미지 저장" 메뉴가 나와요.</p>'+
+    '<img src="'+url+'" alt="포토카드" style="width:100%;border-radius:12px;-webkit-touch-callout:default;-webkit-user-select:auto;user-select:auto">'+
+    '<button class="btn btn--tertiary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">닫기</button>');
+}
 $('#btnSave').onclick=function(){
   if(!currentCard)return;
-  var canvas=$('#cardCanvas'), a=document.createElement('a'), d8=new Date();
-  var ymd=d8.getFullYear()+String(d8.getMonth()+1).padStart(2,'0')+String(d8.getDate()).padStart(2,'0');
-  a.href=canvas.toDataURL('image/png');
-  a.download='탐라_포토카드_'+currentCard.rarityLabel+'_'+ymd+'.png';a.click();
+  var ua=navigator.userAgent||'', inApp=/KAKAOTALK|Instagram|FBAN|FBAV|Line\/|NAVER|DaumApps|; wv\)|Whale.*Mobile/i.test(ua);
+  var ios=/iPad|iPhone|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  cardBlob(function(blob){
+    if(!blob){toast('저장 이미지를 만들지 못했어요. 다시 시도해 주세요');return}
+    if(inApp){showCardImage(blob);return}
+    if(ios){
+      var file=new File([blob],cardFileName(),{type:'image/png'});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){
+        navigator.share({files:[file]}).catch(function(e){if(e&&e.name!=='AbortError')showCardImage(blob)});
+        return;
+      }
+      showCardImage(blob);return;
+    }
+    var url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url;a.download=cardFileName();a.style.display='none';document.body.appendChild(a);a.click();
+    setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url)},3000);
+  });
 };
 $('#btnShare').onclick=function(){
   if(!currentCard)return;
-  var canvas=$('#cardCanvas');
-  canvas.toBlob(function(blob){
+  cardBlob(function(blob){
     if(!blob)return;
     var file=new File([blob],'탐라_포토카드.png',{type:'image/png'});
     if(navigator.canShare&&navigator.canShare({files:[file]})){
-      navigator.share({files:[file],title:'탐라문화제 포토카드'}).catch(function(){});
-    } else toast('사진을 길게 눌러 저장해 주세요.');
-  },'image/png');
+      navigator.share({files:[file],title:'탐라문화제 포토카드'}).catch(function(e){if(e&&e.name!=='AbortError')showCardImage(blob)});
+    } else showCardImage(blob);
+  });
 };
 
 /* ---------------- 초기화 ---------------- */
