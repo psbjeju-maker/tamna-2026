@@ -3028,7 +3028,7 @@ function cardBlob(cb){
 }
 /* 길게 눌러 저장하는 이미지 화면: 인앱브라우저(카톡·인스타 등)·iOS처럼 다운로드/공유가 막힌 곳의 확실한 폴백 */
 function showCardImage(blob){
-  var url=blob?URL.createObjectURL(blob):$('#cardCanvas').toDataURL('image/png');
+  var url=$('#cardCanvas').toDataURL('image/png');
   sheet('<h3>사진을 길게 눌러 저장하세요</h3><p>아래 사진을 손가락으로 꾹 누르면 "이미지 저장" 메뉴가 나와요.</p>'+
     '<img src="'+url+'" alt="포토카드" style="width:100%;border-radius:12px;-webkit-touch-callout:default;-webkit-user-select:auto;user-select:auto">'+
     '<button class="btn btn--tertiary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">닫기</button>');
@@ -3070,6 +3070,10 @@ $('#btnShare').onclick=function(){
   var kakao=/KAKAOTALK/i.test(ua), inApp=kakao||/Instagram|FBAN|FBAV|FB_IAB|Line\/|NAVER|DaumApps/i.test(ua);
   var bar=document.getElementById('inappBar');
   if(!inApp||!bar)return;
+  /* 카톡은 열자마자 기본 브라우저로 자동 전환(인앱에선 이미지·파일 저장이 막혀 있음). 한 번만 시도 */
+  if(kakao){var tried=0;try{tried=sessionStorage.getItem('kkExt')}catch(e){}
+    if(!tried){try{sessionStorage.setItem('kkExt','1')}catch(e){}
+      location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(location.href);return}}
   try{if(sessionStorage.getItem('inappBarX'))return}catch(e){}
   bar.hidden=false;
   document.getElementById('inappX').onclick=function(){bar.hidden=true;try{sessionStorage.setItem('inappBarX','1')}catch(e){}};
