@@ -1230,9 +1230,11 @@ function anyQrFrom(t){
   var mq=window.MQScan&&MQScan.tokenFrom(t);if(mq)return 'mq:'+mq;
   return '';
 }
+var scanMode='mission';
 function onAnyQr(v){
   if(v.indexOf('st:')===0)return claimStampTok(v.slice(3));
-  if(v.indexOf('mq:')===0)return claimBoothQr(v.slice(3));
+  /* 같은 행사 QR 1장: 스탬프 창에서 찍으면 스탬프, 미션 창에서 찍으면 미션 */
+  if(v.indexOf('mq:')===0)return scanMode==='stamp'?claimStampTok(v.slice(3)):claimBoothQr(v.slice(3));
   if(v.indexOf('tk:')===0)return claimTicketTok(v.slice(3));
 }
 /* 뽑기권 QR: 찍으면 MH머니 카드 5장/10장이 한 번에 들어온다(1회용) */
@@ -1255,7 +1257,8 @@ function claimTicketTok(token){
     toast(e.retryable?'연결이 불안정해요. 다시 찍어 주세요 — 받지 않은 상태예요.':(e.message||'뽑기권을 쓰지 못했어요'));
   });
 }
-function openStampScan(){
+function openStampScan(mode){
+  scanMode=mode==='stamp'?'stamp':'mission';
   if(!window.MQScan){toast('잠시 후 다시 눌러 주세요');return}
   MQScan.open({hint:'방문 스탬프 QR이나 현장 미션 QR을 네모 안에 맞춰 주세요',parse:anyQrFrom,
     badHint:'행사 QR이 아니에요. 장소 화면이나 스태프의 QR을 비춰 주세요.',onToken:onAnyQr,onManual:openStampCode});
@@ -1308,8 +1311,8 @@ function claimStampTok(tok){
     toast(e.retryable?'연결이 불안정해요. 다시 찍어 주세요 — 완료로 기록되지 않았어요.':(e.message||'스탬프를 찍지 못했어요'));
   });
 }
-$('#btnStamp').onclick=openStampScan;
-$('#btnBoothQr').onclick=openStampScan;
+$('#btnStamp').onclick=function(){openStampScan('stamp')};
+$('#btnBoothQr').onclick=function(){openStampScan('mission')};
 /* 장소 안내 시트(도채비 답변 버튼용) */
 function placeSheet(k){
   sheet('<h3>'+esc(placeName(k))+'</h3>'+placeCardHtml(k)+
