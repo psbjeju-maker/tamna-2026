@@ -198,7 +198,7 @@
     var ov = document.createElement('div'); ov.className = 'mh-ov';
     function close() { if (ov.parentNode) ov.parentNode.removeChild(ov); }
     function draw() {
-      var h = '<p class="mh-t">' + esc(opts.title || '쿠지에 넣을 카드를 골라 주세요') + '</p><p class="mh-s">' + cnt + ' / ' + need + '장 선택</p><div class="mh-pk">';
+      var h = '<p class="mh-t">' + esc(opts.title || '행운의 뽑기에 넣을 카드를 골라 주세요') + '</p><p class="mh-s">' + cnt + ' / ' + need + '장 선택</p><div class="mh-pk">';
       for (var i = 1; i <= TOTAL; i++) {
         var id = 'M' + i, n = owned(book, id), u = sel[id] || 0;
         h += '<div class="mh-slot ' + (n ? '' : 'no') + (u ? ' sel' : '') + '" data-id="' + id + '"><img alt="' + label(id) + '" src="' + esc(src(id)) + '">' +
@@ -207,7 +207,7 @@
       h += '</div><div class="mh-tray">';
       var chosen = []; Object.keys(sel).forEach(function (k) { for (var j = 0; j < sel[k]; j++) chosen.push(k); });
       for (var q = 0; q < need; q++) h += chosen[q] ? '<i class="f"><img alt="" src="' + esc(src(chosen[q])) + '"></i>' : '<i></i>';
-      h += '</div><div class="mh-act"><button type="button" class="mh-btn sec" data-a="x">취소</button><button type="button" class="mh-btn sec" data-a="auto">자동으로 넣기</button><button type="button" class="mh-btn" data-a="ok"' + (cnt === need ? '' : ' disabled') + '>쿠지에 넣기</button></div>';
+      h += '</div><div class="mh-act"><button type="button" class="mh-btn sec" data-a="x">취소</button><button type="button" class="mh-btn sec" data-a="auto">자동으로 넣기</button><button type="button" class="mh-btn" data-a="ok"' + (cnt === need ? '' : ' disabled') + '>행운의 뽑기에 넣기</button></div>';
       ov.innerHTML = h;
     }
     ov.addEventListener('click', function (e) {

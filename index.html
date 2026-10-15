@@ -96,8 +96,8 @@
     <!-- 이렇게 해요 -->
     <div class="howto">
       <div class="howto__step"><b>1</b><div><strong>미션 하기</strong><span>게임·신 만나기·포토카드</span></div></div>
-      <div class="howto__step"><b>2</b><div><strong id="howtoCost">미션 달성 = 쿠지 1번</strong><span>MH머니 카드가 생겨요</span></div></div>
-      <div class="howto__step"><b>3</b><div><strong>쿠지 탭에서 뽑기</strong><span>피규어·쿠폰 도전</span></div></div>
+      <div class="howto__step"><b>2</b><div><strong id="howtoCost">미션 달성 = 행운의 뽑기 1번</strong><span>MH머니 카드가 생겨요</span></div></div>
+      <div class="howto__step"><b>3</b><div><strong>행운의 뽑기 탭에서 뽑기</strong><span>피규어·쿠폰 도전</span></div></div>
     </div>
 
     <!-- 지금 추천 -->
@@ -205,7 +205,7 @@
 
     <div class="section" id="couponSec" style="margin-top:20px">
       <div class="section__head"><h2 class="section__title">내 쿠폰</h2></div>
-      <div id="couponBox"><p class="caption">아직 받은 쿠폰이 없어요. 쿠지에서 5,000원 쿠폰이 나올 수 있어요.</p></div>
+      <div id="couponBox"><p class="caption">아직 받은 쿠폰이 없어요. 행운의 뽑기에서 5,000원 쿠폰이 나올 수 있어요.</p></div>
     </div>
 
     <div class="section" id="albumSec">
@@ -235,7 +235,7 @@
     </div>
 
     <div class="section">
-      <div class="section__head"><h2 class="section__title">쿠지 기록</h2></div>
+      <div class="section__head"><h2 class="section__title">행운의 뽑기 기록</h2></div>
       <div id="tasteList"></div>
     </div>
 
@@ -264,13 +264,13 @@
   <!-- ========== 쿠지 맛보기 ========== -->
   <section class="screen" id="s-taste">
     <div class="hero">
-      <h1 class="hero__title">디지털 쿠지</h1>
-      <p class="hero__sub">미션 하나를 깨면 MH머니 카드 1장! 카드 1장으로 쿠지를 한 번 뽑아요. 하이엔드 피규어 당첨 기회를 얻어 보세요.</p>
+      <h1 class="hero__title">행운의 뽑기</h1>
+      <p class="hero__sub">미션 하나를 깨면 MH머니 카드 1장! 카드 1장으로 행운의 뽑기를 한 번 해요. 하이엔드 피규어 당첨 기회를 얻어 보세요.</p>
     </div>
 
     <div class="note" id="tasteDemo" hidden style="margin-bottom:14px">
       <b>시연용 · 실물 지급 없음</b><br>
-      이 맛보기는 어떤 결과가 나와도 받아 갈 수 있는 물건이 없어요. 쿠지가 어떤 느낌인지 보여 드리는 체험이에요.
+      이 맛보기는 어떤 결과가 나와도 받아 갈 수 있는 물건이 없어요. 행운의 뽑기가 어떤 느낌인지 보여 드리는 체험이에요.
     </div>
 
     <div class="stats">
@@ -278,7 +278,7 @@
       <div class="stat"><svg class="icon"><use href="#i-check"/></svg><div class="stat__label">다음 카드까지 미션</div><div class="stat__num" id="tasteCost">-</div></div>
     </div>
 
-    <button class="btn btn--primary btn--block" id="btnTaste">쿠지 뽑기</button>
+    <button class="btn btn--primary btn--block" id="btnTaste">행운의 뽑기</button>
     <p class="caption caption--center" id="tasteNeed" style="margin-top:10px"></p>
     <p class="caption caption--center" id="tasteLimit"></p>
 
@@ -304,7 +304,7 @@
       <div id="tasteAlbum" style="margin-top:12px"></div>
     </div>
 
-    <button class="btn btn--tertiary btn--block" data-nav="record" style="margin-top:12px">내 쿠지 기록 · 쿠폰 보기</button>
+    <button class="btn btn--tertiary btn--block" data-nav="record" style="margin-top:12px">내 행운의 뽑기 기록 · 쿠폰 보기</button>
   </section>
 
   <!-- ========== 포토카드 ========== -->
@@ -390,7 +390,7 @@
     <div class="chips" id="dokAsk">
       <button class="chip chip--btn" data-ask="festival">탐라문화제가 뭐야?</button>
       <button class="chip chip--btn" data-ask="stamp">스탬프는 뭐야?</button>
-      <button class="chip chip--btn" data-ask="treasure">쿠지가 뭐야?</button>
+      <button class="chip chip--btn" data-ask="treasure">행운의 뽑기가 뭐야?</button>
       <button class="chip chip--btn" data-ask="luck">MH머니 카드는 어떻게 받아?</button>
       <button class="chip chip--btn" data-ask="coupon">쿠폰은 어디서 써?</button>
       <button class="chip chip--btn" data-ask="where">과수원피스가 뭐야?</button>
@@ -403,7 +403,7 @@
 <!-- 하단 내비게이션 (3탭: 놀기 / 쿠지 / 내 기록) — 포토카드·도채비는 놀기 안의 하위 화면 -->
 <nav id="tabs" class="nav" aria-label="주 메뉴"><div class="nav__in nav__in--3">
   <button class="tab on" data-go="home"><svg class="icon"><use href="#i-compass"/></svg>놀기</button>
-  <button class="tab" data-go="taste"><svg class="icon"><use href="#i-gift"/></svg>쿠지</button>
+  <button class="tab" data-go="taste"><svg class="icon"><use href="#i-gift"/></svg>행운의 뽑기</button>
   <button class="tab" data-go="record"><svg class="icon"><use href="#i-ticket"/></svg>내 기록</button>
 </div></nav>
 
@@ -689,7 +689,7 @@ function liveHintHtml(c){
 /* ---------------- 상태 ----------------
    S : 이 기기에 저장하는 것(닉네임·참가코드·게임 최고기록·포토 슬롯 등 "내 폰 안의" 값). tamna_v2.
        옛 키(tamna_v1)는 읽지도 지우지도 않는다.
-   V : 서버(getState)에서 받은 마지막 상태. mh머니·미션 기록·쿠지 결과 표시는 전부 여기서만 나온다.
+   V : 서버(getState)에서 받은 마지막 상태. mh머니·미션 기록·행운의 뽑기 결과 표시는 전부 여기서만 나온다.
        (앱이 mh머니를 더하거나 빼지 않는다 — 서버가 준 숫자만 그대로 보여준다) */
 var EID = C.eventId || 'tamna';
 var S = load();
@@ -821,7 +821,7 @@ function resultHtml(res){
   return '<div class="note">'+esc(REASON[r.reason]||'이번에는 미션으로 기록되지 않았어요.')+'</div>';
 }
 /* ---- 미션 3개 = MH머니 카드 1장 (2026-10-10) ----
-   서버 지갑 숫자(coins)를 '달성한 미션 수'로 쓰고, 쿠지 1회 비용(kuji.cost, 3)으로 나눠 카드 수·진행도를 보여 준다. */
+   서버 지갑 숫자(coins)를 '달성한 미션 수'로 쓰고, 행운의 뽑기 1회 비용(kuji.cost, 3)으로 나눠 카드 수·진행도를 보여 준다. */
 function kCost(){var k=kujiCfg(),w=V&&V.wallet;var c=(w&&w.kujiCost!=null)?w.kujiCost:(k&&k.cost!=null?k.cost:3);return c>0?c:3}
 function ticketsOf(c){return c==null?null:Math.floor(c/kCost())}
 function progOf(c){return c==null?0:c%kCost()}
@@ -834,10 +834,10 @@ function stepHtml(prev,next,cardId){
   var K=kCost(), gained=Math.floor(next/K)-Math.floor(prev/K), p=next%K, left=K-p;
   if(gained>0)return '<div class="kcard"><img class="kcard__img" src="'+esc(cardImg(cardId||lastCard()))+'" alt="MH머니 카드">'+
     '<div class="kcard__t">미션 달성! MH머니 카드 '+(gained>1?gained+'장':'1장')+'이 나왔어요</div>'+
-    '<div class="kcard__s">쿠지 탭에서 하이엔드 피규어 당첨 기회를 얻어 보세요</div>'+
-    '<button class="btn btn--primary btn--block" data-nav="taste" style="margin-top:12px">쿠지 뽑으러 가기</button></div>';
+    '<div class="kcard__s">행운의 뽑기 탭에서 하이엔드 피규어 당첨 기회를 얻어 보세요</div>'+
+    '<button class="btn btn--primary btn--block" data-nav="taste" style="margin-top:12px">행운의 뽑기 하러 가기</button></div>';
   return '<div class="reward"><div class="reward__num">미션 '+p+'/'+K+'</div>'+dotsHtml(p,K)+
-    '<div class="reward__label">미션 '+(left===1?'한':left===2?'두':left)+' 번만 더 하면 쿠지를 뽑을 수 있어요. 하이엔드 피규어 당첨 기회를 얻어 보세요!</div></div>';
+    '<div class="reward__label">미션 '+(left===1?'한':left===2?'두':left)+' 번만 더 하면 행운의 뽑기를 할 수 있어요. 하이엔드 피규어 당첨 기회를 얻어 보세요!</div></div>';
 }
 function showStep(prev,next,title,cardId){
   var K=kCost(), id=cardId||lastCard();
@@ -1010,7 +1010,7 @@ function paint(){
   $('#meName').textContent=S.name||'-';$('#meCode').textContent=S.code||'-';
   var days=dday(), dtxt=days===0?'D-DAY':'D-'+days;
   $('#ddayN').textContent=dtxt;
-  var hc=$('#howtoCost');if(hc)hc.textContent=(kCost()>1?'미션 '+kCost()+'개 달성':'미션 달성')+' = 쿠지 1번';
+  var hc=$('#howtoCost');if(hc)hc.textContent=(kCost()>1?'미션 '+kCost()+'개 달성':'미션 달성')+' = 행운의 뽑기 1번';
   $('#homeSync').textContent=syncLine();
   $('#lnkGuide').href=C.guideUrl;
   paintCrew();paintStaff();paintTaste();paintGame();paintCampaign();paintRecord();paintAlbum();
@@ -1164,7 +1164,7 @@ function paintCampaign(){
   var nb=$('#homeNext'), met=C.crew.filter(isMet).length, k=kujiCfg(), cost=k&&k.cost, cn=coins();
   var rec;
   if(met<C.crew.length&&placeState('festival')==='open')rec={t:'신 찾기',go:['home','godsSec'],i:'compass'};
-  else if(cost!=null&&cn!=null&&cn>=cost&&k.enabled!==false)rec={t:'쿠지 뽑기',go:['taste'],i:'gift'};
+  else if(cost!=null&&cn!=null&&cn>=cost&&k.enabled!==false)rec={t:'행운의 뽑기',go:['taste'],i:'gift'};
   else rec={t:'신 찾기',go:['home','godsSec'],i:'compass'};
   nb.innerHTML='<svg class="icon"><use href="#i-'+rec.i+'"/></svg>'+esc(rec.t);
   nb.onclick=function(){go(rec.go[0],rec.go[1])};
@@ -1214,7 +1214,7 @@ function paintRecord(){
   $('#recGods').innerHTML=C.crew.map(function(c){var m=everMet(c);return '<span class="godDot'+(m?' godDot--on':'')+'">'+(m?'<img src="'+c.photo+'" alt="" style="object-position:'+(c.facePos||'50% 0%')+'">':'')+'<i>'+(m?esc(c.name):'???')+'</i></span>'}).join('');
   var c=myCoupon();
   var cp=couponPlay();
-  $('#couponBox').innerHTML=cp?playHtml(cp):'<p class="caption">아직 당첨된 쿠폰이 없어요. 쿠지에서 5,000원 쿠폰이 나올 수 있어요. 쿠폰은 하루에 1장만 받을 수 있고, 부스에서 실물로 받아요.</p>';
+  $('#couponBox').innerHTML=cp?playHtml(cp):'<p class="caption">아직 당첨된 쿠폰이 없어요. 행운의 뽑기에서 5,000원 쿠폰이 나올 수 있어요. 쿠폰은 하루에 1장만 받을 수 있고, 부스에서 실물로 받아요.</p>';
   $('#drawRows').innerHTML=drawRowsHtml();
 }
 /* 오늘 스탬프 찍기 → 기존 QR 스캐너. 카메라가 안 되면 화면 아래 7자리 코드로 입력 */
@@ -1245,8 +1245,8 @@ function claimTicketTok(token){
     if(r.already){toast('이미 받은 뽑기권이에요');sync();return}
     sync().then(function(){paint()});
     if(window.MH&&MH.reveal&&r.cards&&r.cards.length)MH.reveal(r.cards,{book:bk,title:'뽑기권! MH머니 카드 '+r.tickets+'장',onClose:function(){
-      sheet(dokSheetHtml('excited','MH머니 카드 '+r.tickets+'장이 들어왔어! 쿠지 탭에서 하이엔드 피규어 당첨 기회를 얻어 봐!')+
-        '<button class="btn btn--primary btn--block" data-nav="taste" style="margin-top:12px">쿠지 뽑으러 가기</button>');
+      sheet(dokSheetHtml('excited','MH머니 카드 '+r.tickets+'장이 들어왔어! 행운의 뽑기 탭에서 하이엔드 피규어 당첨 기회를 얻어 봐!')+
+        '<button class="btn btn--primary btn--block" data-nav="taste" style="margin-top:12px">행운의 뽑기 하러 가기</button>');
       paintAlbum();
     }});
     else toast('MH머니 카드 '+r.tickets+'장이 들어왔어요');
@@ -1476,17 +1476,17 @@ function paintTaste(){
   var b=$('#btnTaste'), need=$('#tasteNeed'), lim=$('#tasteLimit');
   var why='';
   if(!k)why=net.offline?'서버와 연결되면 열려요.':'설정을 불러오는 중이에요.';
-  else if(k.enabled===false)why='쿠지가 아직 열려 있지 않아요.';
-  else if(cost==null)why='쿠지 준비 중이에요.';
-  else if(w&&k.playLimit!=null&&w.playCount>=k.playLimit)why='쿠지 횟수를 모두 썼어요.';
-  else if(w&&c!=null&&c<cost){var lf=cost-c;why='MH머니 카드가 없어요. 미션 '+(lf===1?'한':lf===2?'두':lf)+' 번만 더 하면 쿠지를 뽑을 수 있어요!'}
+  else if(k.enabled===false)why='행운의 뽑기가 아직 열려 있지 않아요.';
+  else if(cost==null)why='행운의 뽑기 준비 중이에요.';
+  else if(w&&k.playLimit!=null&&w.playCount>=k.playLimit)why='행운의 뽑기 횟수를 모두 썼어요.';
+  else if(w&&c!=null&&c<cost){var lf=cost-c;why='MH머니 카드가 없어요. 미션 '+(lf===1?'한':lf===2?'두':lf)+' 번만 더 하면 행운의 뽑기를 할 수 있어요!'}
   var lockedByPass=false;
   var cf=cfgNow();
   if(!why&&cf&&cf.passRequired&&V&&V.pass&&!V.pass.active){why='항해 패스 확인이 필요해요.';lockedByPass=true}
   b.disabled=!!why||!V;
-  b.textContent=demo?"시연으로 뽑기":"쿠지 뽑기";
+  b.textContent=demo?"시연으로 뽑기":"행운의 뽑기";
   need.textContent=why||(V?'':'서버에서 내 기록을 불러오는 중이에요.');
-  lim.textContent=(w&&k)?('내 쿠지 '+w.playCount+'회'+(k.playLimit!=null?' / 최대 '+k.playLimit+'회':'')):'';
+  lim.textContent=(w&&k)?('내 행운의 뽑기 '+w.playCount+'회'+(k.playLimit!=null?' / 최대 '+k.playLimit+'회':'')):'';
   var box=$('#tasteResultBox');
   if(lastPlay){box.hidden=false;$('#tasteResult').innerHTML=playHtml(lastPlay)}
   else box.hidden=true;
@@ -1564,7 +1564,7 @@ function playTaste(cardIds){
     b.disabled=true;b.textContent='번호 고르는 중…';
     var bb=JSON.parse(JSON.stringify((V&&V.cardBook)||{}));
     KB.open({
-      title:'쿠지 번호를 골라 주세요',
+      title:'뽑기 번호를 골라 주세요',
       board:function(){return EV.kujiBoard(EID)},
       play:function(n){return EV.playKuji(EID,'coin',n,cardIds)},
       onResult:function(r){afterPlay(r,bb)},
@@ -1660,8 +1660,8 @@ var OPENING_LINES=[
 ];
 /* 등록 직후 한 번 — 오늘 할 일 안내(숫자·보상은 말하지 않는다: 서버가 정한다) */
 var TASTE_LINES=[
-  {img:'dokebi/exp_excited.png', text:'등록 끝! 선물이야 — 쿠지 1번 바로 뽑을 수 있게 MH머니 카드 1장 줄게!'},
-  {img:'dokebi/exp_smile.png', text:'미니게임 깨고, 신께 인사하고, 포토카드 만들면 카드가 또 나와. 쿠지 뽑아서 피규어 가져가!'},
+  {img:'dokebi/exp_excited.png', text:'등록 끝! 선물이야 — 행운의 뽑기 1번 바로 할 수 있게 MH머니 카드 1장 줄게!'},
+  {img:'dokebi/exp_smile.png', text:'미니게임 깨고, 신께 인사하고, 포토카드 만들면 카드가 또 나와. 행운의 뽑기 해서 피규어 가져가!'},
   {img:'dokebi/exp_wink.png', text:'「오늘 스탬프 찍기」도 있어! 하루 하나씩 모으면 10월 31일 과수원피스 헌터×헌터 더블찬스 인형 추첨으로 이어져.'}
 ];
 /* 2026-10-15 첫 접속 선물: 서버 미션 'welcome'(쿠지 1회분)을 한 번만 청구 → 카드 연출 → 쿠지로 안내.
@@ -1676,8 +1676,8 @@ function giveWelcome(){
     S.flags.welcome=1;save();
     var r=res.r;if(!(r.awarded>0))return;
     var id=lastCard(r.cards),done=function(){
-      sheet(dokSheetHtml('excited','첫 접속 선물 도착! 지금 바로 쿠지 1번 뽑아 봐. 미니게임·신 찾기를 하면 카드가 또 나와서 피규어 당첨 기회가 계속 생겨!')+
-        '<button class="btn btn--primary btn--block" data-nav="taste" style="margin-top:12px">쿠지 뽑으러 가기</button>'+
+      sheet(dokSheetHtml('excited','첫 접속 선물 도착! 지금 바로 행운의 뽑기 1번 해 봐. 미니게임·신 찾기를 하면 카드가 또 나와서 피규어 당첨 기회가 계속 생겨!')+
+        '<button class="btn btn--primary btn--block" data-nav="taste" style="margin-top:12px">행운의 뽑기 하러 가기</button>'+
         '<button class="btn btn--tertiary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">나중에</button>');
       paintAlbum();
     };
@@ -1733,8 +1733,8 @@ var DOK_RANDOM=[
   {t:'주말엔 박서방 제주지점에서 피규어·굿즈 플리마켓이 열려. 거기서도 스탬프를 받을 수 있어!',f:'wink',when:function(){var s=placeState('store');return !!s&&s!=='not-today'}},
   {t:'포토카드 만들어 봤어? 신이랑 찍은 사진으로 만들면 예뻐.',f:'smile',when:function(){return !missionDone('photo')}},
   {t:'놀이터에서 귤 좀 잘라봐. 재밌어.',f:'laugh'},
-  {t:'MH머니 카드 생겼지? 쿠지 탭에서 하이엔드 피규어 당첨 기회를 얻어 봐!',f:'wink',when:function(){var t=ticketsOf(coins());return t!=null&&t>0}},
-  {t:function(){var l=kCost()-progOf(coins());return '미션 '+(l===1?'한':l===2?'두':l)+' 번만 더 하면 쿠지를 뽑을 수 있어!'},f:'smile',when:function(){var c=coins();return c!=null&&progOf(c)>0}},
+  {t:'MH머니 카드 생겼지? 행운의 뽑기 탭에서 하이엔드 피규어 당첨 기회를 얻어 봐!',f:'wink',when:function(){var t=ticketsOf(coins());return t!=null&&t>0}},
+  {t:function(){var l=kCost()-progOf(coins());return '미션 '+(l===1?'한':l===2?'두':l)+' 번만 더 하면 행운의 뽑기를 할 수 있어!'},f:'smile',when:function(){var c=coins();return c!=null&&progOf(c)>0}},
   {t:'탐라문화제 재밌지? 나도 이런 날엔 신난다.',f:'excited'}
 ];
 function pickDok(){
@@ -1757,9 +1757,9 @@ var DOK_ASK={
     b:[['체험 부스 안내','place:festival'],['박서방 플리마켓 안내','place:store']]},
   stamp:{t:'탐라문화제는 하루 하나씩 5개, 박서방 토·일 플리마켓은 하루 하나씩 2개! 최대 7개의 방문 스탬프를 모을 수 있어. 모은 기록은 과수원피스의 헌터×헌터 더블찬스 인형 추첨과 연결돼. 정확한 응모 조건은 아래에서 확인해봐!',f:'wink',
     b:[['내 스탬프','record#recStamps7'],['추첨 안내','record#drawSec']]},
-  treasure:{t:function(){var k=kujiCfg();return '디지털 쿠지야. MH머니 카드 1장으로 번호를 골라 뽑아. 하이엔드 피규어 당첨 기회도 있어! 5,000원 쿠폰도 들어 있어.'+(k&&k.demoMode?' 지금은 시연이라 실물 지급은 없어.':'')},f:'wink',b:[['쿠지 뽑으러 가기','taste']]},
+  treasure:{t:function(){var k=kujiCfg();return '행운의 뽑기야. MH머니 카드 1장으로 번호를 골라 뽑아. 하이엔드 피규어 당첨 기회도 있어! 5,000원 쿠폰도 들어 있어.'+(k&&k.demoMode?' 지금은 시연이라 실물 지급은 없어.':'')},f:'wink',b:[['행운의 뽑기 하러 가기','taste']]},
   luck:{t:'신께 인사하기, 놀이터 게임 깨기, 포토카드 만들기, SNS 인증이 다 미션이야. 미션 하나를 깨면 MH머니 카드 1장이 나와!',f:'smile',b:[['여섯 신 찾기','home#godsSec']]},
-  coupon:{t:'쿠지에서 5,000원 쿠폰이 나오면 부스에서 날짜 도장 찍힌 실물 쿠폰을 받아. 그 쿠폰은 받은 날 박서방 제주지점에서만 쓸 수 있어!',f:'smile',
+  coupon:{t:'행운의 뽑기에서 5,000원 쿠폰이 나오면 부스에서 날짜 도장 찍힌 실물 쿠폰을 받아. 그 쿠폰은 받은 날 박서방 제주지점에서만 쓸 수 있어!',f:'smile',
     b:[['내 쿠폰','record#couponSec'],['박서방 위치','place:store']]},
   where:{t:'10월 31일에 열리는 과수원피스야. 방문 스탬프를 모은 기록이 거기서 헌터×헌터 더블찬스 인형 추첨으로 이어져. 추첨은 현장에서 체크인한 사람만 참여할 수 있어!',f:'excited',
     b:[['추첨 안내','record#drawSec']]},
