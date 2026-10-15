@@ -552,11 +552,11 @@ function onNearGod(gid){
 function compassSvg(bearingDeg,known,size){
   size=size||26;
   var needle = known
-    ? '<g transform="rotate('+bearingDeg+' 17 17)"><polygon points="17,4 21.5,19 17,15.5 12.5,19" fill="#F5B331"/></g>'
-    : '<text x="17" y="21" text-anchor="middle" font-size="13" font-weight="800" fill="#F5B331">?</text>';
+    ? '<g transform="rotate('+bearingDeg+' 17 17)"><polygon points="17,4 21.5,19 17,15.5 12.5,19" fill="#A5B0FF"/></g>'
+    : '<text x="17" y="21" text-anchor="middle" font-size="13" font-weight="800" fill="#A5B0FF">?</text>';
   return '<svg class="compass" width="'+size+'" height="'+size+'" viewBox="0 0 34 34" style="flex:none">'+
-    '<circle cx="17" cy="17" r="15" fill="rgba(245,179,49,.14)" stroke="#F5B331" stroke-width="1.5"/>'+
-    (known?'<circle cx="17" cy="17" r="1.6" fill="#F5B331"/>':'')+
+    '<circle cx="17" cy="17" r="15" fill="rgba(165,176,255,.15)" stroke="#A5B0FF" stroke-width="1.5"/>'+
+    (known?'<circle cx="17" cy="17" r="1.6" fill="#A5B0FF"/>':'')+
     needle+'</svg>';
 }
 /* ---------------- 큰 추적 화면 ----------------
@@ -569,10 +569,10 @@ var trackGod=null, trackTimer=null, trackWatchId=null;
 var deviceHeading=null, headingSource=null, trkAngle=0, lastCompassPaint=0;
 function trackCompassShell(){
   return '<svg class="compass compass--big" width="220" height="220" viewBox="0 0 34 34" style="flex:none">'+
-    '<circle cx="17" cy="17" r="15" fill="rgba(245,179,49,.14)" stroke="#F5B331" stroke-width="1.5"/>'+
-    '<circle cx="17" cy="17" r="1.6" fill="#F5B331" id="trkDot" style="display:none"></circle>'+
-    '<g id="trkNeedle" style="display:none"><polygon points="17,4 21.5,19 17,15.5 12.5,19" fill="#F5B331"/></g>'+
-    '<text id="trkQ" x="17" y="21" text-anchor="middle" font-size="13" font-weight="800" fill="#F5B331">?</text>'+
+    '<circle cx="17" cy="17" r="15" fill="rgba(165,176,255,.15)" stroke="#A5B0FF" stroke-width="1.5"/>'+
+    '<circle cx="17" cy="17" r="1.6" fill="#A5B0FF" id="trkDot" style="display:none"></circle>'+
+    '<g id="trkNeedle" style="display:none"><polygon points="17,4 21.5,19 17,15.5 12.5,19" fill="#A5B0FF"/></g>'+
+    '<text id="trkQ" x="17" y="21" text-anchor="middle" font-size="13" font-weight="800" fill="#A5B0FF">?</text>'+
   '</svg>';
 }
 function setNeedleAngle(targetDeg){
