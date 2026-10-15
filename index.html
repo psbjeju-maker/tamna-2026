@@ -1599,12 +1599,14 @@ function playTaste(cardIds){
 function grantCrew(hit){
   closeModal();revealId=hit.id;
   var p=claim(hit.missionId,hit.name+' 인사');
+  /* 단계별 표시: 먼저 "찾았습니다" + 신 카드만 보여 주고, 보상은 '보상 받기'를 눌러야 나온다
+     (한 화면에 카드·보상이 몰려 어지럽다는 피드백). 서버 기록은 뒤에서 이미 진행 중. */
   function showCaptureSheet(){
-    sheet('<h3>'+hit.name+'</h3><p>'+hit.desc+'</p>'+
-      '<div id="rwBody">'+CLAIMING+'</div>'+
+    sheet('<h3>'+hit.name+(function(n){var c=n.charCodeAt(n.length-1)-44032;return c>=0&&c<11172&&c%28?'을':'를'})(hit.name)+' 찾았습니다!</h3><p>'+hit.desc+'</p>'+
       jejuCard(hit)+
-      '<div id="rwExtra"></div>'+
-      '<button class="btn btn--primary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">계속</button>');
+      '<div id="rwWrap" hidden><div id="rwBody">'+CLAIMING+'</div><div id="rwExtra"></div></div>'+
+      '<button id="rwBtn" class="btn btn--primary btn--block">보상 받기</button>');
+    var done=false;
     p.then(function(res){
       fillRw(res);
       if(res.ok&&C.crew.every(everMet)){
@@ -1612,6 +1614,13 @@ function grantCrew(hit){
         if(ex)ex.innerHTML='<div class="note" style="margin-top:16px"><b>여섯 신께 모두 인사했어요.</b><br>신 도장과 별개로, 방문 스탬프는 장소 QR로 하루 하나씩 모여요.</div>';
       }
     });
+    $('#rwBtn').onclick=function(){
+      if(!done){
+        done=true;$('#rwWrap').hidden=false;
+        this.textContent='계속';
+        this.scrollIntoView({behavior:'smooth',block:'end'});
+      }else closeModal();
+    };
   }
   /* 도채비는 처음 인사드릴 때만 짧은 대화 장면(오해 풀어주기)이 먼저 나온다 */
   if(hit.id==='GOD2'&&!missionDone(hit.missionId)){ playCinema(hit.name,DOKEBI_LINES,showCaptureSheet); }
@@ -1733,7 +1742,7 @@ var DOK_ASK={
     b:[['내 쿠폰','record#couponSec'],['박서방 위치','place:store']]},
   where:{t:'10월 31일에 열리는 과수원피스야. 방문 스탬프를 모은 기록이 거기서 헌터×헌터 더블찬스 인형 추첨으로 이어져. 추첨은 현장에서 체크인한 사람만 참여할 수 있어!',f:'excited',
     b:[['추첨 안내','record#drawSec']]},
-  who:{t:'뿔 달린 거 상상했지? 그건 오니야, 난 도채비라고!',f:'pout'}
+  who:{t:'뿔 달린 거 상상했지? 그건 일본 도깨비(오니)야, 난 도채비라고!',f:'pout'}
 };
 function dokScreen(){
   $('#dokBigText').textContent='뭐 궁금한 거 있어? 아래에서 골라봐.';
@@ -1763,7 +1772,7 @@ var DOKEBI_LINES=[
   {img:'dokebi/exp_smile.png', text:'오, 사람이잖아! 나는 도채비야.'},
   {img:'dokebi/exp_smile.png', text:'근데 왜 그런 표정이야?'},
   {img:'dokebi/exp_surprise.png', text:'뿔 달리고 이빨 뾰족한 거, 그거 상상했지?'},
-  {img:'dokebi/exp_pout.png', text:'그건 오니(鬼)야. 난 도채비라고.'},
+  {img:'dokebi/exp_pout.png', text:'그건 일본 도깨비(오니)야. 난 도채비라고.'},
   {img:'dokebi/exp_wink.png', text:'원래 사람이랑 똑같이 생겼어. 뿔도 이빨도 없어.'},
   {img:'dokebi/exp_wink.png', text:'대신 방망이는 꼭 들고 다녀. 장난칠 때도, 복 나눠줄 때도 이게 있어야 흥이 나거든.'},
   {img:'dokebi/exp_laugh.png', text:'오해 풀렸지? 재밌게 놀다 가!'}
