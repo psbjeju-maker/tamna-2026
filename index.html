@@ -464,7 +464,7 @@
 <script>['gesturestart','gesturechange','gestureend'].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault()},{passive:false})});var _lt=0;document.addEventListener('touchend',function(e){var n=Date.now();if(n-_lt<300)e.preventDefault();_lt=n},{passive:false});</script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="config.js?v=taste4"></script>
+<script src="config.js?v=taste5"></script>
 <script src="live.js"></script>
 <script src="ev-client.js?v=6"></script>
 <script src="mqscan.js?v=2"></script>
@@ -1211,7 +1211,7 @@ function paintRecord(){
   $('#recStamps7').innerHTML=stamps7Html();
   var met=C.crew.filter(everMet).length;
   $('#recGodN').textContent=met;
-  $('#recGods').innerHTML=C.crew.map(function(c){var m=everMet(c);return '<span class="godDot'+(m?' godDot--on':'')+'">'+(m?'<img src="'+c.photo+'" alt="">':'')+'<i>'+(m?esc(c.name):'???')+'</i></span>'}).join('');
+  $('#recGods').innerHTML=C.crew.map(function(c){var m=everMet(c);return '<span class="godDot'+(m?' godDot--on':'')+'">'+(m?'<img src="'+c.photo+'" alt="" style="object-position:'+(c.facePos||'50% 0%')+'">':'')+'<i>'+(m?esc(c.name):'???')+'</i></span>'}).join('');
   var c=myCoupon();
   var cp=couponPlay();
   $('#couponBox').innerHTML=cp?playHtml(cp):'<p class="caption">아직 당첨된 쿠폰이 없어요. 쿠지에서 5,000원 쿠폰이 나올 수 있어요. 쿠폰은 하루에 1장만 받을 수 있고, 부스에서 실물로 받아요.</p>';
