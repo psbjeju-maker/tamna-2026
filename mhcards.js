@@ -105,7 +105,7 @@
     function draw() {
       var id = ids[idx]; flipped = false;
       ov.innerHTML = '';
-      var t = document.createElement('p'); t.className = 'mh-t'; t.textContent = opts.title || (ids.length > 1 ? '카드 ' + (idx + 1) + ' / ' + ids.length : '카드를 받았어요!');
+      var t = document.createElement('p'); t.className = 'mh-t'; t.textContent = opts.title ? opts.title + (ids.length > 1 ? ' · ' + (idx + 1) + ' / ' + ids.length : '') : (ids.length > 1 ? '카드 ' + (idx + 1) + ' / ' + ids.length : '카드를 받았어요!');
       var s = document.createElement('p'); s.className = 'mh-s'; s.innerHTML = '<span class="mh-hint">카드를 톡 눌러 뒤집어 보세요</span>';
       var st = document.createElement('div'); st.className = 'mh-stage';
       st.innerHTML = '<div class="mh-card"><div class="mh-bk"><img alt="카드 뒷면" src="' + esc(back()) + '"></div>' +
