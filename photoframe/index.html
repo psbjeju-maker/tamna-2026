@@ -83,8 +83,9 @@ input[type=file]{display:none}
     <div class="seg" id="posSeg">
       <button data-v="left">왼쪽 아래</button>
       <button data-v="right" class="on">오른쪽 아래</button>
+      <button data-v="none">포스터 없음</button>
     </div>
-    <div class="optLabel">포스터 크기</div>
+    <div class="optLabel" id="sizeLabel">포스터 크기</div>
     <div class="seg" id="sizeSeg">
       <button data-v="0.26">작게</button>
       <button data-v="0.33" class="on">보통</button>
@@ -146,6 +147,8 @@ input[type=file]{display:none}
       var b = e.target.closest('button'); if(!b) return;
       [].forEach.call(this.children, function(c){ c.classList.toggle('on', c === b); });
       state[key] = parse(b.dataset.v);
+      var off = state.pos === 'none';
+      $('sizeLabel').style.display = $('sizeSeg').style.display = off ? 'none' : '';
       if(state.photo) render();
     });
   }
@@ -182,6 +185,7 @@ input[type=file]{display:none}
 
     var short = Math.min(W, H);
     var right = state.pos === 'right';
+    if(state.pos !== 'none'){
     // 포스터 크기: 짧은 변 기준
     var fw = short * state.size;
     var fh = fw * (flyer.naturalHeight / flyer.naturalWidth || 1.414);
@@ -239,6 +243,7 @@ input[type=file]{display:none}
     ctx.restore();
 
     ctx.restore();
+    }
 
     cv.toBlob(function(b){
       state.blob = b;
