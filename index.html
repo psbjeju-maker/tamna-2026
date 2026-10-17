@@ -279,6 +279,10 @@
     </div>
 
     <button class="btn btn--primary btn--block" id="btnTaste">행운의 뽑기</button>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn--block" id="btnTaste5" style="flex:1">5연 뽑기</button>
+      <button class="btn btn--block" id="btnTaste10" style="flex:1">10연 뽑기</button>
+    </div>
     <p class="caption caption--center" id="tasteNeed" style="margin-top:10px"></p>
     <p class="caption caption--center" id="tasteLimit"></p>
 
@@ -1487,11 +1491,18 @@ function paintTaste(){
   var cf=cfgNow();
   if(!why&&cf&&cf.passRequired&&V&&V.pass&&!V.pass.active){why='항해 패스 확인이 필요해요.';lockedByPass=true}
   b.disabled=!!why||!V;
+  [5,10].forEach(function(n){
+    var mb=$('#btnTaste'+n);if(!mb)return;
+    var leftPlays=(w&&k&&k.playLimit!=null)?k.playLimit-w.playCount:Infinity;
+    mb.disabled=!!why||!V||c==null||ticketsOf(c)<n||leftPlays<n||multiBusy;
+    mb.textContent=n+'연 뽑기';
+  });
   b.textContent=demo?"시연으로 뽑기":"행운의 뽑기";
   need.textContent=why||(V?'':'서버에서 내 기록을 불러오는 중이에요.');
   lim.textContent=(w&&k)?('내 행운의 뽑기 '+w.playCount+'회'+(k.playLimit!=null?' / 최대 '+k.playLimit+'회':'')):'';
   var box=$('#tasteResultBox');
-  if(lastPlay){box.hidden=false;$('#tasteResult').innerHTML=playHtml(lastPlay)}
+  if(lastMulti){box.hidden=false;$('#tasteResult').innerHTML=multiHtml(lastMulti)}
+  else if(lastPlay){box.hidden=false;$('#tasteResult').innerHTML=playHtml(lastPlay)}
   else box.hidden=true;
   var pl=(V&&V.plays)||[];
   $('#tasteList').innerHTML=pl.length?tasteSummaryHtml(pl):'<p class="caption">아직 맛본 기록이 없어요.</p>';
@@ -1550,7 +1561,7 @@ $('#btnTaste').onclick=function(){
   playTaste();
 };
 function afterPlay(r,bookBefore){
-  lastPlay=r.play;
+  lastMulti=null;lastPlay=r.play;
   var p=r.play||{};
   if(p.kind==='coupon')setTimeout(function(){dokPop('5,000원 쿠폰이야! 부스에서 실물 쿠폰 받아서 오늘 박서방에서 써 봐!','excited',6500)},900);
   else if(p.kind==='blank')setTimeout(function(){dokPop('아쉽다, 꽝이야. 다음 판에 또 해 봐.','smile',4500)},900);
@@ -1560,8 +1571,66 @@ function afterPlay(r,bookBefore){
     toast(r.play&&r.play.demo?'시연 결과가 나왔어요':'결과가 서버에 기록됐어요');
   });
 }
+/* 5연·10연: 서버 뽑기를 한 판씩 차례로 N번 부른다(판마다 코인 차감·기록은 기존 그대로).
+   번호판 모드면 남은 번호에서 무작위로 골라 넣는다. 중간에 실패하면 거기까지의 결과만 보여 준다. */
+var lastMulti=null,multiBusy=false;
+function multiHtml(m){
+  var blanks=0,coinsSum=0,cpn=0,items=[];
+  m.plays.forEach(function(p){
+    if(p.kind==='blank')blanks++;
+    else if(p.kind==='coin')coinsSum+=(p.coinReward||1);
+    else if(p.kind==='coupon')cpn++;
+    else items.push(p);
+  });
+  var parts=[m.plays.length+'연 결과'];
+  if(items.length)parts.push('상품 '+items.length+'개');
+  if(cpn)parts.push('5,000원 쿠폰 '+cpn+'장');
+  if(coinsSum)parts.push(coinName()+' '+coinsSum+'장');
+  if(blanks)parts.push('꽝 '+blanks+'번');
+  var h='<div class="reward"><div class="reward__num" style="font-size:22px">'+parts.join(' · ')+'</div>'+(m.note?'<div class="reward__label">'+esc(m.note)+'</div>':'')+'</div>';
+  m.plays.forEach(function(p){if(p.kind==='coupon'||(p.kind!=='blank'&&p.kind!=='coin'))h+='<div style="margin-top:12px">'+playHtml(p)+'</div>'});
+  return h;
+}
+function playMulti(n){
+  var b=$('#btnTaste'+n);if(!b||b.disabled||multiBusy)return;
+  var k=kujiCfg(),plays=[],cards=[],note='';
+  multiBusy=true;paintTaste();b.textContent='뽑는 중…';
+  var bookBefore=JSON.parse(JSON.stringify((V&&V.cardBook)||{}));
+  var pool=null;
+  var ready=(k&&k.pickNumber)?EV.kujiBoard(EID).then(function(bd){
+    var out={};(bd.picked||[]).concat(bd.voids||[]).forEach(function(x){out[x]=1});
+    pool=[];for(var i=1;i<=bd.n;i++)if(!out[i])pool.push(i);
+    for(var j=pool.length-1;j>0;j--){var r=Math.floor(Math.random()*(j+1)),t=pool[j];pool[j]=pool[r];pool[r]=t}
+  }):Promise.resolve();
+  function step(i){
+    if(i>=n)return Promise.resolve();
+    var num=null;
+    if(pool){if(!pool.length){note='남은 번호가 없어 '+plays.length+'번에서 멈췄어요.';return Promise.resolve()}num=pool.pop()}
+    return EV.playKuji(EID,'coin',num).then(function(r){
+      plays.push(r.play);
+      if(r.play&&r.play.cards)cards=cards.concat(r.play.cards);
+      return step(i+1);
+    });
+  }
+  ready.then(function(){return step(0)}).catch(function(e){
+    if(e&&e.reason==='not-registered'){lostRegistration();return}
+    note=((e&&e.message)||'연결이 불안정해요')+' — '+plays.length+'번까지만 처리됐어요.';
+  }).then(function(){
+    multiBusy=false;
+    if(!plays.length){paintTaste();toast(note||'뽑지 못했어요');return}
+    lastMulti={plays:plays,note:note};lastPlay=null;
+    return sync().then(function(){paintTaste();
+      if(cards.length&&window.MH)setTimeout(function(){MH.reveal(cards,{book:bookBefore,title:'아쉽! 대신 '+coinName()+' 카드',onClose:paintAlbum})},500);
+      var el=$('#tasteResultBox');if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'center'});
+      toast(plays.length+'연 결과가 서버에 기록됐어요');
+    });
+  });
+}
+$('#btnTaste5').onclick=function(){playMulti(5)};
+$('#btnTaste10').onclick=function(){playMulti(10)};
 function playTaste(cardIds){
   var b=$('#btnTaste');if(b.disabled)return;
+  lastMulti=null;
   var k0=kujiCfg();
   if(k0&&k0.pickNumber&&window.KB){
     b.disabled=true;b.textContent='번호 고르는 중…';
