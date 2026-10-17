@@ -217,5 +217,81 @@
     return { close: close };
   }
 
-  window.KB = { open: open, askPin: askPin, sealItem: sealItem };
+  /* 5연·10연: 번호는 남은 것 중 무작위로 알아서 고르고, 한 판마다 봉인지를 직접 뜯게 한다.
+     KB.multi({ count, board(), play(no), onDone(plays, note) })
+     board 가 null 이면(번호판 모드 아님) 번호 없이 뽑는다. 중간에 실패하면 거기까지 모아 onDone 에 넘긴다. */
+  function multi(opts) {
+    css();
+    var plays = [], idx = 0, seal = null, note = '', ended = false;
+    var ov = document.createElement('div'); ov.className = 'kb'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true');
+    ov.innerHTML = '<div class="kb-w kb-c" id="kbm"></div>';
+    document.body.appendChild(ov);
+    var box = ov.firstChild;
+    loadMods();
+    function end() {
+      if (ended) return; ended = true;
+      if (seal) { try { seal.destroy(); } catch (e) {} seal = null; }
+      if (ov.parentNode) ov.parentNode.removeChild(ov);
+      if (opts.onDone) opts.onDone(plays, note);
+    }
+    function pickNo() {
+      if (!opts.board) return Promise.resolve(null);
+      return opts.board().then(function (b) {
+        var out = {}, a = [];
+        (b.picked || []).concat(b.voids || []).forEach(function (x) { out[x] = 1; });
+        for (var i = 1; i <= b.n; i++) if (!out[i]) a.push(i);
+        if (!a.length) throw { message: '남은 번호가 없어요.' };
+        return a[Math.floor(Math.random() * a.length)];
+      });
+    }
+    function tryPlay(left) {
+      return pickNo().then(function (no) {
+        return Promise.resolve(opts.play(no)).catch(function (e) {
+          var why = e && e.reason;
+          if (left > 0 && (why === 'number-taken' || why === 'number-void')) return tryPlay(left - 1);
+          throw e;
+        });
+      });
+    }
+    function head(t) { return '<p class="kb-s" style="margin:0 0 4px"><b>' + (idx + 1) + ' / ' + opts.count + '</b> ' + esc(t) + '</p>'; }
+    function next() {
+      if (seal) { try { seal.destroy(); } catch (e) {} seal = null; }
+      if (idx >= opts.count) { end(); return; }
+      box.innerHTML = head('뽑는 중…') + '<div class="kb-stage" style="display:flex;align-items:center;justify-content:center;font-size:44px">🎟️</div>';
+      tryPlay(3).then(function (r) {
+        if (!r || !r.play) { end(); return; }
+        plays.push(r.play); show(r.play);
+      }, function (e) {
+        note = ((e && e.message) || '연결이 불안정해요') + ' — ' + plays.length + '번까지만 처리됐어요.';
+        end();
+      });
+    }
+    function show(play) {
+      var last = idx + 1 >= opts.count;
+      box.innerHTML = head((play.number ? play.number + '번 ' : '') + '봉인지를 왼쪽에서 오른쪽으로 쭉 밀어 뜯어 주세요') +
+        '<div class="kb-stage" id="kbs"></div><div class="kb-f"><button class="kb-b" type="button" data-a="skip" style="flex:1">건너뛰기</button></div>';
+      loadMods().then(function (m) {
+        if (!m || !document.getElementById('kbs')) { idx++; next(); return; }
+        seal = m.seal.mount(document.getElementById('kbs'));
+        var it = sealItem(play, opts), fin = false;
+        seal.onDone = function () {
+          if (fin) return; fin = true;
+          var f = box.querySelector('.kb-f');
+          if (f) f.innerHTML = '<button class="kb-b kb-main" type="button" data-a="nx">' + (last ? '🎉 결과 모아보기' : '다음 뽑기 ▶') + '</button>';
+        };
+        seal.load({ label: it.label, name: it.name, img: it.img, power: it.power });
+        seal.resize && seal.resize();
+      });
+    }
+    ov.addEventListener('click', function (e) {
+      var ab = e.target && e.target.closest && e.target.closest('[data-a]'); if (!ab) return;
+      var a = ab.getAttribute('data-a');
+      if (a === 'skip') { if (seal) seal.skip(); }
+      else if (a === 'nx') { idx++; next(); }
+    });
+    next();
+    return { close: end };
+  }
+
+  window.KB = { open: open, multi: multi, askPin: askPin, sealItem: sealItem };
 })();

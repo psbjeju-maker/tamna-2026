@@ -474,7 +474,7 @@
 <script src="mqscan.js?v=2"></script>
 <script src="qr.js"></script>
 <script src="mhcards.js?v=10"></script>
-<script src="kujiboard.js?v=6"></script>
+<script src="kujiboard.js?v=7"></script>
 <script>
 (function(){
 'use strict';
@@ -1592,38 +1592,24 @@ function multiHtml(m){
   return h;
 }
 function playMulti(n){
-  var b=$('#btnTaste'+n);if(!b||b.disabled||multiBusy)return;
-  var k=kujiCfg(),plays=[],cards=[],note='';
+  var b=$('#btnTaste'+n);if(!b||b.disabled||multiBusy||!window.KB)return;
+  var k=kujiCfg(),bookBefore=JSON.parse(JSON.stringify((V&&V.cardBook)||{}));
   multiBusy=true;paintTaste();b.textContent='뽑는 중…';
-  var bookBefore=JSON.parse(JSON.stringify((V&&V.cardBook)||{}));
-  var pool=null;
-  var ready=(k&&k.pickNumber)?EV.kujiBoard(EID).then(function(bd){
-    var out={};(bd.picked||[]).concat(bd.voids||[]).forEach(function(x){out[x]=1});
-    pool=[];for(var i=1;i<=bd.n;i++)if(!out[i])pool.push(i);
-    for(var j=pool.length-1;j>0;j--){var r=Math.floor(Math.random()*(j+1)),t=pool[j];pool[j]=pool[r];pool[r]=t}
-  }):Promise.resolve();
-  function step(i){
-    if(i>=n)return Promise.resolve();
-    var num=null;
-    if(pool){if(!pool.length){note='남은 번호가 없어 '+plays.length+'번에서 멈췄어요.';return Promise.resolve()}num=pool.pop()}
-    return EV.playKuji(EID,'coin',num).then(function(r){
-      plays.push(r.play);
-      if(r.play&&r.play.cards)cards=cards.concat(r.play.cards);
-      return step(i+1);
-    });
-  }
-  ready.then(function(){return step(0)}).catch(function(e){
-    if(e&&e.reason==='not-registered'){lostRegistration();return}
-    note=((e&&e.message)||'연결이 불안정해요')+' — '+plays.length+'번까지만 처리됐어요.';
-  }).then(function(){
-    multiBusy=false;
-    if(!plays.length){paintTaste();toast(note||'뽑지 못했어요');return}
-    lastMulti={plays:plays,note:note};lastPlay=null;
-    return sync().then(function(){paintTaste();
-      if(cards.length&&window.MH)setTimeout(function(){MH.reveal(cards,{book:bookBefore,title:'아쉽! 대신 '+coinName()+' 카드',onClose:paintAlbum})},500);
-      var el=$('#tasteResultBox');if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'center'});
-      toast(plays.length+'연 결과가 서버에 기록됐어요');
-    });
+  KB.multi({
+    count:n,
+    board:(k&&k.pickNumber)?function(){return EV.kujiBoard(EID)}:null,
+    play:function(no){return EV.playKuji(EID,'coin',no)},
+    onDone:function(plays,note){
+      multiBusy=false;
+      if(!plays.length){paintTaste();sync();toast(note||'뽑지 못했어요');return}
+      var cards=[];plays.forEach(function(p){if(p&&p.cards)cards=cards.concat(p.cards)});
+      lastMulti={plays:plays,note:note};lastPlay=null;
+      sync().then(function(){paintTaste();
+        if(cards.length&&window.MH)setTimeout(function(){MH.reveal(cards,{book:bookBefore,title:'아쉽! 대신 '+coinName()+' 카드',onClose:paintAlbum})},400);
+        var el=$('#tasteResultBox');if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'center'});
+        toast(plays.length+'연 결과가 서버에 기록됐어요');
+      });
+    }
   });
 }
 $('#btnTaste5').onclick=function(){playMulti(5)};
