@@ -751,9 +751,27 @@ function paintHunt(){
   var txt='<b>지금 여섯 신 숨바꼭질 중!</b><span>'+Math.floor(left/60)+'분 '+('0'+left%60).slice(-2)+'초 남음 · 신을 찾으면 뽑기권 +1</span>';
   ['#huntBanner','#huntBannerHome'].forEach(function(q){var el=$(q);if(!el)return;el.hidden=!on;if(on){el.innerHTML=txt+'<button class="btn btn--primary btn--sm" type="button" data-nav="home" data-anchor="godsSec">찾으러 가기</button>'}});
   var lk=$('#huntLock'),bd=$('#huntBody');if(lk)lk.hidden=on;if(bd)bd.hidden=!on;
-  if(on&&!huntWas&&S.code&&typeof dokPop==='function')dokPop('숨바꼭질 시작! 행사장에 숨은 신을 찾아봐!','excited',6000);
+  huntLayout(on);
+  if(on&&!huntWas&&S.code&&typeof dokPop==='function'){
+    dokPop('숨바꼭질 시작! 행사장에 숨은 신을 찾아봐!','excited',6000);
+    if($('#hud').classList.contains('on')&&!uiBusy())goMain();
+  }
   huntWas=on;
 }
+/* 2026-10-18: 숨바꼭질 시간엔 신 찾기가 메인 — 놀기 화면 맨 위로 올리고 첫 화면도 여기로.
+   끝나면 원래 자리(뽑기 메인)로 되돌린다. */
+var huntHomeSlot=null,huntHeadTxt=null;
+function huntLayout(on){
+  var sec=$('#godsSec'),scr=$('#s-home');if(!sec||!scr)return;
+  var hl=scr.querySelector('.headline'),lead=hl&&hl.nextElementSibling;
+  if(!huntHomeSlot){huntHomeSlot=document.createComment('godsSec');sec.parentNode.insertBefore(huntHomeSlot,sec);huntHeadTxt=hl&&hl.textContent}
+  var ban=$('#huntBannerHome');
+  if(on&&ban.nextSibling!==sec){ban.parentNode.insertBefore(sec,ban.nextSibling)}
+  if(!on&&huntHomeSlot.nextSibling!==sec){huntHomeSlot.parentNode.insertBefore(sec,huntHomeSlot.nextSibling)}
+  if(hl)hl.textContent=on?'여섯 신 숨바꼭질':huntHeadTxt;
+  if(lead)lead.hidden=on;
+}
+function goMain(){if(huntOn())go('home','godsSec');else go('taste')}
 setInterval(paintHunt,1000);
 function kujiCfg(){var c=cfgNow();return (c&&c.kuji)||null}
 function coinNameSrv(){var c=cfgNow();return (c&&c.coinName)||null}
@@ -932,7 +950,7 @@ document.addEventListener('click',function(e){
 });
 $('#balBtn').onclick=function(){go('home','godsSec')};
 $('#ddayPill').onclick=function(){go('home')};
-$('#brandHome').onclick=function(e){e.preventDefault();go('taste')};
+$('#brandHome').onclick=function(e){e.preventDefault();goMain()};
 
 /* ---------------- 등록 · 복구 ---------------- */
 function fmtPhone(e){
@@ -989,8 +1007,8 @@ $('#btnRecover').onclick=function(){openRecover($('#inPhone').value.trim())};
     var st=$('#stage');
     if(st&&st.classList.contains('on')){stopGame();return}
     if($('#modal').classList.contains('on')){closeModal();return}
-    var home=$('#s-taste');
-    if(home&&!home.classList.contains('on')&&$('#hud').classList.contains('on')){go('taste');return}
+    var home=$(huntOn()?'#s-home':'#s-taste');
+    if(home&&!home.classList.contains('on')&&$('#hud').classList.contains('on')){goMain();return}
     toast('앱을 끄려면 홈 버튼을 눌러 주세요');
   });
 })();
@@ -998,7 +1016,7 @@ $('#btnRecover').onclick=function(){openRecover($('#inPhone').value.trim())};
 var entered=false;
 function enter(){
   $('#hud').classList.add('on');$('#tabs').classList.add('on');
-  paint();go('taste');
+  paint();goMain();
   sync().then(function(){retryPending();autoAttend();if(S.flags.tasteIntro)giveWelcome()});
   if(!S.flags.tasteIntro){S.flags.tasteIntro=1;save();
     setTimeout(function(){playCinema('도채비',TASTE_LINES,giveWelcome,'face')},400);}
