@@ -45,10 +45,16 @@
     document.head.appendChild(st);
   }
 
-  var RANK = function (n) { n = String(n || '').replace(/\s/g, ''); return n.indexOf('하이') >= 0 ? 0 : n.indexOf('프리미엄') >= 0 ? 1 : n.indexOf('피규어') >= 0 ? 2 : 3; };
+  /* 이름 맨 앞 "A상/B상/C상" 글자를 우선 쓴다. 예전엔 "피규어"가 들어가면 전부 C상으로 떠서 A상이 엉뚱하게 보였다(2026-10-18) */
+  var RANK = function (n) {
+    n = String(n || '').replace(/\s/g, '');
+    var m = /^([ABC])상/i.exec(n); if (m) return 'ABC'.indexOf(m[1].toUpperCase());
+    return n.indexOf('하이') >= 0 ? 0 : n.indexOf('프리미엄') >= 0 ? 1 : n.indexOf('피규어') >= 0 ? 2 : 3;
+  };
   /* 상 이름 → 봉인지 연출(등급 글자·강도) */
   function sealItem(play, opts) {
-    var img = (typeof play.image === 'string' && /^(https?:\/\/|data:image\/(jpeg|png|webp);base64,)/.test(play.image)) ? play.image : '';
+    /* 앱 안 상대경로 사진(assets/...)도 허용 — 이전엔 걸러져서 A·B·C 사진이 안 떴다(2026-10-18) */
+    var img = (typeof play.image === 'string' && /^(https?:\/\/|data:image\/(jpeg|png|webp);base64,|assets\/[\w\/.-]+\.(jpe?g|png|webp)$)/.test(play.image)) ? play.image : '';
     if (play.kind === 'blank') {
       return { label: '꽝', name: play.name || '꽝', img: '', power: '약' };
     }
