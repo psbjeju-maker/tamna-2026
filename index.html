@@ -986,7 +986,7 @@ var entered=false;
 function enter(){
   $('#hud').classList.add('on');$('#tabs').classList.add('on');
   paint();go('taste');
-  sync().then(function(){retryPending();if(S.flags.tasteIntro)giveWelcome()});
+  sync().then(function(){retryPending();autoAttend();if(S.flags.tasteIntro)giveWelcome()});
   if(!S.flags.tasteIntro){S.flags.tasteIntro=1;save();
     setTimeout(function(){playCinema('도채비',TASTE_LINES,giveWelcome,'face')},400);}
   refreshLive();refreshPlayerPos();loadLive();
@@ -996,7 +996,7 @@ function enter(){
   var everyMs=(C.liveLocation&&C.liveLocation.playerRefreshMs)||25000;
   setInterval(refreshLive,everyMs);
   setInterval(refreshPlayerPos,everyMs);
-  setInterval(function(){ if(!S.code)return; if(pendingIds().length)retryPending(); else if(net.offline)sync(); giveWelcome(); },20000);
+  setInterval(function(){ if(!S.code)return; if(pendingIds().length)retryPending(); else if(net.offline)sync(); giveWelcome(); autoAttend(); },20000);
   setInterval(function(){ if(S.code&&!document.hidden){sync();loadLive()} },90000);
   setInterval(function(){ if(!document.hidden)EV.readCfg(EID).then(function(c){CFGPUB=c},function(){}) },30000); // 장소 운영 상태·쿠폰 만료 갱신
   window.addEventListener('online',function(){ if(S.code){sync().then(function(){retryPending()})} });
@@ -1316,6 +1316,20 @@ function openStampCode(){
   $('#stGo').onclick=function(){var t=stampTokenFrom($('#stCode').value);if(!t){toast('7자리 코드를 확인해 주세요');return}closeModal();claimStampTok(t)};
 }
 var stampBusy=false;
+/* 2026-10-18 자동 출석: 앱이 행사장에서만 쓰이므로, 축제장 운영 중이면 하루 한 번 축제장 스탬프를 자동으로 찍는다.
+   토큰 = 행사 미션 QR(인쇄 고정, 10자리 → 서버가 축제장 스탬프로 처리). 미션 QR을 새로 바꾸면 이 값도 바꿀 것. */
+var ATTEND_TOKEN='2A5QKQCSAM', attendBusy=false;
+function autoAttend(){
+  if(attendBusy||!S.code||!V||stampBusy)return;
+  var day=kstToday();
+  if(S.flags.attend===day||hasStamp(day,'festival')||placeState('festival')!=='open')return;
+  attendBusy=true;
+  EV.claimStamp(EID,ATTEND_TOKEN).then(function(r){
+    attendBusy=false;S.flags.attend=day;save();
+    sync().then(function(){paintCampaign();paintRecord()});
+    if(!r.already)toast('오늘 출석 체크 완료! 방문 스탬프 '+r.count+' / '+r.max);
+  },function(e){attendBusy=false;if(!e.retryable){S.flags.attend=day;save()}});
+}
 function claimStampTok(tok){
   if(stampBusy)return;stampBusy=true;
   toast('스탬프 확인 중…');
@@ -1761,21 +1775,24 @@ var TASTE_LINES=[
 /* 2026-10-15 첫 접속 선물: 서버 미션 'welcome'(쿠지 1회분)을 한 번만 청구 → 카드 연출 → 쿠지로 안내.
    서버가 한 번만 지급하므로 이미 받은 사람은 조용히 넘어간다. 연결 실패면 다음 접속 때 다시 시도. */
 var welcoming=false;
+/* 2026-10-18: 첫 접속 선물 = 뽑기권 3장(미션 gift3, 기존 참가자도 1번 받음). gift3 설정이 없으면 예전 welcome */
+function welcomeId(){var g=missionCfg('gift3');return g&&g.enabled?'gift3':'welcome'}
 function giveWelcome(){
-  if(welcoming||(S.flags&&S.flags.welcome)||!S.code||!missionCfg('welcome')||$('#cinema').classList.contains('on'))return;
+  var wid=welcomeId(), fk=wid==='gift3'?'gift3':'welcome';
+  if(welcoming||(S.flags&&S.flags[fk])||!S.code||!missionCfg(wid)||$('#cinema').classList.contains('on'))return;
   welcoming=true;
-  claim('welcome','첫 접속 선물').then(function(res){
+  claim(wid,'첫 접속 선물').then(function(res){
     welcoming=false;
-    if(!res.ok){if(!res.queued){S.flags.welcome=1;save()}return}
-    S.flags.welcome=1;save();
+    if(!res.ok){if(!res.queued){S.flags[fk]=1;save()}return}
+    S.flags[fk]=1;save();
     var r=res.r;if(!(r.awarded>0))return;
     var id=lastCard(r.cards),done=function(){
-      sheet(dokSheetHtml('excited','첫 접속 선물 도착! 지금 바로 행운의 뽑기 1번 해 봐. 미니게임·신 찾기를 하면 카드가 또 나와서 피규어 당첨 기회가 계속 생겨!')+
+      sheet(dokSheetHtml('excited','첫 접속 선물 도착! 뽑기권 '+r.awarded+'장이야. 지금 바로 행운의 뽑기 해 봐!')+
         '<button class="btn btn--primary btn--block" data-nav="taste" style="margin-top:12px">행운의 뽑기 하러 가기</button>'+
         '<button class="btn btn--tertiary btn--block" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">나중에</button>');
       paintAlbum();
     };
-    if(window.MH&&MH.reveal)MH.reveal([id],{book:res.book,title:'첫 접속 선물! MH머니 카드 1장',onClose:done});
+    if(window.MH&&MH.reveal)MH.reveal((r.cards&&r.cards.length)?r.cards:[id],{book:res.book,title:'첫 접속 선물! 뽑기권 '+r.awarded+'장',onClose:done});
     else done();
   });
 }
