@@ -50,7 +50,7 @@ window.TamnaLive = (function () {
   var DIRS = ["북", "북동", "동", "남동", "남", "남서", "서", "북서"];
   function dirLabel(deg) { return DIRS[Math.round(deg / 45) % 8]; }
   function fmtDist(m) {
-    if (m < 30) return "바로 근처";
+    if (m < 10) return "바로 근처";
     if (m < 1000) return Math.round(m / 10) * 10 + "m";
     return (m / 1000).toFixed(1) + "km";
   }

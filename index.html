@@ -479,8 +479,8 @@
 <script>['gesturestart','gesturechange','gestureend'].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault()},{passive:false})});var _lt=0;document.addEventListener('touchend',function(e){var n=Date.now();if(n-_lt<300)e.preventDefault();_lt=n},{passive:false});</script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="config.js?v=taste5"></script>
-<script src="live.js"></script>
+<script src="config.js?v=near10"></script>
+<script src="live.js?v=near10"></script>
 <script src="ev-client.js?v=6"></script>
 <script src="mqscan.js?v=2"></script>
 <script src="qr.js"></script>
@@ -513,13 +513,14 @@ function refreshPlayerPos(){
 }
 /* ---------------- 근처 자동 발견 ----------------
    나침반으로 직접 방향을 찾아가지 않아도, 흐려진 위치 기준으로 신과
-   "바로 근처"(<30m, live.js의 fmtDist 기준과 동일)까지 가까워지면
+   "바로 근처"(<10m, live.js의 fmtDist 기준과 동일)까지 가까워지면
    도채비가 말풍선으로 알려주고 추적 화면의 "인사하기" 버튼을 바로 띄운다.
    도장은 자동으로 찍히지 않는다 — 손님이 직접 "인사하기"를 눌러야 찍힌다
    (2026-10-01: 자동 지급 방식 폐기, 꼭 인사 버튼을 눌러야 하도록 변경).
    다시 멀어졌다가 재접근하면 또 트리거된다(재도전/재인사).
    이미 인사드린 신이면 반가운 인사말만 다시 뜬다. */
-var NEAR_M = 30;
+/* 2026-10-18: 30m → 10m. 이 거리 안에 들어와야만 인사하기(찾기 완료)가 된다 */
+var NEAR_M = 10;
 /* 2026-10-12: 스태프가 '고정 모드'면 한 번 보낸 위치를 그대로 믿는다(화면이 꺼져 갱신이 없어도).
    이동 모드는 예전처럼 staleMs(90초) 넘게 소식 없으면 '자리 비움'. 고정도 8시간 지나면 무시(끄는 걸 잊은 경우) */
 function liveStale(h){
@@ -666,13 +667,13 @@ function trackTick(){
   var h=liveHints[trackGod.id];
   var stale=liveStale(h);
   if(!h||!h.active||h.lat==null||stale){
-    showTrkQ();
+    showTrkQ();setGreetBtn(false);
     $('#trackDist').textContent='신호 없음';
     $('#trackNote').textContent='지금은 위치를 안 알려주고 계세요. 잠시 후 다시 열어보세요.';
     return;
   }
   if(!playerPos){
-    showTrkQ();
+    showTrkQ();setGreetBtn(false);
     $('#trackDist').textContent='내 위치 확인 중…';
     $('#trackNote').textContent='위치 권한을 허용하면 방향까지 보여드려요.';
     return;
@@ -683,9 +684,21 @@ function trackTick(){
   showTrkNeedle();
   setNeedleAngle(angle);
   $('#trackDist').textContent=TamnaLive.dirLabel(b)+'쪽 · 약 '+TamnaLive.fmtDist(d);
-  $('#trackNote').textContent=deviceHeading!=null
+  setGreetBtn(d<NEAR_M);
+  if(d<NEAR_M){$('#trackNote').textContent='바로 앞이에요! 인사하기를 눌러보세요.';return}
+  $('#trackNote').textContent=(deviceHeading!=null
     ? '폰을 든 채 천천히 돌아보세요. 화살표가 가리키는 쪽으로 걸어가면 가까워져요.'
-    : '조금씩 움직이면서 다시 확인해보세요. 가까워질수록 거리가 줄어들어요.';
+    : '조금씩 움직이면서 다시 확인해보세요. 가까워질수록 거리가 줄어들어요.')+' '+NEAR_M+'m 안으로 가면 인사할 수 있어요.';
+}
+/* 인사하기 버튼은 신과 NEAR_M 안에 있을 때만 눌린다 */
+function godDist(c){
+  var h=c&&liveHints[c.id];
+  if(!playerPos||!h||!h.active||h.lat==null||liveStale(h))return Infinity;
+  return TamnaLive.distanceM(playerPos.lat,playerPos.lng,h.lat,h.lng);
+}
+function setGreetBtn(on){
+  var b=$('#trackScanBtn');b.disabled=!on;
+  b.lastChild.textContent=on?'인사하기':'더 가까이 가야 인사할 수 있어요';
 }
 function liveHintHtml(c){
   var h=liveHints[c.id];
@@ -1742,6 +1755,7 @@ $('#btnSns').onclick=scanSnsQr;
 function greetGod(){
   var hit=trackGod;
   if(!hit)return;
+  if(godDist(hit)>=NEAR_M){toast(NEAR_M+'m 안으로 더 가까이 가야 인사할 수 있어요');return}
   closeTracker();
   if(isMet(hit)){dokPop(hit.name+'다! 또 만났네 — 사진 한 장 더 찍어봐!','laugh',5200);return}
   if(S.pending&&S.pending[hit.missionId]){retryPending();toast('서버에 다시 전달하는 중이에요');return}

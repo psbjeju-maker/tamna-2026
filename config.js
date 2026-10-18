@@ -117,7 +117,7 @@ window.TAMNA = {
   liveLocation: {
     enabled: true,
     collection: "tamna_gods_live",
-    fuzzMeters: 25,          // 실제 위치를 이 반경 안에서 무작위로 흐려서 전송
+    fuzzMeters: 3,           // 실제 위치를 이 반경 안에서 무작위로 흐려서 전송
     updateMs: 8000,          // 스태프 폰이 위치를 올리는 주기
     playerRefreshMs: 25000,  // 참가자 화면이 힌트를 갱신하는 주기
     staleMs: 90000           // 이보다 오래된 위치는 "자리 비움"으로 취급
